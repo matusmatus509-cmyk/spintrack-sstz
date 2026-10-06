@@ -196,7 +196,8 @@ export async function searchSSTZ(query) {
 }
 
 /**
- * Parses individual duels and match protocols from a player profile HTML page
+ * Parses individual duels and match protocols from a player profile HTML page,
+ * separating singles (1v1) from doubles (štvorhry)
  */
 function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
   function parseDuelSet(setStr, playerWon) {
@@ -215,7 +216,9 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
     }
   }
 
-  const matches = [];
+  const singlesMatches = [];
+  const doublesMatches = [];
+
   const encounterRegex = /<div class="media-body">([\s\S]*?)<\/div>[\s\S]*?<section\s+id="tml2-(\d+)"[^>]*>([\s\S]*?)<\/section>/gi;
   let encMatch;
 
@@ -276,80 +279,150 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
       duelIndex++;
       const blockClass = bMatch[1];
       const blockHtml = bMatch[2];
-
       const isWin = blockClass.includes('tml2-block-success');
+      const isDoubles = blockHtml.includes('Štvorhra');
 
-      const playerMatches = [...blockHtml.matchAll(/<div\s+class="tml2__match__player">\s*<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)];
-      const scoreMatches = [...blockHtml.matchAll(/<div\s+class="tml2__match__score">\s*<span>([^<]+)<\/span>/gi)];
+      const items = [...blockHtml.matchAll(/<div\s+class="tml2__match__item[^"]*">([\s\S]*?)<\/div>\s*<\/div>/gi)];
+      const itemScoreMatches = [...blockHtml.matchAll(/<div\s+class="tml2__match__score">\s*<span>([^<]+)<\/span>/gi)];
 
-      if (playerMatches.length >= 2 && scoreMatches.length >= 2) {
-        const p1Id = playerMatches[0][1];
-        const p1Name = playerMatches[0][2].replace(/<[^>]+>/g, '').trim();
-        const p1Score = parseInt(scoreMatches[0][1].trim(), 10) || 0;
+      if (items.length >= 2 && itemScoreMatches.length >= 2) {
+        const item1Html = items[0][1];
+        const item2Html = items[1][1];
 
-        const p2Id = playerMatches[1][1];
-        const p2Name = playerMatches[1][2].replace(/<[^>]+>/g, '').trim();
-        const p2Score = parseInt(scoreMatches[1][1].trim(), 10) || 0;
+        const item1Players = [...item1Html.matchAll(/<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)].map(p => ({
+          id: p[1],
+          name: p[2].replace(/<[^>]+>/g, '').trim()
+        }));
+        const item2Players = [...item2Html.matchAll(/<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)].map(p => ({
+          id: p[1],
+          name: p[2].replace(/<[^>]+>/g, '').trim()
+        }));
 
-        const isP1Target = (p1Id === playerId);
-        const opponentId = isP1Target ? p2Id : p1Id;
-        const opponentName = isP1Target ? p2Name : p1Name;
-        const myScore = isP1Target ? p1Score : p2Score;
-        const oppScore = isP1Target ? p2Score : p1Score;
-
+        const s1 = parseInt(itemScoreMatches[0][1].trim(), 10) || 0;
+        const s2 = parseInt(itemScoreMatches[1][1].trim(), 10) || 0;
         const rawSetsMatches = [...blockHtml.matchAll(/<div\s+class="tml2__match__set\s+([^"]+)">([^<]+)<\/div>/gi)];
-        const setDetails = [];
-        let totalPtsWon = 0;
-        let totalPtsLost = 0;
 
-        for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
-          const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
-          const item1RawVal = rawSetsMatches[sIdx][2].trim();
+        if (isDoubles || item1Players.length > 1 || item2Players.length > 1) {
+          // --- DOUBLES MATCH ---
+          const inItem1 = item1Players.some(p => p.id === playerId);
+          const myTeam = inItem1 ? item1Players : item2Players;
+          const oppTeam = inItem1 ? item2Players : item1Players;
+          const partner = myTeam.find(p => p.id !== playerId) || { id: '', name: 'Neznámy spoluhráč' };
+          const myScore = inItem1 ? s1 : s2;
+          const oppScore = inItem1 ? s2 : s1;
 
-          const targetWonThisSet = isP1Target ? item1SetWon : !item1SetWon;
+          const setDetails = [];
+          let totalPtsWon = 0;
+          let totalPtsLost = 0;
 
-          let targetRawVal = item1RawVal;
-          if (!isP1Target) {
-            targetRawVal = item1RawVal.startsWith('+') ? `-${item1RawVal.slice(1)}` : (item1RawVal.startsWith('-') ? `+${item1RawVal.slice(1)}` : item1RawVal);
+          for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
+            const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
+            const item1RawVal = rawSetsMatches[sIdx][2].trim();
+            const targetWonThisSet = inItem1 ? item1SetWon : !item1SetWon;
+
+            let targetRawVal = item1RawVal;
+            if (!inItem1) {
+              targetRawVal = item1RawVal.startsWith('+') ? `-${item1RawVal.slice(1)}` : (item1RawVal.startsWith('-') ? `+${item1RawVal.slice(1)}` : item1RawVal);
+            }
+
+            const parsed = parseDuelSet(targetRawVal, targetWonThisSet);
+            totalPtsWon += parsed.playerPts;
+            totalPtsLost += parsed.opponentPts;
+
+            setDetails.push({
+              setNumber: sIdx + 1,
+              playerPoints: parsed.playerPts,
+              opponentPoints: parsed.opponentPts,
+              display: parsed.display,
+              won: parsed.won
+            });
           }
 
-          const parsed = parseDuelSet(targetRawVal, targetWonThisSet);
-          totalPtsWon += parsed.playerPts;
-          totalPtsLost += parsed.opponentPts;
-
-          setDetails.push({
-            setNumber: sIdx + 1,
-            playerPoints: parsed.playerPts,
-            opponentPoints: parsed.opponentPts,
-            display: parsed.display,
-            won: parsed.won
+          doublesMatches.push({
+            id: `${seasonLabel.replace('/', '-')}-${matchId}-doubles-${duelIndex}`,
+            teamMatchId: matchId,
+            season: seasonLabel,
+            leagueName: fullLeagueName,
+            date,
+            round,
+            teams,
+            partnerName: partner.name,
+            partnerId: partner.id,
+            opponentPair: oppTeam.map(p => p.name).join(' & '),
+            opponents: oppTeam,
+            result: isWin ? 'WIN' : 'LOSS',
+            score: `${myScore}:${oppScore}`,
+            sets: setDetails.map(s => s.won ? `+${s.opponentPoints}` : `-${s.playerPoints}`),
+            setDetails,
+            totalPointsWon: totalPtsWon,
+            totalPointsLost: totalPtsLost,
+            source: 'SSTZ',
+            type: 'doubles'
           });
-        }
+        } else {
+          // --- SINGLES MATCH (1v1) ---
+          const p1 = item1Players[0];
+          const p2 = item2Players[0];
+          if (p1 && p2) {
+            const isP1 = p1.id === playerId;
+            const opp = isP1 ? p2 : p1;
+            const myScore = isP1 ? s1 : s2;
+            const oppScore = isP1 ? s2 : s1;
 
-        matches.push({
-          id: `${seasonLabel.replace('/', '-')}-${matchId}-${duelIndex}`,
-          teamMatchId: matchId,
-          season: seasonLabel,
-          leagueName: fullLeagueName,
-          competition: 'SSTZ Liga',
-          date,
-          round,
-          teams,
-          opponentName,
-          opponentId,
-          result: isWin ? 'WIN' : 'LOSS',
-          score: `${myScore}:${oppScore}`,
-          sets: setDetails.map(s => s.won ? `+${s.opponentPoints}` : `-${s.playerPoints}`),
-          setDetails,
-          totalPointsWon: totalPtsWon,
-          totalPointsLost: totalPtsLost,
-          source: 'SSTZ'
-        });
+            const setDetails = [];
+            let totalPtsWon = 0;
+            let totalPtsLost = 0;
+
+            for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
+              const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
+              const item1RawVal = rawSetsMatches[sIdx][2].trim();
+              const targetWonThisSet = isP1 ? item1SetWon : !item1SetWon;
+
+              let targetRawVal = item1RawVal;
+              if (!isP1) {
+                targetRawVal = item1RawVal.startsWith('+') ? `-${item1RawVal.slice(1)}` : (item1RawVal.startsWith('-') ? `+${item1RawVal.slice(1)}` : item1RawVal);
+              }
+
+              const parsed = parseDuelSet(targetRawVal, targetWonThisSet);
+              totalPtsWon += parsed.playerPts;
+              totalPtsLost += parsed.opponentPts;
+
+              setDetails.push({
+                setNumber: sIdx + 1,
+                playerPoints: parsed.playerPts,
+                opponentPoints: parsed.opponentPts,
+                display: parsed.display,
+                won: parsed.won
+              });
+            }
+
+            singlesMatches.push({
+              id: `${seasonLabel.replace('/', '-')}-${matchId}-${duelIndex}`,
+              teamMatchId: matchId,
+              season: seasonLabel,
+              leagueName: fullLeagueName,
+              competition: 'SSTZ Liga',
+              date,
+              round,
+              teams,
+              opponentName: opp.name,
+              opponentId: opp.id,
+              result: isWin ? 'WIN' : 'LOSS',
+              score: `${myScore}:${oppScore}`,
+              sets: setDetails.map(s => s.won ? `+${s.opponentPoints}` : `-${s.playerPoints}`),
+              setDetails,
+              totalPointsWon: totalPtsWon,
+              totalPointsLost: totalPtsLost,
+              source: 'SSTZ',
+              type: 'singles'
+            });
+          }
+        }
       }
     }
   }
 
-  return matches;
+  return { singles: singlesMatches, doubles: doublesMatches };
 }
 
 /**
@@ -426,7 +499,9 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
     }
 
     // Parse duels for current season (2026/27)
-    let allMatches = parsePlayerDuelsFromHtml(htmlCurr, playerId, '2026/27');
+    const currExtracted = parsePlayerDuelsFromHtml(htmlCurr, playerId, '2026/27');
+    let allSingles = [...currExtracted.singles];
+    let allDoubles = [...currExtracted.doubles];
 
     // If requested, fetch historical seasons (from 2025/26 down to 2018/19)
     if (shouldFetchAllSeasons) {
@@ -465,9 +540,12 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
 
           if (resSeasonPlayer.ok) {
             const seasonHtml = await resSeasonPlayer.text();
-            const seasonDuels = parsePlayerDuelsFromHtml(seasonHtml, playerId, s.label);
-            if (seasonDuels.length > 0) {
-              allMatches.push(...seasonDuels);
+            const seasonExtracted = parsePlayerDuelsFromHtml(seasonHtml, playerId, s.label);
+            if (seasonExtracted.singles.length > 0) {
+              allSingles.push(...seasonExtracted.singles);
+            }
+            if (seasonExtracted.doubles.length > 0) {
+              allDoubles.push(...seasonExtracted.doubles);
             }
           }
         } catch (seasonErr) {
@@ -478,8 +556,9 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
 
     // Detect player's club from match encounters
     let detectedClub = '';
-    if (allMatches.length > 0) {
-      const allEncounterTeams = allMatches.map(m => m.teams.replace(/\s*\(\d+:\d+\)$/, '').split(/\s*-\s*/));
+    const allMatchesCombined = [...allSingles, ...allDoubles];
+    if (allMatchesCombined.length > 0) {
+      const allEncounterTeams = allMatchesCombined.map(m => m.teams.replace(/\s*\(\d+:\d+\)$/, '').split(/\s*-\s*/));
       if (allEncounterTeams.length > 0) {
         const firstPair = allEncounterTeams[0];
         for (const candidate of firstPair) {
@@ -498,11 +577,17 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
     const clubName = detectedClub || (clubMatch ? clubMatch[2].replace(/<[^>]+>/g, '').trim() : '');
     const clubId = clubMatch ? clubMatch[1] : '';
 
-    // Calculate career totals from allMatches
-    const careerPlayed = allMatches.length;
-    const careerWon = allMatches.filter(m => m.result === 'WIN').length;
-    const careerLost = careerPlayed - careerWon;
-    const careerWinRate = careerPlayed > 0 ? Math.round((careerWon / careerPlayed) * 100) : 0;
+    // Calculate career totals from allSingles (pure singles)
+    const careerSinglesPlayed = allSingles.length;
+    const careerSinglesWon = allSingles.filter(m => m.result === 'WIN').length;
+    const careerSinglesLost = careerSinglesPlayed - careerSinglesWon;
+    const careerSinglesWinRate = careerSinglesPlayed > 0 ? Math.round((careerSinglesWon / careerSinglesPlayed) * 100) : 0;
+
+    // Calculate career totals from allDoubles (pure doubles)
+    const careerDoublesPlayed = allDoubles.length;
+    const careerDoublesWon = allDoubles.filter(m => m.result === 'WIN').length;
+    const careerDoublesLost = careerDoublesPlayed - careerDoublesWon;
+    const careerDoublesWinRate = careerDoublesPlayed > 0 ? Math.round((careerDoublesWon / careerDoublesPlayed) * 100) : 0;
 
     const profile = {
       id: playerId,
@@ -513,16 +598,23 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
       singles,
       doubles,
       singlesStats: shouldFetchAllSeasons ? {
-        played: careerPlayed,
-        won: careerWon,
-        lost: careerLost,
-        winRate: careerWinRate,
+        played: careerSinglesPlayed,
+        won: careerSinglesWon,
+        lost: careerSinglesLost,
+        winRate: careerSinglesWinRate,
         home: singles.home,
         away: singles.away
       } : singles,
-      doublesStats: doubles,
-      matches: allMatches,
-      totalMatches: allMatches.length,
+      doublesStats: shouldFetchAllSeasons ? {
+        played: careerDoublesPlayed,
+        won: careerDoublesWon,
+        lost: careerDoublesLost,
+        winRate: careerDoublesWinRate
+      } : doubles,
+      matches: allSingles, // Pure singles matches
+      doublesMatches: allDoubles, // Pure doubles matches
+      totalMatches: allSingles.length,
+      totalDoublesMatches: allDoubles.length,
       syncedSeasonsCount: shouldFetchAllSeasons ? ALL_SEASONS.length : 1,
       isAllSeasons: shouldFetchAllSeasons,
       syncedAt: new Date().toISOString()

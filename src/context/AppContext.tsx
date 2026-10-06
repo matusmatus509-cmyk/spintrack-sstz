@@ -5,6 +5,7 @@ import {
   RacketSetup,
   TrainingSession,
   MatchRecord,
+  DoublesMatchRecord,
   SSTZProfile,
   TeamScheduleMatch,
   Badge,
@@ -41,6 +42,11 @@ interface AppContextType {
   addMatch: (match: Omit<MatchRecord, 'id'>) => void;
   deleteMatch: (id: string) => void;
   updateMatchNotes: (matchId: string, notes: string, tacticsNote?: string) => void;
+
+  // Doubles (Štvorhry)
+  doublesMatches: DoublesMatchRecord[];
+  addDoublesMatch: (match: Omit<DoublesMatchRecord, 'id'>) => void;
+  deleteDoublesMatch: (id: string) => void;
 
   // Opponents Database & Scouting
   opponents: OpponentProfile[];
@@ -285,6 +291,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRacketId, setActiveRacketId] = useState<string>(saved?.activeRacketId || 'racket-1');
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>(saved?.trainingSessions || defaultSessions);
   const [matches, setMatches] = useState<MatchRecord[]>(saved?.matches || defaultMatches);
+  const [doublesMatches, setDoublesMatches] = useState<DoublesMatchRecord[]>(saved?.doublesMatches || []);
   const [opponents, setOpponents] = useState<OpponentProfile[]>(
     extractOpponentsFromMatches(saved?.matches || defaultMatches, saved?.opponents || [])
   );
@@ -311,6 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activeRacketId,
       trainingSessions,
       matches,
+      doublesMatches,
       opponents,
       sstzProfile,
       teamSchedule,
@@ -330,6 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     activeRacketId,
     trainingSessions,
     matches,
+    doublesMatches,
     opponents,
     sstzProfile,
     teamSchedule,
@@ -536,6 +545,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMatches(prev => prev.filter(m => m.id !== id));
   };
 
+  const addDoublesMatch = (matchData: Omit<DoublesMatchRecord, 'id'>) => {
+    const id = `doubles-${Date.now()}`;
+    const newMatch: DoublesMatchRecord = { ...matchData, id, type: 'doubles' };
+    setDoublesMatches(prev => [newMatch, ...prev]);
+  };
+
+  const deleteDoublesMatch = (id: string) => {
+    setDoublesMatches(prev => prev.filter(m => m.id !== id));
+  };
+
   const updateMatchNotes = (matchId: string, notes: string, tacticsNote?: string) => {
     setMatches(prev => prev.map(m => {
       if (m.id === matchId) {
@@ -663,10 +682,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const newToAdd = importedMatches.filter(im => !existingIds.has(im.sstzMatchId));
           const combined = [...newToAdd, ...prev];
 
-          // Auto-update opponents directory
+          // Auto-update opponents directory from pure singles matches
           setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
 
           return combined;
+        });
+      }
+
+      if (data.doublesMatches && data.doublesMatches.length > 0) {
+        const importedDoubles: DoublesMatchRecord[] = data.doublesMatches.map((dm: any) => ({
+          ...dm,
+          source: 'SSTZ',
+          type: 'doubles'
+        }));
+        setDoublesMatches(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newToAdd = importedDoubles.filter(d => !existingIds.has(d.id));
+          return [...newToAdd, ...prev];
         });
       }
 
@@ -840,6 +872,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMatch,
         deleteMatch,
         updateMatchNotes,
+        doublesMatches,
+        addDoublesMatch,
+        deleteDoublesMatch,
         opponents,
         updateOpponent,
         getOpponent,

@@ -113,6 +113,39 @@ export interface OpponentProfile {
   lastUpdated?: string;
 }
 
+export interface DoublesMatchRecord {
+  id: string;
+  teamMatchId?: string;
+  season?: string;
+  leagueName?: string;
+  date: string;
+  round?: string;
+  teams?: string;
+  partnerName: string;
+  partnerId?: string;
+  opponentPair: string;
+  opponents?: { id: string; name: string }[];
+  result: 'WIN' | 'LOSS';
+  score: string; // e.g. '3:1'
+  sets: string[];
+  setDetails?: SetDetail[];
+  totalPointsWon?: number;
+  totalPointsLost?: number;
+  notes?: string;
+  source?: 'SSTZ' | 'manual';
+  type: 'doubles';
+}
+
+export interface DoublesPartnerStat {
+  partnerName: string;
+  partnerId?: string;
+  matchesCount: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  matches: DoublesMatchRecord[];
+}
+
 export interface SSTZProfile {
   id: string;
   name: string;
@@ -136,6 +169,7 @@ export interface SSTZProfile {
     lost: number;
     winRate: number;
   };
+  doublesMatches?: DoublesMatchRecord[];
   lastSync: string;
 }
 
