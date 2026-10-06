@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { PwaInstallPrompt } from './PwaInstallPrompt';
 import {
@@ -68,6 +69,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isOpen]);
+
   const handleReset = () => {
     if (window.confirm('Naozaj chceš vymazať všetky údaje a vrátiť aplikáciu do predvoleného stavu?')) {
       resetToDefaults();
@@ -75,26 +86,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="mobile-sheet-container"
+      onClick={onClose}
       style={{
         position: 'fixed',
+        inset: 0,
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
+        width: '100vw',
+        height: '100vh',
         background: 'rgba(0, 0, 0, 0.75)',
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 200,
-        padding: '20px'
+        zIndex: 99999,
+        padding: '20px',
+        boxSizing: 'border-box'
       }}
     >
       <div
         className="glass-panel mobile-sheet-content"
+        onClick={e => e.stopPropagation()}
         style={{
           maxWidth: '520px',
           width: '100%',
@@ -103,7 +121,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           flexDirection: 'column',
           gap: '18px',
           maxHeight: '90vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+          margin: 'auto'
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -289,6 +309,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <strong>SpinTrack SSTZ v1.0.0</strong> • Inšpirované aplikáciou SpinTrack (RubberApp) s priamou integráciou oficiálneho systému SSTZ Slovensko.
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

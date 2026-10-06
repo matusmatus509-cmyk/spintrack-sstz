@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { SetBreakdown } from '../components/SetBreakdown';
 import {
@@ -295,6 +296,16 @@ export const OpponentsView: React.FC = () => {
       seasons: Array.from(seasons)
     };
   }, [selectedOpponentMatches]);
+
+  useEffect(() => {
+    if (selectedOpponent || isNewOpponentModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [selectedOpponent, isNewOpponentModal]);
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -836,36 +847,49 @@ export const OpponentsView: React.FC = () => {
       {/* ========================================================
           OPPONENT DETAIL & SCOUTING MODAL (1v1 INDIVIDUAL)
          ======================================================== */}
-      {(selectedOpponent || isNewOpponentModal) && (
+      {(selectedOpponent || isNewOpponentModal) && createPortal(
         <div
           className="mobile-sheet-container"
+          onClick={() => {
+            setSelectedOpponent(null);
+            setIsNewOpponentModal(false);
+            setIsEditing(false);
+          }}
           style={{
             position: 'fixed',
+            inset: 0,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(10px)',
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 100,
-            padding: '16px'
+            zIndex: 99999,
+            padding: '16px',
+            boxSizing: 'border-box'
           }}
         >
           <div
             className="glass-panel mobile-sheet-content"
+            onClick={e => e.stopPropagation()}
             style={{
               width: '100%',
               maxWidth: '820px',
-              maxHeight: '92vh',
+              maxHeight: '90vh',
               overflowY: 'auto',
               padding: '22px',
               borderRadius: 'var(--radius-xl)',
               background: 'var(--bg-main)',
               border: '1px solid var(--border-subtle)',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)'
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)',
+              boxSizing: 'border-box',
+              margin: 'auto'
             }}
           >
             {/* Modal Header */}
@@ -1408,7 +1432,8 @@ export const OpponentsView: React.FC = () => {
             )}
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { CATALOG_RUBBERS, CATALOG_BLADES } from '../data/gearCatalog';
 import { Rubber, Blade, RacketSetup } from '../types';
@@ -122,6 +123,16 @@ export const EquipmentView: React.FC = () => {
     });
     alert(`Drevo ${catBlade.brand} ${catBlade.model} bolo pridané do tvojej výbavy!`);
   };
+
+  useEffect(() => {
+    if (showNewRacketModal || showNewRubberModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showNewRacketModal, showNewRubberModal]);
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -744,32 +755,44 @@ export const EquipmentView: React.FC = () => {
       )}
 
       {/* Modal: Poskladať novú raketu */}
-      {showNewRacketModal && (
+      {showNewRacketModal && createPortal(
         <div
           className="mobile-sheet-container"
+          onClick={() => setShowNewRacketModal(false)}
           style={{
             position: 'fixed',
+            inset: 0,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.7)',
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.75)',
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 100,
-            padding: '20px'
+            zIndex: 99999,
+            padding: '20px',
+            boxSizing: 'border-box'
           }}
         >
-          <div className="glass-panel mobile-sheet-content" style={{
-            maxWidth: '480px',
-            width: '100%',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
+          <div
+            className="glass-panel mobile-sheet-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxSizing: 'border-box',
+              margin: 'auto'
+            }}
+          >
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Poskladať novú raketu</h3>
 
             <form onSubmit={handleCreateRacket} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -874,33 +897,49 @@ export const EquipmentView: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal: Pridať poťah */}
-      {showNewRubberModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '20px'
-        }}>
-          <div className="glass-panel" style={{
-            maxWidth: '480px',
-            width: '100%',
-            padding: '24px',
+      {showNewRubberModal && createPortal(
+        <div
+          className="mobile-sheet-container"
+          onClick={() => setShowNewRubberModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div
+            className="glass-panel mobile-sheet-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxSizing: 'border-box',
+              margin: 'auto'
+            }}
+          >
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Pridať poťah do výbavy</h3>
 
             <form onSubmit={handleCreateRubber} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -967,7 +1006,8 @@ export const EquipmentView: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

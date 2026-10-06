@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
   X,
@@ -188,6 +189,16 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isOpen]);
+
   const formatHoursDisplay = (mins: number) => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
@@ -196,36 +207,45 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     return `${h} hod ${m} min`;
   };
 
-  return (
+  return createPortal(
     <div
       className="mobile-sheet-container"
+      onClick={onClose}
       style={{
         position: 'fixed',
+        inset: 0,
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(10px)',
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 150,
-        padding: '16px'
+        zIndex: 99999,
+        padding: '16px',
+        boxSizing: 'border-box'
       }}
     >
       <div
         className="glass-panel mobile-sheet-content"
+        onClick={e => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: '680px',
-          maxHeight: '92vh',
+          maxHeight: '90vh',
           overflowY: 'auto',
           padding: '24px',
           borderRadius: 'var(--radius-xl)',
           background: 'var(--bg-main)',
           border: '1px solid var(--border-subtle)',
-          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)'
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)',
+          boxSizing: 'border-box',
+          margin: 'auto'
         }}
       >
         {/* Modal Top Header */}
@@ -997,6 +1017,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
 
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

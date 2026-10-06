@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
   Calendar as CalendarIcon,
@@ -60,6 +61,16 @@ export const CalendarView: React.FC = () => {
     setSelectedMatch(null);
     alert('Zápas bol úspešne pridaný do tvojho denníka a pripočítal čas k aktívnej rakete!');
   };
+
+  useEffect(() => {
+    if (showLogModal && selectedMatch) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showLogModal, selectedMatch]);
 
   // Next upcoming match
   const nextMatch = teamSchedule.find(m => !m.isPlayed);
@@ -272,25 +283,44 @@ export const CalendarView: React.FC = () => {
       )}
 
       {/* Modal: Zaznamenať do denníka */}
-      {showLogModal && selectedMatch && (
+      {showLogModal && selectedMatch && createPortal(
         <div
           className="mobile-sheet-container"
+          onClick={() => setShowLogModal(false)}
           style={{
             position: 'fixed',
+            inset: 0,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.7)',
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.75)',
             backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 100,
-            padding: '20px'
+            zIndex: 99999,
+            padding: '20px',
+            boxSizing: 'border-box'
           }}
         >
-          <div className="glass-panel mobile-sheet-content" style={{ maxWidth: '480px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            className="glass-panel mobile-sheet-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxSizing: 'border-box',
+              margin: 'auto'
+            }}
+          >
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Zapísať ligový duel do denníka</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               {selectedMatch.round} • {selectedMatch.homeTeam} vs {selectedMatch.awayTeam} ({selectedMatch.dateTime})
@@ -337,7 +367,8 @@ export const CalendarView: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { ActivityRecord, ActivityCategory, MatchRecord } from '../types';
 import { AddActivityModal } from '../components/AddActivityModal';
@@ -468,17 +469,20 @@ export const DiaryView: React.FC = () => {
       />
 
       {/* Photo Preview Modal */}
-      {selectedPhotoPreview && (
+      {selectedPhotoPreview && createPortal(
         <div
           onClick={() => setSelectedPhotoPreview(null)}
           style={{
             position: 'fixed',
+            inset: 0,
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
+            width: '100vw',
+            height: '100vh',
             background: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 200,
+            zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -491,7 +495,8 @@ export const DiaryView: React.FC = () => {
             alt="Náhľad"
             style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
