@@ -1,0 +1,183 @@
+export type RubberType = 'inverted' | 'short_pips' | 'long_pips' | 'antispin';
+
+export interface Rubber {
+  id: string;
+  brand: string;
+  model: string;
+  type: RubberType;
+  color: 'black' | 'red' | 'blue' | 'green' | 'pink' | 'purple';
+  spongeThickness: string; // e.g., '2.0mm', 'MAX', '1.8mm'
+  spongeHardness?: number; // degrees, e.g. 47.5
+  speed: number; // 1-100
+  spin: number; // 1-100
+  control: number; // 1-100
+  hoursPlayed: number;
+  maxRecommendedHours: number; // usually 60-90 hours before spin degradation
+  dateInstalled: string; // YYYY-MM-DD
+  notes?: string;
+  isWishlist?: boolean;
+}
+
+export interface Blade {
+  id: string;
+  brand: string;
+  model: string;
+  plies: string; // e.g. '5 wood + 2 ALC'
+  weightGrams: number;
+  grip: 'FL' | 'ST' | 'AN' | 'CPEN';
+  speed: number;
+  control: number;
+  hoursPlayed: number;
+  dateAcquired: string;
+  notes?: string;
+  isWishlist?: boolean;
+}
+
+export interface RacketSetup {
+  id: string;
+  name: string;
+  bladeId: string;
+  forehandRubberId: string;
+  backhandRubberId: string;
+  isActive: boolean;
+  totalHours: number;
+  winCount: number;
+  lossCount: number;
+  gpiScore: number; // Gear Performance Index (0-100)
+  dateCreated: string;
+}
+
+export interface TrainingSession {
+  id: string;
+  date: string; // ISO date string
+  durationMinutes: number;
+  type: 'tréning' | 'zápas' | 'podania' | 'kondícia' | 'multiball' | 'liga';
+  focusDrills: string[];
+  racketId?: string;
+  intensity: number; // 1 to 5
+  location: string;
+  notes: string;
+}
+
+export interface SetDetail {
+  setNumber: number;
+  playerPoints: number;
+  opponentPoints: number;
+  display: string; // e.g. "11:8"
+  won: boolean;
+}
+
+export interface MatchRecord {
+  id: string;
+  date: string;
+  season?: string; // e.g. '2026/27' or '2025/26'
+  competition: 'SSTZ Liga' | 'Turnaj' | 'Priateľský zápas' | 'Klubový tréning';
+  leagueName?: string;
+  round?: string;
+  teamHome?: string;
+  teamAway?: string;
+  opponentName: string;
+  opponentId?: string;
+  result: 'WIN' | 'LOSS';
+  score: string; // e.g. '3:1' or '3:2'
+  sets: string[]; // e.g. ['+11', '-8', '+9', '+7']
+  setDetails?: SetDetail[];
+  totalPointsWon?: number;
+  totalPointsLost?: number;
+  racketId?: string;
+  notes?: string;
+  tacticsNote?: string; // čo na neho fungovalo / čo si vedel hrať
+  sstzMatchId?: string;
+  source?: 'SSTZ' | 'manual';
+}
+
+export type Handedness = 'right' | 'left' | 'unknown';
+export type OpponentRubberType = 'soft' | 'long_pips' | 'short_pips' | 'antispin' | 'other';
+export type PlayStyle = 'attacker' | 'defender' | 'blocker' | 'allround' | 'other';
+
+export interface OpponentProfile {
+  id: string; // Opponent ID or normalized name
+  name: string;
+  clubName?: string;
+  association?: string;
+  handedness: Handedness;
+  forehandRubber: OpponentRubberType;
+  backhandRubber: OpponentRubberType;
+  forehandModel?: string;
+  backhandModel?: string;
+  bladeModel?: string;
+  playStyle: PlayStyle;
+  notes: string; // scouting postrehy, čo na neho platí
+  strengths?: string;
+  weaknesses?: string;
+  lastUpdated?: string;
+}
+
+export interface SSTZProfile {
+  id: string;
+  name: string;
+  association: string;
+  clubName?: string;
+  clubId?: string;
+  leagueSlug?: string;
+  isAllSeasons?: boolean;
+  syncedSeasonsCount?: number;
+  singlesStats: {
+    won: number;
+    played: number;
+    lost: number;
+    winRate: number;
+    home?: { won: number; total: number };
+    away?: { won: number; total: number };
+  };
+  doublesStats: {
+    won: number;
+    played: number;
+    lost: number;
+    winRate: number;
+  };
+  lastSync: string;
+}
+
+export interface TeamScheduleMatch {
+  id: string;
+  round: string;
+  dateTime: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: string;
+  awayScore: string;
+  isPlayed: boolean;
+  protocolUrl?: string;
+}
+
+export interface LeagueStandingsRow {
+  position: number;
+  clubId: string;
+  clubName: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losts: number;
+  score: string;
+  points: number;
+}
+
+export interface LeagueData {
+  slug: string;
+  title: string;
+  clubs: { clubId: string; clubName: string }[];
+  standings?: LeagueStandingsRow[];
+  matches?: TeamScheduleMatch[];
+  syncedAt?: string;
+}
+
+export interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+  progress: number;
+  maxProgress: number;
+}
