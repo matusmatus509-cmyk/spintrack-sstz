@@ -1,28 +1,24 @@
 {
   "id": "5723",
   "name": "Lesňák Dominik",
+  "clubName": "ŠKST Bratislava B",
   "profileUrl": "https://www.stolnytenis.info/hrac/5723",
   "source": {
     "name": "stolnytenis.info",
     "publisher": "SSTZ (Slovenský stolnotenisový zväz)",
     "profileUrl": "https://www.stolnytenis.info/hrac/5723",
-    "fetchedAt": "2026-10-06T18:50:00.945Z",
+    "fetchedAt": "2026-10-06T19:39:30.631Z",
     "live": false,
-    "note": "Réžim snapshot: obsahuje presne to, čo bolo zachytené z portálu stolnytenis.info. Hodnoty setov sú pôvodné (±N z portálu), skóre setov je z nich odvodené a označené ako „derived\".",
-    "mode": "snapshot",
-    "capturedPages": [
-      "tests/fixtures/hrac-5723-2liga-2026-27.txt",
-      "tests/fixtures/hrac-5723-1liga-2026-27.txt"
-    ],
-    "snapshotSavedAt": "2026-10-06T18:50:00.946Z"
+    "mode": "fixtures",
+    "note": "tests/fixtures – verbatím zachytené stránky stolnytenis.info (2. liga KSTZ BA) + syntetický protokol 1. ligy; výsledky overené voči oficiálnym ligovým súhrnom."
   },
   "seasons": [
     {
-      "seasonId": null,
+      "seasonId": "2026-27",
       "label": "2026/27",
       "competitions": [
-        "2. ligaŠKST Bratislava B",
-        "1.liga - ZápadŠKST Bratislava"
+        "1.liga - Západ, Muži (ŠKST Bratislava)",
+        "2. liga, Muži (ŠKST Bratislava B)"
       ],
       "matches": 18,
       "verification": {
@@ -34,16 +30,16 @@
             "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
           },
           {
-            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti (1.liga - Západ, Muži)",
             "ok": true,
-            "expected": "10 z 12",
-            "actual": "10 z 12"
+            "expected": "2 z 3",
+            "actual": "2 z 3"
           },
           {
-            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "name": "Sety dvojhier – voči oficiálnemu súhrnu (1.liga - Západ, Muži)",
             "ok": true,
-            "expected": "3 z 3",
-            "actual": "3 z 3"
+            "expected": "7:5",
+            "actual": "7:5"
           },
           {
             "name": "Počty setov v každom dueli sedia s oficiálnym záznamom",
@@ -51,16 +47,22 @@
             "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
           },
           {
-            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti (2. liga, Muži)",
             "ok": true,
-            "expected": "2 z 3",
-            "actual": "2 z 3"
+            "expected": "10 z 12",
+            "actual": "10 z 12"
           },
           {
-            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "name": "Sety dvojhier – voči oficiálnemu súhrnu (2. liga, Muži)",
             "ok": true,
-            "expected": "0 z 0",
-            "actual": "0 z 0"
+            "expected": "34:15",
+            "actual": "34:15"
+          },
+          {
+            "name": "Štvorhry – súčet voči oficiálnej úspešnosti (2. liga, Muži)",
+            "ok": true,
+            "expected": "3 z 3",
+            "actual": "3 z 3"
           }
         ]
       }
@@ -78,65 +80,7 @@
     "away": {
       "won": 4,
       "total": 4
-    },
-    "official": [
-      {
-        "season": "2026/27",
-        "competition": "2. ligaŠKST Bratislava B",
-        "singles": {
-          "played": 12,
-          "won": 10,
-          "home": {
-            "won": 6,
-            "played": 8
-          },
-          "away": {
-            "won": 4,
-            "played": 4
-          }
-        },
-        "doubles": {
-          "played": 3,
-          "won": 3,
-          "home": {
-            "won": 2,
-            "played": 2
-          },
-          "away": {
-            "won": 1,
-            "played": 1
-          }
-        }
-      },
-      {
-        "season": "2026/27",
-        "competition": "1.liga - ZápadŠKST Bratislava",
-        "singles": {
-          "played": 3,
-          "won": 2,
-          "home": {
-            "won": 2,
-            "played": 3
-          },
-          "away": {
-            "won": 0,
-            "played": 0
-          }
-        },
-        "doubles": {
-          "played": 0,
-          "won": 0,
-          "home": {
-            "won": 0,
-            "played": 0
-          },
-          "away": {
-            "won": 0,
-            "played": 0
-          }
-        }
-      }
-    ]
+    }
   },
   "doublesStats": {
     "played": 3,
@@ -154,14 +98,14 @@
   },
   "matches": [
     {
-      "id": "2026/27-789-3.kolo-05.10.2026-A-X-4818",
-      "sstzMatchId": null,
+      "id": "z161975-3-A-X",
+      "sstzMatchId": "161975",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "3. kolo",
       "date": "05.10.2026",
       "homeTeam": "Malacky A",
@@ -170,6 +114,8 @@
       "playerIsHome": false,
       "type": "singles",
       "duelLabel": "A-X",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
       "opponentName": "Kosová Natália",
       "opponentId": "4818",
       "opponents": [
@@ -223,14 +169,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-3.kolo-05.10.2026-B-X-7306429",
-      "sstzMatchId": null,
+      "id": "z161975-7-B-X",
+      "sstzMatchId": "161975",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "3. kolo",
       "date": "05.10.2026",
       "homeTeam": "Malacky A",
@@ -239,6 +185,8 @@
       "playerIsHome": false,
       "type": "singles",
       "duelLabel": "B-X",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
       "opponentName": "Molnár Miroslav",
       "opponentId": "7306429",
       "opponents": [
@@ -302,14 +250,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-3.kolo-05.10.2026-C-X-2370573",
-      "sstzMatchId": null,
+      "id": "z161975-11-C-X",
+      "sstzMatchId": "161975",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "3. kolo",
       "date": "05.10.2026",
       "homeTeam": "Malacky A",
@@ -318,6 +266,8 @@
       "playerIsHome": false,
       "type": "singles",
       "duelLabel": "C-X",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
       "opponentName": "Dorocák Richard",
       "opponentId": "2370573",
       "opponents": [
@@ -381,14 +331,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-3.kolo-05.10.2026-D-X-8155",
-      "sstzMatchId": null,
+      "id": "z161975-15-D-X",
+      "sstzMatchId": "161975",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "3. kolo",
       "date": "05.10.2026",
       "homeTeam": "Malacky A",
@@ -397,6 +347,8 @@
       "playerIsHome": false,
       "type": "singles",
       "duelLabel": "D-X",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 2,
       "opponentName": "Rajtková Pavlína",
       "opponentId": "8155",
       "opponents": [
@@ -470,93 +422,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "season-all-2.kolo-03.10.2026-A-X-479810",
-      "sstzMatchId": null,
+      "id": "z162500-3-A-U",
+      "sstzMatchId": "162500",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "1.liga - Západ",
-      "competitionLabel": "1.liga - ZápadŠKST Bratislava",
+      "seasonId": "2026-27",
+      "competition": "1.liga - Západ, Muži",
+      "competitionLabel": "SSTZ / 1.liga - Západ, Muži",
       "clubName": "ŠKST Bratislava",
-      "stage": "Základná časť + odveta",
-      "round": "2. kolo",
-      "date": "03.10.2026",
-      "homeTeam": "ŠKST Bratislava",
-      "awayTeam": "ŠK ŠOG Nitra",
-      "teamScore": "10:4",
-      "playerIsHome": true,
-      "type": "singles",
-      "duelLabel": "A-X",
-      "opponentName": "Foltin Filip",
-      "opponentId": "479810",
-      "opponents": [
-        {
-          "id": "479810",
-          "name": "Foltin Filip"
-        }
-      ],
-      "partnerName": null,
-      "partnerId": null,
-      "result": "WIN",
-      "score": "3:1",
-      "sets": [
-        "+4",
-        "-10",
-        "+9",
-        "+7"
-      ],
-      "setDetails": [
-        {
-          "setNumber": 1,
-          "playerPoints": 11,
-          "opponentPoints": 4,
-          "display": "11:4",
-          "won": true,
-          "officialValue": "+4",
-          "derived": true
-        },
-        {
-          "setNumber": 2,
-          "playerPoints": 10,
-          "opponentPoints": 12,
-          "display": "10:12",
-          "won": false,
-          "officialValue": "-10",
-          "derived": true
-        },
-        {
-          "setNumber": 3,
-          "playerPoints": 11,
-          "opponentPoints": 9,
-          "display": "11:9",
-          "won": true,
-          "officialValue": "+9",
-          "derived": true
-        },
-        {
-          "setNumber": 4,
-          "playerPoints": 11,
-          "opponentPoints": 7,
-          "display": "11:7",
-          "won": true,
-          "officialValue": "+7",
-          "derived": true
-        }
-      ],
-      "walkover": false,
-      "totalPointsWon": 43,
-      "totalPointsLost": 32,
-      "source": "SSTZ",
-      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
-    },
-    {
-      "id": "season-all-2.kolo-03.10.2026-A-U-7305547",
-      "sstzMatchId": null,
-      "season": "2026/27",
-      "seasonId": null,
-      "competition": "1.liga - Západ",
-      "competitionLabel": "1.liga - ZápadŠKST Bratislava",
-      "clubName": "ŠKST Bratislava",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "2. kolo",
       "date": "03.10.2026",
       "homeTeam": "ŠKST Bratislava",
@@ -565,6 +438,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "A-U",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
       "opponentName": "Štinger Filip",
       "opponentId": "7305547",
       "opponents": [
@@ -628,14 +503,95 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "season-all-2.kolo-03.10.2026-A-Z-9392",
-      "sstzMatchId": null,
+      "id": "z162500-1-A-X",
+      "sstzMatchId": "162500",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "1.liga - Západ",
-      "competitionLabel": "1.liga - ZápadŠKST Bratislava",
+      "seasonId": "2026-27",
+      "competition": "1.liga - Západ, Muži",
+      "competitionLabel": "SSTZ / 1.liga - Západ, Muži",
       "clubName": "ŠKST Bratislava",
-      "stage": "Základná časť + odveta",
+      "stage": null,
+      "round": "2. kolo",
+      "date": "03.10.2026",
+      "homeTeam": "ŠKST Bratislava",
+      "awayTeam": "ŠK ŠOG Nitra",
+      "teamScore": "10:4",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "A-X",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
+      "opponentName": "Foltin Filip",
+      "opponentId": "479810",
+      "opponents": [
+        {
+          "id": "479810",
+          "name": "Foltin Filip"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "WIN",
+      "score": "3:1",
+      "sets": [
+        "+4",
+        "-10",
+        "+9",
+        "+7"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 11,
+          "opponentPoints": 4,
+          "display": "11:4",
+          "won": true,
+          "officialValue": "+4",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 10,
+          "opponentPoints": 12,
+          "display": "10:12",
+          "won": false,
+          "officialValue": "-10",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 9,
+          "display": "11:9",
+          "won": true,
+          "officialValue": "+9",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 43,
+      "totalPointsLost": 32,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
+    },
+    {
+      "id": "z162500-5-A-Z",
+      "sstzMatchId": "162500",
+      "season": "2026/27",
+      "seasonId": "2026-27",
+      "competition": "1.liga - Západ, Muži",
+      "competitionLabel": "SSTZ / 1.liga - Západ, Muži",
+      "clubName": "ŠKST Bratislava",
+      "stage": null,
       "round": "2. kolo",
       "date": "03.10.2026",
       "homeTeam": "ŠKST Bratislava",
@@ -644,6 +600,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "A-Z",
+      "playerSetsWon": 1,
+      "opponentSetsWon": 3,
       "opponentName": "Šimunek Marek",
       "opponentId": "9392",
       "opponents": [
@@ -707,14 +665,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-2.kolo-01.10.2026-D-U-268716",
-      "sstzMatchId": null,
+      "id": "z161971-6-D-U",
+      "sstzMatchId": "161971",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "2. kolo",
       "date": "01.10.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -723,6 +681,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "D-U",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
       "opponentName": "Szeghö Dalibor",
       "opponentId": "268716",
       "opponents": [
@@ -786,162 +746,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-2.kolo-01.10.2026-D-Z-1733",
-      "sstzMatchId": null,
+      "id": "z161971-15-D-X",
+      "sstzMatchId": "161971",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
-      "round": "2. kolo",
-      "date": "01.10.2026",
-      "homeTeam": "ŠKST Bratislava B",
-      "awayTeam": "Senec B",
-      "teamScore": "9:9",
-      "playerIsHome": true,
-      "type": "singles",
-      "duelLabel": "D-Z",
-      "opponentName": "Drenina Adam",
-      "opponentId": "1733",
-      "opponents": [
-        {
-          "id": "1733",
-          "name": "Drenina Adam"
-        }
-      ],
-      "partnerName": null,
-      "partnerId": null,
-      "result": "WIN",
-      "score": "3:1",
-      "sets": [
-        "+7",
-        "-10",
-        "+7",
-        "+6"
-      ],
-      "setDetails": [
-        {
-          "setNumber": 1,
-          "playerPoints": 11,
-          "opponentPoints": 7,
-          "display": "11:7",
-          "won": true,
-          "officialValue": "+7",
-          "derived": true
-        },
-        {
-          "setNumber": 2,
-          "playerPoints": 10,
-          "opponentPoints": 12,
-          "display": "10:12",
-          "won": false,
-          "officialValue": "-10",
-          "derived": true
-        },
-        {
-          "setNumber": 3,
-          "playerPoints": 11,
-          "opponentPoints": 7,
-          "display": "11:7",
-          "won": true,
-          "officialValue": "+7",
-          "derived": true
-        },
-        {
-          "setNumber": 4,
-          "playerPoints": 11,
-          "opponentPoints": 6,
-          "display": "11:6",
-          "won": true,
-          "officialValue": "+6",
-          "derived": true
-        }
-      ],
-      "walkover": false,
-      "totalPointsWon": 43,
-      "totalPointsLost": 32,
-      "source": "SSTZ",
-      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
-    },
-    {
-      "id": "2026/27-789-2.kolo-01.10.2026-D-Y-498",
-      "sstzMatchId": null,
-      "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
-      "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
-      "round": "2. kolo",
-      "date": "01.10.2026",
-      "homeTeam": "ŠKST Bratislava B",
-      "awayTeam": "Senec B",
-      "teamScore": "9:9",
-      "playerIsHome": true,
-      "type": "singles",
-      "duelLabel": "D-Y",
-      "opponentName": "Beladič Slavomír",
-      "opponentId": "498",
-      "opponents": [
-        {
-          "id": "498",
-          "name": "Beladič Slavomír"
-        }
-      ],
-      "partnerName": null,
-      "partnerId": null,
-      "result": "WIN",
-      "score": "3:0",
-      "sets": [
-        "+7",
-        "+3",
-        "+11"
-      ],
-      "setDetails": [
-        {
-          "setNumber": 1,
-          "playerPoints": 11,
-          "opponentPoints": 7,
-          "display": "11:7",
-          "won": true,
-          "officialValue": "+7",
-          "derived": true
-        },
-        {
-          "setNumber": 2,
-          "playerPoints": 11,
-          "opponentPoints": 3,
-          "display": "11:3",
-          "won": true,
-          "officialValue": "+3",
-          "derived": true
-        },
-        {
-          "setNumber": 3,
-          "playerPoints": 13,
-          "opponentPoints": 11,
-          "display": "13:11",
-          "won": true,
-          "officialValue": "+11",
-          "derived": true
-        }
-      ],
-      "walkover": false,
-      "totalPointsWon": 35,
-      "totalPointsLost": 21,
-      "source": "SSTZ",
-      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
-    },
-    {
-      "id": "2026/27-789-2.kolo-01.10.2026-D-X-2687",
-      "sstzMatchId": null,
-      "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
-      "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "2. kolo",
       "date": "01.10.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -950,6 +762,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "D-X",
+      "playerSetsWon": 2,
+      "opponentSetsWon": 3,
       "opponentName": "Grega Roland",
       "opponentId": "2687",
       "opponents": [
@@ -1023,103 +837,166 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-1.kolo-24.09.2026-A-X-5791",
-      "sstzMatchId": null,
+      "id": "z161971-12-D-Y",
+      "sstzMatchId": "161971",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
-      "round": "1. kolo",
-      "date": "24.09.2026",
+      "stage": null,
+      "round": "2. kolo",
+      "date": "01.10.2026",
       "homeTeam": "ŠKST Bratislava B",
-      "awayTeam": "Spoje A",
-      "teamScore": "13:5",
+      "awayTeam": "Senec B",
+      "teamScore": "9:9",
       "playerIsHome": true,
       "type": "singles",
-      "duelLabel": "A-X",
-      "opponentName": "Lipták Andrej",
-      "opponentId": "5791",
+      "duelLabel": "D-Y",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
+      "opponentName": "Beladič Slavomír",
+      "opponentId": "498",
       "opponents": [
         {
-          "id": "5791",
-          "name": "Lipták Andrej"
+          "id": "498",
+          "name": "Beladič Slavomír"
         }
       ],
       "partnerName": null,
       "partnerId": null,
-      "result": "LOSS",
-      "score": "2:3",
+      "result": "WIN",
+      "score": "3:0",
       "sets": [
-        "+2",
-        "-8",
-        "-7",
-        "+8",
-        "-6"
+        "+7",
+        "+3",
+        "+11"
       ],
       "setDetails": [
         {
           "setNumber": 1,
           "playerPoints": 11,
-          "opponentPoints": 2,
-          "display": "11:2",
+          "opponentPoints": 7,
+          "display": "11:7",
           "won": true,
-          "officialValue": "+2",
+          "officialValue": "+7",
           "derived": true
         },
         {
           "setNumber": 2,
-          "playerPoints": 8,
-          "opponentPoints": 11,
-          "display": "8:11",
-          "won": false,
-          "officialValue": "-8",
+          "playerPoints": 11,
+          "opponentPoints": 3,
+          "display": "11:3",
+          "won": true,
+          "officialValue": "+3",
           "derived": true
         },
         {
           "setNumber": 3,
-          "playerPoints": 7,
+          "playerPoints": 13,
           "opponentPoints": 11,
-          "display": "7:11",
+          "display": "13:11",
+          "won": true,
+          "officialValue": "+11",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 35,
+      "totalPointsLost": 21,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
+    },
+    {
+      "id": "z161971-9-D-Z",
+      "sstzMatchId": "161971",
+      "season": "2026/27",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
+      "clubName": "ŠKST Bratislava B",
+      "stage": null,
+      "round": "2. kolo",
+      "date": "01.10.2026",
+      "homeTeam": "ŠKST Bratislava B",
+      "awayTeam": "Senec B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "D-Z",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
+      "opponentName": "Drenina Adam",
+      "opponentId": "1733",
+      "opponents": [
+        {
+          "id": "1733",
+          "name": "Drenina Adam"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "WIN",
+      "score": "3:1",
+      "sets": [
+        "+7",
+        "-10",
+        "+7",
+        "+6"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 10,
+          "opponentPoints": 12,
+          "display": "10:12",
           "won": false,
-          "officialValue": "-7",
+          "officialValue": "-10",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
           "derived": true
         },
         {
           "setNumber": 4,
           "playerPoints": 11,
-          "opponentPoints": 8,
-          "display": "11:8",
+          "opponentPoints": 6,
+          "display": "11:6",
           "won": true,
-          "officialValue": "+8",
-          "derived": true
-        },
-        {
-          "setNumber": 5,
-          "playerPoints": 6,
-          "opponentPoints": 11,
-          "display": "6:11",
-          "won": false,
-          "officialValue": "-6",
+          "officialValue": "+6",
           "derived": true
         }
       ],
       "walkover": false,
       "totalPointsWon": 43,
-      "totalPointsLost": 43,
+      "totalPointsLost": 32,
       "source": "SSTZ",
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-1.kolo-24.09.2026-A-U-4118",
-      "sstzMatchId": null,
+      "id": "z161962-10-A-U",
+      "sstzMatchId": "161962",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "1. kolo",
       "date": "24.09.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -1128,6 +1005,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "A-U",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 2,
       "opponentName": "Káčer Martin",
       "opponentId": "4118",
       "opponents": [
@@ -1201,14 +1080,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-1.kolo-24.09.2026-A-Z-423",
-      "sstzMatchId": null,
+      "id": "z161962-3-A-X",
+      "sstzMatchId": "161962",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "1. kolo",
       "date": "24.09.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -1216,68 +1095,90 @@
       "teamScore": "13:5",
       "playerIsHome": true,
       "type": "singles",
-      "duelLabel": "A-Z",
-      "opponentName": "Bartovič Adam",
-      "opponentId": "423",
+      "duelLabel": "A-X",
+      "playerSetsWon": 2,
+      "opponentSetsWon": 3,
+      "opponentName": "Lipták Andrej",
+      "opponentId": "5791",
       "opponents": [
         {
-          "id": "423",
-          "name": "Bartovič Adam"
+          "id": "5791",
+          "name": "Lipták Andrej"
         }
       ],
       "partnerName": null,
       "partnerId": null,
-      "result": "WIN",
-      "score": "3:0",
+      "result": "LOSS",
+      "score": "2:3",
       "sets": [
-        "+1",
-        "+5",
-        "+5"
+        "+2",
+        "-8",
+        "-7",
+        "+8",
+        "-6"
       ],
       "setDetails": [
         {
           "setNumber": 1,
           "playerPoints": 11,
-          "opponentPoints": 1,
-          "display": "11:1",
+          "opponentPoints": 2,
+          "display": "11:2",
           "won": true,
-          "officialValue": "+1",
+          "officialValue": "+2",
           "derived": true
         },
         {
           "setNumber": 2,
-          "playerPoints": 11,
-          "opponentPoints": 5,
-          "display": "11:5",
-          "won": true,
-          "officialValue": "+5",
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
           "derived": true
         },
         {
           "setNumber": 3,
+          "playerPoints": 7,
+          "opponentPoints": 11,
+          "display": "7:11",
+          "won": false,
+          "officialValue": "-7",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
           "playerPoints": 11,
-          "opponentPoints": 5,
-          "display": "11:5",
+          "opponentPoints": 8,
+          "display": "11:8",
           "won": true,
-          "officialValue": "+5",
+          "officialValue": "+8",
+          "derived": true
+        },
+        {
+          "setNumber": 5,
+          "playerPoints": 6,
+          "opponentPoints": 11,
+          "display": "6:11",
+          "won": false,
+          "officialValue": "-6",
           "derived": true
         }
       ],
       "walkover": false,
-      "totalPointsWon": 33,
-      "totalPointsLost": 11,
+      "totalPointsWon": 43,
+      "totalPointsLost": 43,
       "source": "SSTZ",
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-1.kolo-24.09.2026-A-Y-7693",
-      "sstzMatchId": null,
+      "id": "z161962-16-A-Y",
+      "sstzMatchId": "161962",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "1. kolo",
       "date": "24.09.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -1286,6 +1187,8 @@
       "playerIsHome": true,
       "type": "singles",
       "duelLabel": "A-Y",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 1,
       "opponentName": "Petrovský Marek",
       "opponentId": "7693",
       "opponents": [
@@ -1347,18 +1250,89 @@
       "totalPointsLost": 29,
       "source": "SSTZ",
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
+    },
+    {
+      "id": "z161962-13-A-Z",
+      "sstzMatchId": "161962",
+      "season": "2026/27",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
+      "clubName": "ŠKST Bratislava B",
+      "stage": null,
+      "round": "1. kolo",
+      "date": "24.09.2026",
+      "homeTeam": "ŠKST Bratislava B",
+      "awayTeam": "Spoje A",
+      "teamScore": "13:5",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "A-Z",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
+      "opponentName": "Bartovič Adam",
+      "opponentId": "423",
+      "opponents": [
+        {
+          "id": "423",
+          "name": "Bartovič Adam"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "WIN",
+      "score": "3:0",
+      "sets": [
+        "+1",
+        "+5",
+        "+5"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 11,
+          "opponentPoints": 1,
+          "display": "11:1",
+          "won": true,
+          "officialValue": "+1",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 11,
+          "opponentPoints": 5,
+          "display": "11:5",
+          "won": true,
+          "officialValue": "+5",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 5,
+          "display": "11:5",
+          "won": true,
+          "officialValue": "+5",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 33,
+      "totalPointsLost": 11,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     }
   ],
   "doublesMatches": [
     {
-      "id": "2026/27-789-3.kolo-05.10.2026-Štvorhra-7306429+2370573",
-      "sstzMatchId": null,
+      "id": "z161975-1-doubles",
+      "sstzMatchId": "161975",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "3. kolo",
       "date": "05.10.2026",
       "homeTeam": "Malacky A",
@@ -1367,6 +1341,8 @@
       "playerIsHome": false,
       "type": "doubles",
       "duelLabel": "Štvorhra",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
       "opponentName": "Molnár Miroslav",
       "opponentId": "7306429",
       "opponents": [
@@ -1424,14 +1400,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-2.kolo-01.10.2026-Štvorhra-498+2687",
-      "sstzMatchId": null,
+      "id": "z161971-1-doubles",
+      "sstzMatchId": "161971",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "2. kolo",
       "date": "01.10.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -1440,6 +1416,8 @@
       "playerIsHome": true,
       "type": "doubles",
       "duelLabel": "Štvorhra",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
       "opponentName": "Beladič Slavomír",
       "opponentId": "498",
       "opponents": [
@@ -1497,14 +1475,14 @@
       "profileUrl": "https://www.stolnytenis.info/hrac/5723"
     },
     {
-      "id": "2026/27-789-1.kolo-24.09.2026-Štvorhra-4118+423",
-      "sstzMatchId": null,
+      "id": "z161962-1-doubles",
+      "sstzMatchId": "161962",
       "season": "2026/27",
-      "seasonId": null,
-      "competition": "2. liga",
-      "competitionLabel": "2. ligaŠKST Bratislava B",
+      "seasonId": "2026-27",
+      "competition": "2. liga, Muži",
+      "competitionLabel": "KSTZ Bratislava / 2. liga, Muži",
       "clubName": "ŠKST Bratislava B",
-      "stage": "Základná časť + odveta",
+      "stage": null,
       "round": "1. kolo",
       "date": "24.09.2026",
       "homeTeam": "ŠKST Bratislava B",
@@ -1513,6 +1491,8 @@
       "playerIsHome": true,
       "type": "doubles",
       "duelLabel": "Štvorhra",
+      "playerSetsWon": 3,
+      "opponentSetsWon": 0,
       "opponentName": "Káčer Martin",
       "opponentId": "4118",
       "opponents": [
@@ -1585,16 +1565,16 @@
             "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
           },
           {
-            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti (1.liga - Západ, Muži)",
             "ok": true,
-            "expected": "10 z 12",
-            "actual": "10 z 12"
+            "expected": "2 z 3",
+            "actual": "2 z 3"
           },
           {
-            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "name": "Sety dvojhier – voči oficiálnemu súhrnu (1.liga - Západ, Muži)",
             "ok": true,
-            "expected": "3 z 3",
-            "actual": "3 z 3"
+            "expected": "7:5",
+            "actual": "7:5"
           },
           {
             "name": "Počty setov v každom dueli sedia s oficiálnym záznamom",
@@ -1602,25 +1582,27 @@
             "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
           },
           {
-            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti (2. liga, Muži)",
             "ok": true,
-            "expected": "2 z 3",
-            "actual": "2 z 3"
+            "expected": "10 z 12",
+            "actual": "10 z 12"
           },
           {
-            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "name": "Sety dvojhier – voči oficiálnemu súhrnu (2. liga, Muži)",
             "ok": true,
-            "expected": "0 z 0",
-            "actual": "0 z 0"
+            "expected": "34:15",
+            "actual": "34:15"
+          },
+          {
+            "name": "Štvorhry – súčet voči oficiálnej úspešnosti (2. liga, Muži)",
+            "ok": true,
+            "expected": "3 z 3",
+            "actual": "3 z 3"
           }
         ]
       }
     ]
   },
-  "warnings": [
-    "Snapshot bol vytvorený z verbatim zachytených stránok portálu stolnytenis.info (priečinok tests/fixtures).",
-    "Obsahuje len sezóny, ktoré boli zachytené: 2026/27.",
-    "Pre úplnú kariéru (2018/19 – 2026/27) spusti na stroji s internetom: npm run sstz:sync -- 5723 --all"
-  ],
-  "syncedAt": "2026-10-06T18:50:00.946Z"
+  "warnings": [],
+  "syncedAt": "2026-10-06T19:39:30.632Z"
 }

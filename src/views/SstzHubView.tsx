@@ -23,6 +23,15 @@ import {
 } from 'lucide-react';
 import { LeagueData } from '../types';
 
+// Aktuálna sezóna SSTZ sa začína 1. júla – odvodíme ju z dnešného dátumu,
+// aby sa tlačidlo nemuselo upravovať každú sezónu ručne.
+const currentSeasonLabel = (() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const startYear = now.getMonth() >= 6 ? y : y - 1;
+  return `${startYear}/${String(startYear + 1).slice(-2)}`;
+})();
+
 export const SstzHubView: React.FC = () => {
   const {
     sstzProfile,
@@ -33,6 +42,7 @@ export const SstzHubView: React.FC = () => {
     selectedClubId,
     isSstzLoading,
     sstzError,
+    sstzSyncMessage,
     disconnectSstz,
     matches
   } = useApp();
@@ -191,7 +201,7 @@ export const SstzHubView: React.FC = () => {
               style={{ padding: '6px 10px', fontSize: '0.74rem' }}
               title="Stiahne zápasy len pre aktuálnu sezónu"
             >
-              <RefreshCw size={12} /> 2026/27
+              <RefreshCw size={12} /> {currentSeasonLabel}
             </button>
             <button
               onClick={() => syncSstzPlayer(sstzProfile.id, true)}
@@ -227,6 +237,23 @@ export const SstzHubView: React.FC = () => {
         }}>
           <AlertCircle size={18} />
           <span>{sstzError}</span>
+        </div>
+      )}
+
+      {isSstzLoading && sstzSyncMessage && (
+        <div style={{
+          padding: '10px 18px',
+          background: 'rgba(59, 130, 246, 0.12)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: 'var(--radius-md)',
+          color: '#60a5fa',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.85rem'
+        }}>
+          <RefreshCw size={14} style={{ animation: isSstzLoading ? 'spin 1.2s linear infinite' : undefined }} />
+          <span>{sstzSyncMessage}</span>
         </div>
       )}
 

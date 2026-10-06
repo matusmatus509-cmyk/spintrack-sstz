@@ -18,6 +18,8 @@
 
 export const BASE_URL = 'https://www.stolnytenis.info';
 
+import { readCache, writeCache, currentSeasonSlug } from './sstzCache.js';
+
 const DEFAULT_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -1065,11 +1067,15 @@ export function composeProfile(input) {
 }
 
 /**
- * Kompletná synchronizácia hráča z portálu (sieťová časť).
- * @param {string|number} playerId
- * @param {{allSeasons?: boolean, seasonSlugs?: string[], includeDoubles?: boolean, onProgress?: (p:any)=>void}} options
+ * LEGACY: synchronizácia cez profil hráča a prepínanie sezóny v session portálu.
+ *
+ * Historicky prvý spôsob. Problém: profil `/hrac/<id>` zobrazuje len sezónu,
+ * ktorú portál práve drží, a prepínanie cez `/sezona/<slug>/svk` závisí od
+ * session portálu – preto to „fungovalo len pre niektorých hráčov“. Tento
+ * kód ponechávame ako zálohu, primárny je `syncPlayerCareer` (ligový pipeline),
+ * ktorý je deterministický pre každého hráča.
  */
-export async function syncPlayerCareer(playerId, options = {}) {
+export async function syncPlayerCareerViaProfilePages(playerId, options = {}) {
   const id = String(playerId).replace(/\D/g, '');
   if (!id) throw new SstzError('Neplatné ID hráča.', { kind: 'input' });
 
@@ -1215,10 +1221,6 @@ export async function getPlayerProfile(playerId, options = {}) {
   if (options.allSeasons) return syncPlayerCareer(playerId, options);
   return syncPlayerCareer(playerId, { ...options, allSeasons: false });
 }
-
-// ---------------------------------------------------------------------------
-// Vyhľadávanie hráčov / klubov / líg (POST na portál, ako to robí samotná stránka)
-// ---------------------------------------------------------------------------
 
 export async function searchSSTZ(query) {
   const q = String(query || '').trim();
@@ -1529,3 +1531,1013 @@ export async function getMatchProtocol(matchId) {
 
   return { ...header, duels: page.duels, duelsRaw: page.duels.length ? undefined : null };
 }
+
+// ===========================================================================
+// NOVÝ PIPELINE: celá kariéra pre KAŽDÉHO hráča (bez prepínania sezóny v session)
+// ---------------------------------------------------------------------------
+// Profil `/hrac/<id>` zobrazuje len aktuálnu sezónu portálu, preto starý
+// prístup zlyhával pri hráčoch bez aktuálnych zápasov a pri historických
+// sezónach. Tento pipeline používa výhradne DETERMINISTICKÉ routy portálu:
+//
+//   /sezona/<sezóna>/<región>                 → zoznam všetkých líg sezóny
+//   /liga/<slug>/uspesnost(+stvo)rhry         → kto hral danú ligu (oficiálne údaje)
+//   /liga/<slug>/tabulka                      → club_id družstiev
+//   /liga/<slug>/rozpis-muzstva?club_id=<id>  → zápasy družstva (odkazy /zapas/<id>)
+//   /zapas/<id>                               → oficiálny protokol so všetkými duelmi
+//
+// Z toho sa poskladá kompletná kariéra: všetky sezóny, všetky ligy, ktoré
+// hráč v sezóne hral (aj keď hral viac líg naraz), všetky dvojhry aj štvorhry.
+// ===========================================================================
+
+/** Regióny portálu – /sezona/<sezóna>/<scope> (overené na portáli). */
+export const REGION_SCOPES = ['svk', 'ba', 'tt', 'tn', 'nr', 'bb', 'za', 'po', 'ke'];
+
+/** Jednoduchý pool s obmedzeným počtom paralelných požiadaviek. */
+async function pMap(items, fn, concurrency = 3) {
+  const results = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(concurrency, items.length)) }, async () => {
+    for (;;) {
+      const i = next;
+      next += 1;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// 1) Zoznam všetkých líg sezóny (národné + krajské/okresné zväzy)
+// ---------------------------------------------------------------------------
+
+/**
+ * Z riadkov stránky (návrhové menu portálu) vytiahne ligy sezóny.
+ * Kategória (zväz) sa odvodí z nadpisu pred skupinou odkazov.
+ */
+export function parseLeagueNavLines(lines, seasonSlug = null) {
+  const leagues = new Map();
+  let lastCategory = null;
+  const seasonRe = seasonSlug
+    ? new RegExp(`^sezona-${seasonSlug}-`)
+    : /^sezona-\d{4}-\d{2}-/;
+
+  for (const line of lines) {
+    const plain = line.text.trim().replace(/^[-*\s\d.)#]+/, '').trim();
+    if (
+      plain &&
+      line.links.length === 0 &&
+      plain.length < 50 &&
+      /^(SSTZ|VSSTZ|KSTZ|ObSTZ|OSTZ|COOP|Západoslovenský|Stredoslovenský|Východoslovenský|Slovenská republika)/i.test(plain)
+    ) {
+      lastCategory = plain;
+    }
+    for (const link of line.links) {
+      const slug = leagueSlugFromHref(link.href);
+      if (!slug || !seasonRe.test(slug)) continue;
+      if (leagues.has(slug)) continue;
+      const rest = slug.replace(/^sezona-\d{4}-\d{2}-/, '');
+      const regionSegment = rest.split('-').slice(-1)[0];
+      const seasonMatch = slug.match(/^sezona-(\d{4}-\d{2})-/);
+      leagues.set(slug, {
+        slug,
+        name: (link.text || '').replace(/\s+/g, ' ').trim() || rest,
+        season: seasonMatch ? seasonMatch[1].replace('-', '/') : null,
+        region: lastCategory || humanizeRegion(regionSegment),
+      });
+    }
+  }
+  return [...leagues.values()];
+}
+
+/**
+ * Všetky ligy sezóny naprieč všetkými regiónmi (9 stránok – dá sa cacheovať,
+ * minulá sezóna sa už nemení).
+ */
+export async function getSeasonUniverse(seasonSlug, { fetchImpl = fetchPage, cookie = '', useCache = true, onProgress } = {}) {
+  if (!/^\d{4}-\d{2}$/.test(seasonSlug || '')) {
+    throw new SstzError(`Neplatná sezóna: ${seasonSlug}`, { kind: 'input' });
+  }
+  if (useCache) {
+    const cached = readCache(`universe/${seasonSlug}`);
+    if (cached?.leagues?.length) return cached;
+  }
+
+  const merged = new Map();
+  await pMap(REGION_SCOPES, async (scope) => {
+    try {
+      const res = await fetchImpl(`/sezona/${seasonSlug}/${scope}`, { cookie });
+      for (const league of parseLeagueNavLines(parseHtmlLines(res.html), seasonSlug)) {
+        if (!merged.has(league.slug)) merged.set(league.slug, league);
+      }
+    } catch (err) {
+      /* región bez ligového menu – preskočíme, nič sa nevymýšľa */
+    }
+  }, 4);
+
+  const result = {
+    season: seasonSlug,
+    leagues: [...merged.values()].sort((a, b) => a.slug.localeCompare(b.slug)),
+    fetchedAt: new Date().toISOString(),
+  };
+  if (useCache && result.leagues.length > 0) writeCache(`universe/${seasonSlug}`, result);
+  if (onProgress) onProgress({ phase: 'universe', season: seasonSlug, leagues: result.leagues.length });
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 2) Kto hral danú ligu – oficiálne indexy úspešnosti (jednotlivci + štvorhry)
+// ---------------------------------------------------------------------------
+
+const STAT_LABELS = ['Stret', 'Zápasy', 'Zapasy', 'Výhry', 'Vyhry', 'Prehry', 'Sety', 'Úspešn', 'Uspešn', 'Mužstvo', 'Muzstvo', 'Hráč', 'Hrac'];
+
+function normalizeStatToken(token) {
+  return String(token || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Rozdelí text odkazu „Meno Priezvisko NázovTímu" na meno a tím.
+ * Ak sú známe tímy (z tabuľky), použije sa presný suffix; inak heuristika
+ * (meno = prvé dva tokeny).
+ */
+export function splitPlayerTeamText(text, knownTeams = []) {
+  const clean = normalizeStatToken(text);
+  if (!clean) return { name: null, team: null };
+  for (const team of [...knownTeams].sort((a, b) => b.length - a.length)) {
+    if (team && clean.endsWith(team) && clean.length > team.length) {
+      return { name: clean.slice(0, clean.length - team.length).trim(), team };
+    }
+    if (team && clean === team) return { name: null, team };
+  }
+  const tokens = clean.split(' ');
+  if (tokens.length <= 2) return { name: clean, team: null };
+  return { name: tokens.slice(0, 2).join(' '), team: tokens.slice(2).join(' ') };
+}
+
+/**
+ * Parsovanie stránky úspešnosti (jednotlivcov alebo štvorhier) na zoznam hráčov.
+ * Výstup: [{ playerId, name, team, rawLinkText, meetings, played, won, lost,
+ *            sets: {won,lost}|null, pct }]
+ * Pri jednotlivcoch je meno+tím v texte odkazu – tím sa dořešuje až proti
+ * tabuľke (pozri `resolveIndexTeam`), preto sa tu ponecháva `rawLinkText`.
+ */
+export function parseUspesnostLines(lines, { kind = 'singles' } = {}) {
+  const entries = [];
+  let current = null;
+  let pendingLabel = null;
+  let collectingTeam = false;
+  let teamTokens = [];
+
+  const flushTeam = () => {
+    if (current && teamTokens.length > 0) {
+      const team = teamTokens.join(' ').replace(/\s+/g, ' ').trim();
+      if (team) current.team = team;
+    }
+    teamTokens = [];
+    collectingTeam = false;
+  };
+
+  const atoms = lines.flatMap((l) => l.atoms || []);
+
+  for (const atom of atoms) {
+    if (atom.type === 'link') {
+      const pid = playerIdFromHref(atom.href);
+      if (pid) {
+        flushTeam();
+        current = {
+          playerId: pid,
+          name: null,
+          team: null,
+          meetings: null,
+          played: null,
+          won: null,
+          lost: null,
+          sets: null,
+          pct: null,
+          rawLinkText: normalizeStatToken(atom.text),
+        };
+        entries.push(current);
+        pendingLabel = null;
+      }
+      continue;
+    }
+    if (!current) continue;
+
+    const token = normalizeStatToken(atom.type === 'text' ? atom.text : atom.raw);
+    if (!token) continue;
+
+    // skupinovanie hráčov ("Od 100% do 40%...") a poradie – preskakujeme
+    if (/^Od$/.test(token) || /^do$/.test(token)) { pendingLabel = null; collectingTeam && flushTeam(); continue; }
+    if (/^\d{1,3}\.$/.test(token)) { pendingLabel = null; continue; }
+
+    if (collectingTeam) {
+      if (/^(Stret|Zápasy|Zapasy|Výhry|Vyhry|Prehry|Sety|Úspešn|Uspešn)\.?/i.test(token)) {
+        flushTeam();
+      } else {
+        teamTokens.push(token);
+        continue;
+      }
+    }
+
+    let m;
+    if (/^Stret\.?$/i.test(token)) { pendingLabel = 'meetings'; continue; }
+    if ((m = token.match(/^Stret\.?\s*(\d+)$/i))) { current.meetings = parseInt(m[1], 10); pendingLabel = null; continue; }
+    if (/^(Zápasy|Zapasy)\.?$/i.test(token)) { pendingLabel = 'played'; continue; }
+    if ((m = token.match(/^(?:Zápasy|Zapasy)\s*(\d+)$/i))) { current.played = parseInt(m[1], 10); pendingLabel = null; continue; }
+    if (/^(Výhry|Vyhry)\.?$/i.test(token)) { pendingLabel = 'won'; continue; }
+    if ((m = token.match(/^(?:Výhry|Vyhry)\s*(\d+)$/i))) { current.won = parseInt(m[1], 10); pendingLabel = null; continue; }
+    if (/^Prehry\.?$/i.test(token)) { pendingLabel = 'lost'; continue; }
+    if ((m = token.match(/^Prehry\s*(\d+)$/i))) { current.lost = parseInt(m[1], 10); pendingLabel = null; continue; }
+    if (/^Sety\.?$/i.test(token)) { pendingLabel = 'sets'; continue; }
+    if ((m = token.match(/^Sety\s*(\d+)\s*:\s*(\d+)$/i))) { current.sets = { won: parseInt(m[1], 10), lost: parseInt(m[2], 10) }; pendingLabel = null; continue; }
+    if ((m = token.match(/^(\d+)\s*:\s*(\d+)$/) ) && pendingLabel === 'sets') { current.sets = { won: parseInt(m[1], 10), lost: parseInt(m[2], 10) }; pendingLabel = null; continue; }
+    if (/^(Úspešn|Uspešn)\.?$/i.test(token)) { pendingLabel = 'pct'; continue; }
+    if ((m = token.match(/^(?:Úspešn|Uspešn)\.?\s*([\d.,]+)\s*%?$/i))) { current.pct = m[1]; pendingLabel = null; continue; }
+    if ((m = token.match(/^([\d.,]+)\s*%$/) ) && pendingLabel === 'pct') { current.pct = m[1]; pendingLabel = null; continue; }
+
+    if ((m = token.match(/^Mužstvo\.?\s*(.*)$/i))) {
+      // „MužstvoŠKST Bratislava B" aj „Mužstvo" + ďalšie tokeny
+      flushTeam();
+      if (m[1].trim()) teamTokens.push(m[1].trim());
+      collectingTeam = true;
+      continue;
+    }
+    if (/^Hráč\.?$/i.test(token)) { continue; }
+
+    if (pendingLabel && /^\d+$/.test(token)) {
+      const value = parseInt(token, 10);
+      if (pendingLabel === 'meetings') current.meetings = value;
+      else if (pendingLabel === 'played') current.played = value;
+      else if (pendingLabel === 'won') current.won = value;
+      else if (pendingLabel === 'lost') current.lost = value;
+      pendingLabel = null;
+      continue;
+    }
+
+    if (pendingLabel === 'sets' && (m = token.match(/^(\d+)\s*:\s*(\d+)$/))) {
+      current.sets = { won: parseInt(m[1], 10), lost: parseInt(m[2], 10) };
+      pendingLabel = null;
+      continue;
+    }
+    if (pendingLabel === 'pct' && (m = token.match(/^([\d.,]+)\s*%?$/))) {
+      current.pct = m[1];
+      pendingLabel = null;
+      continue;
+    }
+  }
+  flushTeam();
+
+  // Mená: na stránke jednotlivcov je meno+tím v texte odkazu (tím sa dořešuje
+  // až proti tabuľke); pri štvorhrách je v odkaze len meno a tím je v „Mužstvo".
+  for (const entry of entries) {
+    if (kind !== 'singles') {
+      if (!entry.name && entry.rawLinkText) entry.name = entry.rawLinkText;
+    }
+  }
+  return entries;
+}
+
+/**
+ * Určí meno a tím hráča z textu odkazu v úspešnosti (napr. „Lesňák Dominik
+ * ŠKST Bratislava B") – prioritne podľa presných názvov družstiev z tabuľky.
+ */
+export function resolveIndexTeam(entry, knownTeams = []) {
+  if (!entry) return { name: null, team: null };
+  if (entry.team) {
+    const fuzzy = knownTeams.find(
+      (t) => t === entry.team || t.replace(/\s+/g, '') === String(entry.team).replace(/\s+/g, '')
+    );
+    return { name: entry.name || (entry.rawLinkText || null), team: fuzzy || entry.team };
+  }
+  const split = splitPlayerTeamText(entry.rawLinkText || '', knownTeams);
+  return { name: entry.name || split.name, team: split.team };
+}
+
+/**
+ * Indexy hráčov ligy (jednotlivci + štvorhry) s cache. Minulé sezóny sú
+ * nemenné → cache bez expirácie; aktuálna sezóna má TTL.
+ */
+export async function getLeaguePlayerIndexes(leagueSlug, { fetchImpl = fetchPage, cookie = '', useCache = true, ttlMs = null } = {}) {
+  if (useCache) {
+    const cached = readCache(`index/${leagueSlug}`, { maxAgeMs: ttlMs });
+    if (cached && (Array.isArray(cached.singles) || Array.isArray(cached.doubles))) return cached;
+  }
+
+  const load = async (subpage, kind) => {
+    try {
+      const res = await fetchImpl(`/liga/${leagueSlug}/${subpage}`, { cookie });
+      return parseUspesnostLines(parseHtmlLines(res.html), { kind });
+    } catch {
+      return [];
+    }
+  };
+
+  const [singles, doubles] = await Promise.all([
+    load('uspesnost', 'singles'),
+    load('uspesnost-stvorhry', 'doubles'),
+  ]);
+
+  const result = { leagueSlug, singles, doubles, fetchedAt: new Date().toISOString() };
+  if (useCache && (singles.length > 0 || doubles.length > 0)) writeCache(`index/${leagueSlug}`, result);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 3) Družstvá ligy (club_id) + rozpis družstva
+// ---------------------------------------------------------------------------
+
+export function parseLeagueClubsLines(lines, leagueSlug) {
+  const clubs = [];
+  const seen = new Set();
+  for (const line of lines) {
+    for (const link of line.links) {
+      const clubId = clubIdFromHref(link.href);
+      const slug = leagueSlugFromHref(link.href);
+      if (!clubId || slug !== leagueSlug) continue;
+      if (seen.has(clubId)) continue;
+      const name = (link.text || '').replace(/\s+/g, ' ').trim();
+      if (!name) continue;
+      seen.add(clubId);
+      clubs.push({ clubId, clubName: name });
+    }
+  }
+  return clubs;
+}
+
+export async function getLeagueClubs(leagueSlug, { fetchImpl = fetchPage, cookie = '', useCache = true, ttlMs = null } = {}) {
+  if (useCache) {
+    const cached = readCache(`clubs/${leagueSlug}`, { maxAgeMs: ttlMs });
+    if (cached?.clubs?.length) return cached;
+  }
+  const res = await fetchImpl(`/liga/${leagueSlug}/tabulka`, { cookie });
+  const clubs = parseLeagueClubsLines(parseHtmlLines(res.html), leagueSlug);
+  const result = { leagueSlug, clubs, fetchedAt: new Date().toISOString() };
+  if (useCache && clubs.length > 0) writeCache(`clubs/${leagueSlug}`, result);
+  return result;
+}
+
+/**
+ * Rozpis družstva – zápasy tímu v lige. Stránka renderuje každý zápas dvakrát
+ * (desktop/mobil), preto sa deduplikuje podľa ID zápasu. Tímy a skóre môžu byť
+ * na viacerých riadkoch – zbierajú sa z okna okolo odkazu na zápas.
+ */
+export function parseTeamScheduleLines(lines) {
+  const matches = new Map();
+  let currentRound = null;
+  const dateRe = /(\d{1,2}\.\d{1,2}\.\d{4})/;
+
+  const roundLine = (text) => /^(\d{1,3})\.\s*kolo$/i.test(String(text || '').trim());
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const roundMatch = line.text.match(/^(\d{1,3})\.\s*kolo$/i);
+    if (roundMatch) {
+      currentRound = `${roundMatch[1]}. kolo`;
+      continue;
+    }
+
+    const zapasLinks = line.links.filter((l) => matchIdFromHref(l.href));
+    if (zapasLinks.length === 0) continue;
+    const id = matchIdFromHref(zapasLinks[0].href);
+    if (!id || matches.has(id)) continue;
+
+    // Okno: dozadu (dátum) aj dopredu (tímy/skóre na ďalších riadkoch), až po
+    // ďalšie kolo alebo blok iného zápasu.
+    const windowLines = [line];
+    for (let k = i + 1; k < lines.length && k <= i + 12; k += 1) {
+      const t = (lines[k].text || '').trim();
+      if (roundLine(t)) break;
+      const otherId = lines[k].links.map((l) => matchIdFromHref(l.href)).find(Boolean);
+      if (otherId && otherId !== id) break;
+      windowLines.push(lines[k]);
+    }
+    const backWindow = [lines[i - 3], lines[i - 2], lines[i - 1]].filter(Boolean);
+
+    const allLinks = windowLines.flatMap((l) => l.links);
+    const teamLinks = [];
+    for (const l of allLinks) {
+      if (!clubIdFromHref(l.href) || matchIdFromHref(l.href)) continue;
+      const clubId = clubIdFromHref(l.href);
+      if (!teamLinks.some((t) => t.clubId === clubId)) {
+        teamLinks.push({ clubId, name: (l.text || '').replace(/\s+/g, ' ').trim() });
+      }
+    }
+    const scoreLinks = allLinks.filter(
+      (l) => matchIdFromHref(l.href) === id && /^\d{1,3}$/.test((l.text || '').trim())
+    );
+
+    const windowText = [...backWindow, ...windowLines].map((w) => w.text).join(' ');
+    const dateMatch = windowText.match(dateRe);
+
+    let homeScore = scoreLinks[0] ? scoreLinks[0].text.trim() : '';
+    let awayScore = scoreLinks[1] ? scoreLinks[1].text.trim() : '';
+    if (!homeScore || !awayScore) {
+      const scoreText = windowText.match(/(\d{1,3})\s*:\s*(\d{1,3})/);
+      if (scoreText) {
+        homeScore = homeScore || scoreText[1];
+        awayScore = awayScore || scoreText[2];
+      }
+    }
+
+    matches.set(id, {
+      id,
+      round: currentRound || '',
+      dateTime: dateMatch ? dateMatch[1] : '',
+      homeTeam: teamLinks[0] ? teamLinks[0].name : '',
+      awayTeam: teamLinks[1] ? teamLinks[1].name : '',
+      homeScore,
+      awayScore,
+      isPlayed: homeScore !== '' && awayScore !== '',
+      walkover: false,
+      protocolUrl: `${BASE_URL}/zapas/${id}`,
+    });
+  }
+
+  return [...matches.values()];
+}
+
+export async function getTeamScheduleCached(leagueSlug, clubId, { fetchImpl = fetchPage, cookie = '', useCache = true, ttlMs = null } = {}) {
+  const key = `schedule/${leagueSlug}/${clubId || 'all'}`;
+  if (useCache) {
+    const cached = readCache(key, { maxAgeMs: ttlMs });
+    if (cached?.matches) return cached;
+  }
+  const path = clubId
+    ? `/liga/${leagueSlug}/rozpis-muzstva?club_id=${clubId}`
+    : `/liga/${leagueSlug}/rozpis`;
+  const res = await fetchImpl(path, { cookie });
+  const list = parseTeamScheduleLines(parseHtmlLines(res.html));
+  const result = { leagueSlug, clubId: clubId || '', matches: list, fetchedAt: new Date().toISOString() };
+  if (useCache && list.length > 0) writeCache(key, result);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 4) Protokol zápasu (/zapas/<id>) – všetky duely stretnutia
+// ---------------------------------------------------------------------------
+
+/**
+ * Parsovanie oficiálneho protokolu zápasu.
+ * Vráti { header, duels: [{ order, label, duelCode, type, homePlayers, awayPlayers,
+ * officialSetsHome, homeSetsWon, awaySetsWon, walkover }] }.
+ */
+export function parseMatchProtocolLines(lines, matchId = null) {
+  const header = { matchId: matchId ? String(matchId) : null };
+  const duels = [];
+
+  const DUEL_ROW_RE = /^(\d{1,3})\.\s*(štvorhra|dvojhra)\s*([A-Z]-[U-Z])?\s*$/i;
+  const PLAYER_PREFIX_RE = /^\d{1,2}\/\d{1,2}\s*/;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const text = (lines[i].text || '').trim();
+    let m;
+    if ((m = text.match(/^Sezóna\s*:\s*(\d{4}\/\d{2})$/i))) { header.season = m[1]; continue; }
+    if ((m = text.match(/^Zápas č\.?\s*:\s*(\d+)$/i))) { header.matchNumber = m[1]; continue; }
+    if ((m = text.match(/^Kolo\s*:\s*(.+)$/i))) { header.round = `${m[1].trim().replace(/\.+$/, '')}. kolo`; continue; }
+    if ((m = text.match(/^Dátum\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})(?:\s+(\d{1,2}:\d{2}))?/i))) {
+      header.date = m[1];
+      header.time = m[2] || null;
+      continue;
+    }
+    if ((m = text.match(/^Liga\s*:\s*(.+)$/i))) { header.league = m[1].trim(); continue; }
+    if ((m = text.match(/^Kategória\s*:\s*(.+)$/i))) { header.category = m[1].trim(); continue; }
+    if ((m = text.match(/^Zväz\s*:\s*(.+)$/i))) { header.association = m[1].trim(); continue; }
+    if ((m = text.match(/^Domáci\s*:\s*(.+)$/i)) && !header.homeTeam && m[1].trim().length > 2) {
+      header.homeTeam = m[1].trim();
+      continue;
+    }
+    if ((m = text.match(/^Hostia\s*:\s*(.+)$/i)) && !header.awayTeam && m[1].trim().length > 2) {
+      header.awayTeam = m[1].trim();
+      continue;
+    }
+  }
+
+  // Duely – číslované riadky tabuľky protokolu; sekcia „Priebeh stretnutia" sa
+  // preskakuje, aby sa duely nezdvojili.
+  let stop = false;
+  for (let i = 0; i < lines.length && !stop; i += 1) {
+    const text = (lines[i].text || '').trim();
+    if (/^Priebeh stretnutia$/i.test(text)) break;
+    const dm = text.match(DUEL_ROW_RE);
+    if (!dm) continue;
+
+    const duel = {
+      order: parseInt(dm[1], 10),
+      label: dm[2].toLowerCase() === 'štvorhra' ? 'Štvorhra' : dm[3] ? dm[3].toUpperCase() : 'Dvojhra',
+      duelCode: dm[3] ? dm[3].toUpperCase() : null,
+      type: dm[2].toLowerCase() === 'štvorhra' ? 'doubles' : 'singles',
+      homePlayers: [],
+      awayPlayers: [],
+      officialSetsHome: [],
+      homeSetsWon: null,
+      awaySetsWon: null,
+      walkover: false,
+    };
+    const perSide = duel.type === 'doubles' ? 2 : 1;
+
+    // región za riadkom duelu: hráči, sety, výsledok – po ďalší duel/koniec
+    for (let k = i + 1; k < lines.length; k += 1) {
+      const nextText = (lines[k].text || '').trim();
+      if (/^Priebeh stretnutia$/i.test(nextText)) { stop = true; break; }
+      if (DUEL_ROW_RE.test(nextText)) break;
+      if (/^(Hlavný rozhodca|Posledná editácia|Predchádzajúci zápas|Nasledujúci zápas)/i.test(nextText)) { stop = true; break; }
+
+      const playerLinks = lines[k].links
+        .map((l) => ({ id: playerIdFromHref(l.href), name: (l.text || '').replace(PLAYER_PREFIX_RE, '').replace(/\s+/g, ' ').trim() }))
+        .filter((p) => p.id);
+      if (playerLinks.length > 0) {
+        const side = duel.homePlayers.length < perSide ? duel.homePlayers : duel.awayPlayers;
+        for (const p of playerLinks) {
+          if (side === duel.homePlayers && duel.homePlayers.length < perSide) duel.homePlayers.push(p);
+          else duel.awayPlayers.push(p);
+        }
+        continue;
+      }
+
+      if (lines[k].signed && lines[k].signed.length > 0) {
+        duel.officialSetsHome.push(...lines[k].signed.map((a) => a.raw));
+        continue;
+      }
+
+      if (/^wo\b|kontum|vzdal/i.test(nextText)) { duel.walkover = true; continue; }
+
+      const rm = nextText.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
+      if (rm) {
+        duel.homeSetsWon = parseInt(rm[1], 10);
+        duel.awaySetsWon = parseInt(rm[2], 10);
+        continue;
+      }
+    }
+
+    // výsledok sa dá odvodiť aj zo setov, ak portál „X : Y" neuviedol
+    if (duel.homeSetsWon == null && duel.officialSetsHome.length > 0) {
+      duel.homeSetsWon = duel.officialSetsHome.filter((s) => s.startsWith('+')).length;
+      duel.awaySetsWon = duel.officialSetsHome.filter((s) => s.startsWith('-')).length;
+    }
+
+    duels.push(duel);
+  }
+
+  return { header, duels };
+}
+
+/**
+ * Z protokolu vytiahne duely konkrétneho hráča (z pohľadu hráča – sety sa
+ * v prípade potreby preklopia, lebo portál ich uvádza z pohľadu domácich).
+ */
+export function protocolDuelsForPlayer(protocol, playerId) {
+  const id = String(playerId);
+  const out = [];
+  for (const duel of protocol.duels || []) {
+    const inHome = duel.homePlayers.some((p) => p.id === id);
+    const inAway = duel.awayPlayers.some((p) => p.id === id);
+    if (!inHome && !inAway) continue;
+
+    const playerIsHome = inHome;
+    const ownSide = playerIsHome ? duel.homePlayers : duel.awayPlayers;
+    const otherSide = playerIsHome ? duel.awayPlayers : duel.homePlayers;
+    const invert = !playerIsHome;
+
+    const officialSets = duel.officialSetsHome.map((value) => {
+      if (!invert) return value;
+      if (value.startsWith('+')) return `-${value.slice(1)}`;
+      if (value.startsWith('-')) return `+${value.slice(1)}`;
+      return value;
+    });
+
+    const playerSetsWon = playerIsHome ? duel.homeSetsWon : duel.awaySetsWon;
+    const opponentSetsWon = playerIsHome ? duel.awaySetsWon : duel.homeSetsWon;
+    const partner = ownSide.find((p) => p.id !== id) || null;
+
+    out.push({
+      order: duel.order,
+      label: duel.label,
+      duelCode: duel.duelCode,
+      type: duel.type,
+      playerIsHome,
+      playerSetsWon: playerSetsWon != null ? playerSetsWon : officialSets.filter((s) => s.startsWith('+')).length,
+      opponentSetsWon: opponentSetsWon != null ? opponentSetsWon : officialSets.filter((s) => s.startsWith('-')).length,
+      officialSets,
+      officialSetsHome: duel.officialSetsHome,
+      setDetails: officialSets.map((value, idx) => setValueToDetail(value, idx + 1)).filter(Boolean),
+      walkover: duel.walkover,
+      partner,
+      opponents: otherSide,
+    });
+  }
+  return out;
+}
+
+export async function getMatchProtocolCached(matchId, { fetchImpl = fetchPage, cookie = '', useCache = true, ttlMs = null } = {}) {
+  const id = String(matchId).replace(/\D/g, '');
+  if (!id) return null;
+  const key = `protocol/${id}`;
+  if (useCache) {
+    const cached = readCache(key, { maxAgeMs: ttlMs });
+    if (cached?.duels) return cached;
+  }
+  const res = await fetchImpl(`/zapas/${id}`, { cookie });
+  const parsed = parseMatchProtocolLines(parseHtmlLines(res.html), id);
+  const result = { ...parsed, url: `${BASE_URL}/zapas/${id}`, fetchedAt: new Date().toISOString() };
+  if (useCache) writeCache(key, result);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// 5) Hlavná funkcia – kompletná kariéra hráča cez ligový pipeline
+// ---------------------------------------------------------------------------
+
+function seasonCacheTtl(seasonSlug) {
+  // minulé sezóny sú nemenné (null = bez expirácie), aktuálna má TTL 15 min
+  return seasonSlug === currentSeasonSlug() ? 15 * 60 * 1000 : null;
+}
+
+function normalizeSeasonInput(value) {
+  const v = String(value || '').trim();
+  if (/^\d{4}\/\d{2}$/.test(v)) return v.replace('/', '-');
+  return /^\d{4}-\d{2}$/.test(v) ? v : null;
+}
+
+/**
+ * Kompletná synchronizácia hráča – funguje pre ĽUBOVOĽNÉHO hráča SSTZ:
+ *  – všetky sezóny (alebo len vybrané / aktuálna),
+ *  – všetky ligy, ktoré hráč v sezóne hral (aj viac líg naraz),
+ *  – všetky dvojhry aj štvorhry z oficiálnych protokolov zápasov.
+ *
+ * Žiadne prepínanie sezóny v session – len deterministické routy portálu.
+ */
+export async function syncPlayerCareer(playerId, options = {}) {
+  const id = String(playerId).replace(/\D/g, '');
+  if (!id) throw new SstzError('Neplatné ID hráča.', { kind: 'input' });
+
+  const {
+    allSeasons = false,
+    seasonSlugs,
+    includeDoubles = true,
+    useCache = true,
+    fetchImpl = fetchPage,
+    onProgress = () => {},
+  } = options;
+
+  const liveFetch = fetchImpl === fetchPage;
+  let cookie = '';
+  if (liveFetch) {
+    try {
+      ({ cookie } = await ensureSession());
+    } catch {
+      cookie = '';
+    }
+  }
+
+  const progress = (patch) => {
+    try { onProgress(patch); } catch { /* ignore */ }
+  };
+  const warnings = [];
+
+  // Cieľové sezóny: explicitný zoznam > všetky > aktuálna
+  let targets;
+  if (Array.isArray(seasonSlugs) && seasonSlugs.length > 0) {
+    targets = seasonSlugs.map(normalizeSeasonInput).filter(Boolean);
+  } else if (allSeasons) {
+    targets = [...SEASON_SLUGS];
+  } else {
+    targets = [currentSeasonSlug()];
+  }
+  targets = [...new Set(targets)];
+
+  const getPage = (path) => fetchImpl(path, { cookie });
+
+  const allMatches = [];
+  const seasonReports = [];
+  let playerName = null;
+  const playerTeams = new Map(); // season -> Set(team names)
+
+  for (const seasonSlug of targets) {
+    const seasonLabel = seasonSlugToLabel(seasonSlug) || seasonSlug;
+    const ttl = seasonCacheTtl(seasonSlug);
+    progress({ phase: 'season', season: seasonLabel, message: `Otváram sezónu ${seasonLabel} (zoznam súťaží)…` });
+
+    let universe;
+    try {
+      universe = await getSeasonUniverse(seasonSlug, { fetchImpl, cookie, useCache });
+    } catch (err) {
+      warnings.push(`Sezónu ${seasonLabel} sa nepodarilo načítať (${err.message}).`);
+      continue;
+    }
+    if (!universe.leagues.length) {
+      warnings.push(`Sezóna ${seasonLabel}: portál neuvádza žiadne súťaže.`);
+      continue;
+    }
+
+    // Kde všade hráč v sezóne hral? – oficiálne indexy úspešnosti každej ligy
+    const hits = [];
+    let scanned = 0;
+    await pMap(universe.leagues, async (league) => {
+      const idx = await getLeaguePlayerIndexes(league.slug, { fetchImpl, cookie, useCache, ttlMs: ttl });
+      scanned += 1;
+      if (scanned % 10 === 0 || scanned === universe.leagues.length) {
+        progress({
+          phase: 'scan',
+          season: seasonLabel,
+          message: `Sezóna ${seasonLabel}: skúšam ${scanned}/${universe.leagues.length} súťaží…`,
+        });
+      }
+      const singlesRow = idx.singles.find((r) => r.playerId === id) || null;
+      const doublesRow = idx.doubles.find((r) => r.playerId === id) || null;
+      if (singlesRow || doublesRow) {
+        hits.push({ league, idx, singlesRow, doublesRow });
+        if (!playerName) playerName = doublesRow?.name || null;
+      }
+    }, 4);
+
+    if (hits.length === 0) continue;
+
+    const seasonCompetitions = [];
+    const seasonChecks = [];
+    let seasonVerified = true;
+
+    for (const hit of hits) {
+      const { league, singlesRow, doublesRow } = hit;
+      progress({
+        phase: 'competition',
+        season: seasonLabel,
+        message: `${seasonLabel}: sťahujem zápasy – ${league.name} (${league.region})…`,
+      });
+
+      // družstvo hráča + club_id pre rozpis (tím sa určí presne podľa tabuľky)
+      let team = null;
+      let clubId = null;
+      try {
+        const { clubs } = await getLeagueClubs(league.slug, { fetchImpl, cookie, useCache, ttlMs: ttl });
+        const names = clubs.map((c) => c.clubName);
+        const resolvedSingles = singlesRow ? resolveIndexTeam(singlesRow, names) : null;
+        const resolvedDoubles = doublesRow ? resolveIndexTeam(doublesRow, names) : null;
+        team = resolvedSingles?.team || resolvedDoubles?.team || null;
+        if (!playerName) playerName = resolvedSingles?.name || resolvedDoubles?.name || null;
+        const club = clubs.find((c) => c.clubName === team);
+        clubId = club ? club.clubId : null;
+      } catch {
+        clubId = null;
+      }
+
+      if (!team || !clubId) {
+        warnings.push(
+          `${seasonLabel} / ${league.name}: hráč figuruje v úspešnosti, ale družstvo sa nepodarilo jednoznačne určiť z tabuľky – zápasy tejto súťaže sa nenačítali.`
+        );
+        seasonVerified = false;
+        continue;
+      }
+
+      if (!playerTeams.has(seasonLabel)) playerTeams.set(seasonLabel, new Set());
+      playerTeams.get(seasonLabel).add(team);
+
+      const schedule = await getTeamScheduleCached(league.slug, clubId, { fetchImpl, cookie, useCache, ttlMs: ttl });
+      const played = schedule.matches.filter((m) => m.isPlayed);
+
+      let leagueMatches = [];
+      await pMap(played, async (entry) => {
+        const protocol = await getMatchProtocolCached(entry.id, { fetchImpl, cookie, useCache, ttlMs: ttl });
+        if (!protocol) return;
+        const duels = protocolDuelsForPlayer(protocol, id);
+        if (duels.length === 0) return;
+
+        const header = protocol.header || {};
+        const date = header.date || entry.dateTime.split(' ')[0] || '';
+        const round = header.round || entry.round || null;
+        const homeTeam = header.homeTeam || entry.homeTeam || null;
+        const awayTeam = header.awayTeam || entry.awayTeam || null;
+        const teamScore =
+          entry.homeScore !== '' && entry.awayScore !== '' ? `${entry.homeScore}:${entry.awayScore}` : null;
+        const playerIsHome = header.homeTeam && team
+          ? header.homeTeam === team
+          : homeTeam && team
+            ? homeTeam === team
+            : null;
+
+        for (const d of duels) {
+          const playerWon =
+            d.playerSetsWon != null && d.opponentSetsWon != null && !d.walkover
+              ? d.playerSetsWon > d.opponentSetsWon
+              : null;
+          const match = {
+            id: `z${entry.id}-${d.order}-${d.duelCode || d.type}`,
+            sstzMatchId: entry.id,
+            season: header.season || seasonLabel,
+            seasonId: seasonSlug,
+            competition: league.name,
+            competitionLabel: `${league.region} / ${league.name}`,
+            clubName: team,
+            stage: null,
+            round,
+            date,
+            homeTeam,
+            awayTeam,
+            teamScore,
+            playerIsHome: playerIsHome != null ? playerIsHome : d.playerIsHome,
+            type: d.type,
+            duelLabel: d.duelCode || d.label,
+            playerSetsWon: d.playerSetsWon,
+            opponentSetsWon: d.opponentSetsWon,
+            opponentName: d.opponents[0]?.name || null,
+            opponentId: d.opponents[0]?.id || null,
+            opponents: d.opponents,
+            partnerName: d.partner?.name || null,
+            partnerId: d.partner?.id || null,
+            result: playerWon == null ? null : playerWon ? 'WIN' : 'LOSS',
+            score:
+              d.playerSetsWon != null && d.opponentSetsWon != null
+                ? `${d.playerSetsWon}:${d.opponentSetsWon}`
+                : d.walkover
+                  ? 'wo'
+                  : '—',
+            sets: d.officialSets,
+            setDetails: d.setDetails,
+            walkover: d.walkover,
+            totalPointsWon: d.setDetails.reduce((acc, s) => acc + s.playerPoints, 0),
+            totalPointsLost: d.setDetails.reduce((acc, s) => acc + s.opponentPoints, 0),
+            source: 'SSTZ',
+            profileUrl: `${BASE_URL}/hrac/${id}`,
+          };
+          leagueMatches.push(match);
+        }
+      }, 3);
+
+      allMatches.push(...leagueMatches);
+      seasonCompetitions.push(`${league.name} (${team})`);
+
+      // Overenie voči oficiálnym súhrnom ligy (úspešnosť jednotlivcov/štvorhier)
+      const singles = leagueMatches.filter((m) => m.type === 'singles');
+      const doubles = leagueMatches.filter((m) => m.type === 'doubles');
+      const singlesWon = singles.filter((m) => m.result === 'WIN').length;
+      const doublesWon = doubles.filter((m) => m.result === 'WIN').length;
+
+      seasonChecks.push({
+        name: 'Počty setov v každom dueli sedia s oficiálnym záznamom',
+        ok: leagueMatches.every((m) => {
+          if (m.walkover || m.sets.length === 0) return true;
+          const won = m.sets.filter((s) => s.startsWith('+')).length;
+          const lost = m.sets.filter((s) => s.startsWith('-')).length;
+          return won === m.playerSetsWon && lost === m.opponentSetsWon;
+        }),
+        detail: 'každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web',
+      });
+
+      if (singlesRow && singlesRow.played != null) {
+        const ok = singles.length === singlesRow.played && singlesWon === singlesRow.won;
+        seasonChecks.push({
+          name: `Dvojhry – súčet voči oficiálnej úspešnosti (${league.name})`,
+          ok,
+          expected: `${singlesRow.won} z ${singlesRow.played}`,
+          actual: `${singlesWon} z ${singles.length}`,
+        });
+        if (singlesRow.sets) {
+          const setsWon = singles.reduce((acc, m) => acc + (m.playerSetsWon || 0), 0);
+          const setsLost = singles.reduce((acc, m) => acc + (m.opponentSetsWon || 0), 0);
+          seasonChecks.push({
+            name: `Sety dvojhier – voči oficiálnemu súhrnu (${league.name})`,
+            ok: setsWon === singlesRow.sets.won && setsLost === singlesRow.sets.lost,
+            expected: `${singlesRow.sets.won}:${singlesRow.sets.lost}`,
+            actual: `${setsWon}:${setsLost}`,
+          });
+        }
+      } else if (singles.length > 0) {
+        seasonVerified = false;
+      }
+
+      if (includeDoubles && doublesRow && doublesRow.played != null) {
+        const ok = doubles.length === doublesRow.played && doublesWon === doublesRow.won;
+        seasonChecks.push({
+          name: `Štvorhry – súčet voči oficiálnej úspešnosti (${league.name})`,
+          ok,
+          expected: `${doublesRow.won} z ${doublesRow.played}`,
+          actual: `${doublesWon} z ${doubles.length}`,
+        });
+      }
+
+      const leagueOk = seasonChecks.every((c) => c.ok);
+      seasonVerified = seasonVerified && leagueOk;
+      if (!leagueOk) {
+        warnings.push(
+          `${seasonLabel} / ${league.name}: načítané zápasy sa nezhodujú s oficiálnou úspešnosťou portálu – skontroluj protokol.`
+        );
+      }
+    }
+
+    seasonReports.push({
+      seasonId: seasonSlug,
+      label: seasonLabel,
+      competitions: seasonCompetitions,
+      matches: 0, // doplní sa po deduplikácii
+      verification: { verified: seasonVerified, checks: seasonChecks },
+    });
+  }
+
+  // Meno hráča – ak ho indexy neobsahujú (napr. hráč bez zápasov), skúsime profil
+  if (!playerName && liveFetch) {
+    try {
+      const res = await getPage(`/hrac/${id}`);
+      playerName = parsePlayerPage(res.html, id).name || null;
+    } catch {
+      /* meno nie je kritické */
+    }
+  }
+
+  // Deduplikácia (ten istý duel cez viac sezón líg nemôže nastať, istota však istí)
+  const unique = new Map();
+  for (const match of allMatches) {
+    if (!unique.has(match.id)) unique.set(match.id, match);
+  }
+  const dateKey = (duel) => {
+    const m = String(duel.date || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    return m ? Number(`${m[3]}${m[2].padStart(2, '0')}${m[1].padStart(2, '0')}`) : 0;
+  };
+  const sorted = [...unique.values()].sort((a, b) => {
+    const diff = dateKey(b) - dateKey(a);
+    if (diff !== 0) return diff;
+    const roundA = parseInt(String(a.round || '').replace(/\D/g, ''), 10) || 0;
+    const roundB = parseInt(String(b.round || '').replace(/\D/g, ''), 10) || 0;
+    if (roundA !== roundB) return roundB - roundA;
+    return String(a.duelLabel || '').localeCompare(String(b.duelLabel || ''));
+  });
+
+  const singles = sorted.filter((m) => m.type === 'singles');
+  const doubles = includeDoubles ? sorted.filter((m) => m.type === 'doubles') : [];
+  const counted = (list) => list.filter((m) => m.result === 'WIN' || m.result === 'LOSS');
+  const singlesWon = counted(singles).filter((m) => m.result === 'WIN').length;
+  const doublesWon = counted(doubles).filter((m) => m.result === 'WIN').length;
+
+  const homeAway = (list) => {
+    const known = counted(list).filter((m) => m.playerIsHome === true || m.playerIsHome === false);
+    const home = known.filter((m) => m.playerIsHome === true);
+    const away = known.filter((m) => m.playerIsHome === false);
+    return {
+      home: { won: home.filter((m) => m.result === 'WIN').length, total: home.length },
+      away: { won: away.filter((m) => m.result === 'WIN').length, total: away.length },
+    };
+  };
+
+  for (const report of seasonReports) {
+    report.matches = sorted.filter((m) => m.season === report.label).length;
+  }
+
+  const allVerified = seasonReports.length > 0 && seasonReports.every((s) => s.verification.verified);
+  if (seasonReports.length === 0) {
+    warnings.push(
+      `Pre hráča #${id} sa nenašli žiadne zápasy v sezónach ${targets.map((s) => seasonSlugToLabel(s)).join(', ')}. Buď v nich nehral, alebo portál nezverejnil protokoly.`
+    );
+  }
+
+  const mostRecentTeam = (() => {
+    for (const m of sorted) if (m.clubName) return m.clubName;
+    return null;
+  })();
+
+  return {
+    id,
+    name: playerName || `Hráč #${id}`,
+    clubName: mostRecentTeam || undefined,
+    profileUrl: `${BASE_URL}/hrac/${id}`,
+    source: {
+      name: 'stolnytenis.info',
+      publisher: 'SSTZ (Slovenský stolnotenisový zväz)',
+      profileUrl: `${BASE_URL}/hrac/${id}`,
+      fetchedAt: new Date().toISOString(),
+      live: liveFetch,
+      mode: 'live',
+      note:
+        'Všetky zápasy pochádzajú z oficiálnych protokolov zápasov stolnytenis.info; úspešnosť je overená voči oficiálnym ligovým súhrnom.',
+    },
+    seasons: seasonReports,
+    singlesStats: {
+      played: counted(singles).length,
+      won: singlesWon,
+      lost: counted(singles).length - singlesWon,
+      winRate: counted(singles).length ? Math.round((singlesWon / counted(singles).length) * 100) : 0,
+      ...homeAway(singles),
+    },
+    doublesStats: {
+      played: counted(doubles).length,
+      won: doublesWon,
+      lost: counted(doubles).length - doublesWon,
+      winRate: counted(doubles).length ? Math.round((doublesWon / counted(doubles).length) * 100) : 0,
+      ...homeAway(doubles),
+    },
+    matches: singles,
+    doublesMatches: doubles,
+    verification: {
+      status: allVerified ? 'verified' : 'unverified',
+      allSeasonsVerified: allVerified,
+      seasons: seasonReports.map((s) => ({
+        label: s.label,
+        verified: s.verification.verified,
+        matches: s.matches,
+        checks: s.verification.checks,
+      })),
+    },
+    warnings,
+    syncedAt: new Date().toISOString(),
+  };
+}
+
+

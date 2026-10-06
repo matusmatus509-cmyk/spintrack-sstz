@@ -67,6 +67,7 @@ interface AppContextType {
   selectedClubId: string;
   isSstzLoading: boolean;
   sstzError: string | null;
+  sstzSyncMessage: string | null;
   syncSstzPlayer: (playerId: string, allSeasons?: boolean) => Promise<boolean>;
   syncTeamSchedule: (leagueSlug: string, clubId?: string) => Promise<boolean>;
   importAllSstzMatchesToDiary: () => number;
@@ -350,6 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Loading & error states
   const [isSstzLoading, setIsSstzLoading] = useState(false);
   const [sstzError, setSstzError] = useState<string | null>(null);
+  const [sstzSyncMessage, setSstzSyncMessage] = useState<string | null>(null);
 
   // Persist to localStorage
   useEffect(() => {
@@ -943,18 +945,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const syncSstzPlayer = async (playerId: string, allSeasons: boolean = false): Promise<boolean> => {
     setIsSstzLoading(true);
     setSstzError(null);
+    setSstzSyncMessage(allSeasons ? null : 'Sťahujem aktuálnu sezónu…');
     try {
-      const url = allSeasons
-        ? `/api/sstz/player/${playerId}?allSeasons=true`
-        : `/api/sstz/player/${playerId}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        throw new Error(
-          payload?.error ? `SSTZ: ${payload.error}` : `Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`
-        );
+      let data: any;
+      if (!allSeasons) {
+        // Aktuálna sezóna – stačí priamy dotaz (rýchlejšie, server má cache)
+        const res = await fetch(`/api/sstz/player/${playerId}`);
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null);
+          throw new Error(
+            payload?.error ? `SSTZ: ${payload.error}` : `Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`
+          );
+        }
+        data = await res.json();
+      } else {
+        // Celá kariéra – beží ako úloha na pozadí (prvýkrát môže trvať aj niekoľko
+        // minút, keďže sa prechádzajú indexy všetkých líg a protokoly zápasov).
+        const startRes = await fetch('/api/sstz/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId, allSeasons: true }),
+        });
+        if (!startRes.ok) {
+          const payload = await startRes.json().catch(() => null);
+          throw new Error(payload?.error || `SSTZ: synchronizáciu sa nepodarilo spustiť (HTTP ${startRes.status})`);
+        }
+        const { jobId } = await startRes.json();
+        for (;;) {
+          await new Promise((r) => setTimeout(r, 2500));
+          const pollRes = await fetch(`/api/sstz/sync/${jobId}`);
+          if (!pollRes.ok) throw new Error(`SSTZ: stav úlohy sa nedá zistiť (HTTP ${pollRes.status})`);
+          const job = await pollRes.json();
+          if (job.progress?.message) setSstzSyncMessage(String(job.progress.message));
+          if (job.status === 'done') { data = job.result; break; }
+          if (job.status === 'error') throw new Error(job.error || 'SSTZ: synchronizácia zlyhala.');
+        }
       }
-      const data = await res.json();
       const profile = applySstzPayload(data, allSeasons);
       try {
         localStorage.setItem('spintrack_sstz_player_id', String(profile.id));
@@ -963,11 +989,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       updateBadgeProgress('badge-sstz-connected', 1);
       setIsSstzLoading(false);
+      setSstzSyncMessage(null);
       return true;
     } catch (err: any) {
       console.error('Error syncing SSTZ player:', err);
       setSstzError(err.message || 'Nepodarilo sa načítať profil z SSTZ.');
       setIsSstzLoading(false);
+      setSstzSyncMessage(null);
       return false;
     }
   };
@@ -1188,6 +1216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedClubId,
         isSstzLoading,
         sstzError,
+        sstzSyncMessage,
         syncSstzPlayer,
         syncTeamSchedule,
         importAllSstzMatchesToDiary,
