@@ -56,17 +56,45 @@ Server potrebuje prístup na internet (portál je dostupný len odtiaľ). Postup
 
 ```bash
 npm install                     # raz
-npm run sstz:probe -- 5723      # diagnostika: zistí, ako portál prepína sezónu
 npm run sstz:sync -- 5723 --all # stiahne VŠETKY sezóny (2018/19 – 2026/27) a uloží snapshot
 npm run dev                     # spustí aplikáciu; tá si snapshot načíta
 ```
 
+Bez internetu (napr. sandbox) sa dá snapshot zostaviť offline z verbatím
+zachytených stránok v `tests/fixtures`:
+
+```bash
+node scripts/sstz-snapshot-from-fixtures.mjs 5723 --season=2026-27
+```
+
 Snapshot sa ukladá do `data/sstz/<id>.json` – dá sa commitnúť do repozitára,
 takže aplikácia funguje aj na stroji bez prístupu na portál (vtedy údaje
-zobrazuje ako „snapshot" s dátumom stiahnutia).
+zobrazuje ako „snapshot" s dátumom stiahnutia). Prázdny/nedostupný výsledok
+nikdy existujúci snapshot neprepíše.
 
 CLI skončí s návratovým kódom `0` len vtedy, keď všetky stiahnuté sezóny
 prejdú overením voči oficiálnym súhrnom.
+
+#### Ako synchronizácia funguje (pre ľubovoľného hráča)
+
+Starý prístup cez hráčske profily fungoval len pre niektorých hráčov a len
+pre aktuálnu sezónu. Nový pipeline preto číta výhradne deterministické
+ligové stránky portálu a platí pre **každého** hráča:
+
+1. **Sezóna** – zo stránok `/sezona/<slug>/svk` + regionálnych krajov sa
+   zostaví kompletný zoznam líg sezóny (SSTZ, VSSTZ, KSTZ aj ObSTZ/OSTZ).
+2. **Kde hráč hral** – pre každú ligu sa číta oficiálny index
+   „Úspešnosť jednotlivcov" (dvojhry + štvorhry). Hráč sa hľadá **vo všetkých
+   ligách sezóny**, takže ak v sezóne hral viac súťaží, nájdu sa všetky.
+3. **Zápasy** – pre zásahové ligy sa číta tabuľka (ID klubu), rozpis družstva
+   (kolá, dátumy, odkazy na zápasy) a protokol každého odohraného zápasu
+   (`/zapas/<id>`) – z neho pochádzajú presné duely, sety aj súper.
+4. **Overenie** – súčet zápasov/výhier/setov hráča sa porovná s oficiálnym
+   indexom úspešnosti ligy. Nesúlad = červený odznak, nikdy nie dopočítanie.
+
+Sety pri vonkajších zápasoch sa automaticky preklopia na pohľad hráča
+(portál uvádza sety z pohľadu domáceho tímu). Medzivýsledky sa cacheujú na
+disku (`data/sstz/cache`): minulé sezóny sú nemenné, aktuálna sezóna 15 min.
 - **Všetkých 126 slovenských líg z 39 regiónov:**
   - Republikové súťaže SSTZ (Extraliga, 1. liga Západ/Východ, mládež), krajské zväzy (KSTZ Bratislava, Trnava, Nitra, Trenčín, Banská Bystrica, Žilina, VSSTZ) aj okresné/oblastné zväzy (ObSTZ / OSTZ).
   - Živé oficiálne ligové tabuľky (poradie, Z, V, R, P, skóre, body) a kompletné rozpisy zápasov s prepojením na oficiálny zápis.

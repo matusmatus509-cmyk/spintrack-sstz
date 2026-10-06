@@ -32,3 +32,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Cache SSTZ pipeline-u (medzivýsledky sťahovania – dajú sa kedykoľvek znova stiahnuť)
+data/sstz/cache/

@@ -80,6 +80,18 @@ const profile = await syncPlayerCareer(playerId, {
   },
 });
 
+// Nikdy neprepíšeme reálny snapshot prázdnym výsledkom (napr. keď portál nie
+// je dostupný) – radšej skončíme chybou a necháme uložené dáta nedotknuté.
+const isEmptyProfile =
+  !profile.seasons.length && !profile.matches.length && !profile.doublesMatches.length;
+const loadFailed = (profile.warnings || []).some((w) =>
+  /nepodarilo sa načítať|neuvádza žiadne súťaže/i.test(w)
+);
+if (isEmptyProfile && loadFailed) {
+  console.error('\n❌ Portál stolnytenis.info nie je dostupný – snapshot sa NEULOŽIL, uložené dáta ostávajú nedotknuté.\n');
+  process.exit(1);
+}
+
 const file = saveSnapshot({ ...profile, source: { ...profile.source } }, args.out);
 const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
 

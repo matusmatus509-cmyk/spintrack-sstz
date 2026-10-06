@@ -98,6 +98,28 @@ export async function fetchWithSnapshotFallback(playerId, liveFn) {
   try {
     const profile = await liveFn();
     if (!profile) throw new Error('Portál nevrátil žiadne dáta pre tohto hráča.');
+
+    // Prázdny výsledok (žiadna sezóna ani zápas) znamená, že živé spojenie
+    // zlyhalo (napr. offline) alebo hráč nemá dáta. Nikdy nesmieme prepísať
+    // existujúci REÁLNY snapshot prázdnym výsledkom – radšej vrátime snapshot.
+    const isEmpty =
+      (!Array.isArray(profile.seasons) || profile.seasons.length === 0) &&
+      (!Array.isArray(profile.matches) || profile.matches.length === 0) &&
+      (!Array.isArray(profile.doublesMatches) || profile.doublesMatches.length === 0);
+    if (isEmpty) {
+      const ws = profile.warnings || [];
+      // Ak sa sezóna nedala vôbec načítať (offline/výpadok), výsledok nie je
+      // dôveryhodný – použijeme snapshot namiesto prázdnych „živých“ dát.
+      const loadFailed = ws.some((w) => /nepodarilo sa načítať|neuvádza žiadne súťaže/i.test(w));
+      const legitEmpty = !loadFailed && ws.some((w) => /nenašli žiadne zápasy/i.test(w));
+      if (!legitEmpty) {
+        throw new Error('Živé sťahovanie nevrátilo žiadne sezóny ani zápasy (portál nedostupný?).');
+      }
+      // Legitímne prázdny výsledok (hráč nemá v indexoch žiadne zápasy) –
+      // vraciame ho, ale nič neukladáme, aby sa nič reálne neprepísalo.
+      return { ...profile, source: { ...profile.source, mode: 'live' } };
+    }
+
     saveSnapshot(profile);
     return { ...profile, source: { ...profile.source, mode: 'live' } };
   } catch (err) {
