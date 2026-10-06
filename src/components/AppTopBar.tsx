@@ -1,25 +1,13 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Settings, Play, Pause, Clock, ShieldCheck } from 'lucide-react';
+import { Settings, ShieldCheck } from 'lucide-react';
 
 interface AppTopBarProps {
   onOpenSettings: () => void;
 }
 
 export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings }) => {
-  const {
-    isStopwatchRunning,
-    stopwatchSeconds,
-    pauseStopwatch,
-    startStopwatch,
-    sstzProfile
-  } = useApp();
-
-  const formatTimer = (totalSecs: number) => {
-    const mins = Math.floor(totalSecs / 60);
-    const secs = totalSecs % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const { sstzProfile } = useApp();
 
   return (
     <div style={{
@@ -61,31 +49,6 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings }) => {
           </span>
         )}
       </div>
-
-      {/* Center: Live Stopwatch Pill (Visible only when stopwatch is active or has time) */}
-      {stopwatchSeconds > 0 && (
-        <div
-          onClick={isStopwatchRunning ? pauseStopwatch : startStopwatch}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: isStopwatchRunning ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-            border: `1px solid ${isStopwatchRunning ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-subtle)'}`,
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-full)',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 700,
-            color: isStopwatchRunning ? '#34d399' : 'var(--text-muted)'
-          }}
-          title={isStopwatchRunning ? 'Klikni pre pozastavenie' : 'Klikni pre pokračovanie'}
-        >
-          {isStopwatchRunning ? <Pause size={12} color="#34d399" /> : <Play size={12} />}
-          <span>{formatTimer(stopwatchSeconds)}</span>
-        </div>
-      )}
 
       {/* Right: Settings gear */}
       <button

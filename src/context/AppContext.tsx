@@ -4,12 +4,15 @@ import {
   Blade,
   RacketSetup,
   TrainingSession,
+  ActivityRecord,
+  ActivityCategory,
   MatchRecord,
   DoublesMatchRecord,
   SSTZProfile,
   TeamScheduleMatch,
   Badge,
-  OpponentProfile
+  OpponentProfile,
+  OpponentRubberType
 } from '../types';
 import { INITIAL_BADGES } from '../data/gearCatalog';
 
@@ -32,7 +35,11 @@ interface AppContextType {
   deleteBlade: (id: string) => void;
   getRubberHealth: (rubber: Rubber) => { percent: number; status: 'excellent' | 'good' | 'worn' | 'critical'; remainingHours: number };
 
-  // Training & Diary
+  // Activities & Diary
+  activities: ActivityRecord[];
+  addActivity: (activity: Omit<ActivityRecord, 'id' | 'createdAt'>) => string;
+  updateActivity: (id: string, updates: Partial<ActivityRecord>) => void;
+  deleteActivity: (id: string) => void;
   trainingSessions: TrainingSession[];
   addTrainingSession: (session: Omit<TrainingSession, 'id'>) => void;
   deleteTrainingSession: (id: string) => void;
@@ -52,14 +59,6 @@ interface AppContextType {
   opponents: OpponentProfile[];
   updateOpponent: (opponent: OpponentProfile) => void;
   getOpponent: (idOrName: string) => OpponentProfile | undefined;
-
-  // Stopwatch
-  isStopwatchRunning: boolean;
-  stopwatchSeconds: number;
-  startStopwatch: () => void;
-  pauseStopwatch: () => void;
-  resetStopwatch: () => void;
-  saveStopwatchAsSession: (type: TrainingSession['type'], notes: string, intensity?: number) => void;
 
   // SSTZ Integration
   sstzProfile: SSTZProfile | null;
@@ -289,6 +288,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [rubbers, setRubbers] = useState<Rubber[]>(saved?.rubbers || defaultRubbers);
   const [rackets, setRackets] = useState<RacketSetup[]>(saved?.rackets || defaultRackets);
   const [activeRacketId, setActiveRacketId] = useState<string>(saved?.activeRacketId || 'racket-1');
+  const defaultActivities: ActivityRecord[] = [
+    {
+      id: 'activity-1',
+      category: 'tréning',
+      date: '2026-09-28',
+      durationMinutes: 90,
+      focusDrills: ['Topspin', 'Príjem', 'Práca nôh', 'Rozcvička'],
+      location: 'Klubová herňa STK',
+      publicNote: 'Skvelý cit na forhende, dobré zrýchlenie pri protitopspine.',
+      visibility: 'community',
+      addEquipmentWear: true,
+      racketId: 'racket-1',
+      intensity: 4,
+      createdAt: '2026-09-28T18:00:00.000Z'
+    },
+    {
+      id: 'activity-2',
+      category: 'tréning',
+      date: '2026-09-30',
+      durationMinutes: 75,
+      focusDrills: ['Multiball', 'Práca nôh', 'Blok / kontra'],
+      location: 'Klubová herňa STK',
+      publicNote: 'Zamerané na rýchlu reakciu po vlastnom servise.',
+      visibility: 'community',
+      addEquipmentWear: true,
+      racketId: 'racket-1',
+      intensity: 5,
+      createdAt: '2026-09-30T17:30:00.000Z'
+    }
+  ];
+
+  const initialActivities: ActivityRecord[] = saved?.activities || (saved?.trainingSessions ? saved.trainingSessions.map((s: any) => ({
+    id: s.id,
+    category: 'tréning' as ActivityCategory,
+    date: s.date ? s.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    durationMinutes: s.durationMinutes || 60,
+    focusDrills: s.focusDrills || [],
+    location: s.location || 'Klubová herňa',
+    publicNote: s.notes || '',
+    visibility: 'community' as const,
+    addEquipmentWear: true,
+    racketId: s.racketId,
+    intensity: s.intensity || 4,
+    createdAt: s.date || new Date().toISOString()
+  })) : defaultActivities);
+
+  const [activities, setActivities] = useState<ActivityRecord[]>(initialActivities);
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>(saved?.trainingSessions || defaultSessions);
   const [matches, setMatches] = useState<MatchRecord[]>(saved?.matches || defaultMatches);
   const [doublesMatches, setDoublesMatches] = useState<DoublesMatchRecord[]>(saved?.doublesMatches || []);
@@ -305,10 +351,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSstzLoading, setIsSstzLoading] = useState(false);
   const [sstzError, setSstzError] = useState<string | null>(null);
 
-  // Stopwatch state
-  const [isStopwatchRunning, setIsStopwatchRunning] = useState(false);
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
-
   // Persist to localStorage
   useEffect(() => {
     const dataToSave = {
@@ -316,6 +358,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rubbers,
       rackets,
       activeRacketId,
+      activities,
       trainingSessions,
       matches,
       doublesMatches,
@@ -336,6 +379,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rubbers,
     rackets,
     activeRacketId,
+    activities,
     trainingSessions,
     matches,
     doublesMatches,
@@ -346,19 +390,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     selectedClubId,
     badges
   ]);
-
-  // Stopwatch timer interval
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isStopwatchRunning) {
-      interval = setInterval(() => {
-        setStopwatchSeconds(s => s + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isStopwatchRunning]);
 
   // Active racket getter
   const activeRacket = rackets.find(r => r.id === activeRacketId) || rackets[0];
@@ -593,31 +624,104 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Stopwatch controls
-  const startStopwatch = () => setIsStopwatchRunning(true);
-  const pauseStopwatch = () => setIsStopwatchRunning(false);
-  const resetStopwatch = () => {
-    setIsStopwatchRunning(false);
-    setStopwatchSeconds(0);
+  // Activities CRUD
+  const addActivity = (activityData: Omit<ActivityRecord, 'id' | 'createdAt'>): string => {
+    const id = `act-${Date.now()}`;
+    const newActivity: ActivityRecord = {
+      ...activityData,
+      id,
+      createdAt: new Date().toISOString()
+    };
+
+    setActivities(prev => [newActivity, ...prev]);
+
+    // Keep trainingSessions in sync for backwards compatibility
+    const newSession: TrainingSession = {
+      id,
+      date: newActivity.date,
+      durationMinutes: newActivity.durationMinutes,
+      type: newActivity.category === 'liga' ? 'liga' : 'tréning',
+      focusDrills: newActivity.focusDrills,
+      racketId: newActivity.racketId || activeRacket?.id,
+      intensity: newActivity.intensity || 4,
+      location: newActivity.location,
+      notes: [newActivity.publicNote, newActivity.privateNote].filter(Boolean).join(' | ')
+    };
+    setTrainingSessions(prev => [newSession, ...prev]);
+
+    // Add hours to active racket if enabled
+    if (newActivity.addEquipmentWear) {
+      const hours = newActivity.durationMinutes / 60;
+      addHoursToActiveRacket(hours);
+    }
+
+    // Auto-register opponent if entered
+    if (newActivity.opponentName && newActivity.opponentName.trim()) {
+      const oppName = newActivity.opponentName.trim();
+      const existing = getOpponent(oppName);
+
+      const rubberMap: Record<string, OpponentRubberType> = {
+        'in': 'soft',
+        'long_pips': 'long_pips',
+        'short_pips': 'short_pips',
+        'anti': 'antispin'
+      };
+
+      const updatedOpp: OpponentProfile = {
+        id: existing?.id || newActivity.opponentId || `opp-${Math.random().toString(36).substring(2, 9)}`,
+        name: oppName,
+        clubName: existing?.clubName || '',
+        association: existing?.association || 'SSTZ',
+        handedness: newActivity.opponentGrip ? newActivity.opponentGrip : (existing?.handedness || 'unknown'),
+        forehandRubber: newActivity.opponentFhRubber ? (rubberMap[newActivity.opponentFhRubber] || 'soft') : (existing?.forehandRubber || 'soft'),
+        backhandRubber: newActivity.opponentBhRubber ? (rubberMap[newActivity.opponentBhRubber] || 'soft') : (existing?.backhandRubber || 'soft'),
+        playStyle: existing?.playStyle || 'allround',
+        notes: existing?.notes || (newActivity.privateNote ? `Zápis z aktivity: ${newActivity.privateNote}` : ''),
+        lastUpdated: new Date().toISOString()
+      };
+      updateOpponent(updatedOpp);
+
+      // If match score was entered, also save to match records
+      if (newActivity.matchScore || newActivity.matchResult) {
+        addMatch({
+          date: newActivity.date,
+          competition: newActivity.category === 'liga' ? 'SSTZ Liga' : (newActivity.category === 'turnaj' ? 'Turnaj' : 'Priateľský zápas'),
+          opponentName: oppName,
+          opponentId: updatedOpp.id,
+          result: newActivity.matchResult || 'WIN',
+          score: newActivity.matchScore || '3:0',
+          sets: [],
+          racketId: newActivity.racketId || activeRacket?.id,
+          notes: newActivity.publicNote || '',
+          tacticsNote: newActivity.privateNote || '',
+          source: 'manual'
+        });
+      }
+    }
+
+    const hours = newActivity.durationMinutes / 60;
+    updateBadgeProgress('badge-hours-10', hours);
+    updateBadgeProgress('badge-hours-50', hours);
+
+    return id;
   };
 
-  const saveStopwatchAsSession = (type: TrainingSession['type'], notes: string, intensity: number = 4) => {
-    if (stopwatchSeconds < 60) return;
-    const durationMinutes = Math.round(stopwatchSeconds / 60);
-
-    addTrainingSession({
-      date: new Date().toISOString(),
-      durationMinutes,
-      type,
-      focusDrills: ['Zaznamenaný tréning cez live stopky'],
-      racketId: activeRacketId,
-      intensity,
-      location: 'Tréningová hala',
-      notes: notes || 'Tréning zaznamenaný so stopkami SpinTrack.'
-    });
-
-    resetStopwatch();
+  const updateActivity = (id: string, updates: Partial<ActivityRecord>) => {
+    setActivities(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
+
+  const deleteActivity = (id: string) => {
+    setActivities(prev => prev.filter(a => a.id !== id));
+    setTrainingSessions(prev => prev.filter(s => s.id !== id));
+  };
+
+  // Stopwatch controls (empty stubs for compatibility)
+  const isStopwatchRunning = false;
+  const stopwatchSeconds = 0;
+  const startStopwatch = () => {};
+  const pauseStopwatch = () => {};
+  const resetStopwatch = () => {};
+  const saveStopwatchAsSession = () => {};
 
   // SSTZ Integration calls (supports allSeasons: true)
   const syncSstzPlayer = async (playerId: string, allSeasons: boolean = false): Promise<boolean> => {
@@ -786,7 +890,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Aggregate stats
-  const totalPlayHours = Math.round((trainingSessions.reduce((acc, s) => acc + s.durationMinutes / 60, 0) + matches.length * 0.5) * 10) / 10;
+  const totalPlayHours = Math.round((activities.reduce((acc, a) => acc + (a.durationMinutes || 0) / 60, 0) + matches.length * 0.5) * 10) / 10;
   const overallWins = matches.filter(m => m.result === 'WIN').length;
   const overallWinRate = matches.length > 0 ? Math.round((overallWins / matches.length) * 100) : 0;
 
@@ -797,8 +901,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rubbers,
       rackets,
       activeRacketId,
+      activities,
       trainingSessions,
       matches,
+      doublesMatches,
       opponents,
       sstzProfile,
       teamSchedule,
@@ -817,8 +923,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.rubbers) setRubbers(data.rubbers);
       if (data.rackets) setRackets(data.rackets);
       if (data.activeRacketId) setActiveRacketId(data.activeRacketId);
+      if (data.activities) setActivities(data.activities);
       if (data.trainingSessions) setTrainingSessions(data.trainingSessions);
       if (data.matches) setMatches(data.matches);
+      if (data.doublesMatches) setDoublesMatches(data.doublesMatches);
       if (data.opponents) setOpponents(data.opponents);
       if (data.sstzProfile) setSstzProfile(data.sstzProfile);
       if (data.teamSchedule) setTeamSchedule(data.teamSchedule);
@@ -838,8 +946,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRubbers(defaultRubbers);
     setRackets(defaultRackets);
     setActiveRacketId('racket-1');
+    setActivities(defaultActivities);
     setTrainingSessions(defaultSessions);
     setMatches(defaultMatches);
+    setDoublesMatches([]);
     setOpponents([]);
     setSstzProfile(null);
     setTeamSchedule([]);
@@ -865,6 +975,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateBlade,
         deleteBlade,
         getRubberHealth,
+        activities,
+        addActivity,
+        updateActivity,
+        deleteActivity,
         trainingSessions,
         addTrainingSession,
         deleteTrainingSession,
@@ -878,12 +992,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         opponents,
         updateOpponent,
         getOpponent,
-        isStopwatchRunning,
-        stopwatchSeconds,
-        startStopwatch,
-        pauseStopwatch,
-        resetStopwatch,
-        saveStopwatchAsSession,
         sstzProfile,
         teamSchedule,
         selectedLeagueSlug,

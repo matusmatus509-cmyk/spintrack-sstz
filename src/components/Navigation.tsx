@@ -4,7 +4,7 @@ import {
   Shield,
   Layers,
   Calendar,
-  BookOpen,
+  Activity,
   BarChart3,
   Target
 } from 'lucide-react';
@@ -23,7 +23,7 @@ export const Navigation: React.FC<NavigationProps> = ({ currentTab, onSelectTab 
     { id: 'opponents' as NavTab, label: 'Súperi', icon: Target, badge: 'Skauting' },
     { id: 'equipment' as NavTab, label: 'Výstroj', icon: Layers },
     { id: 'calendar' as NavTab, label: 'Kalendár', icon: Calendar },
-    { id: 'diary' as NavTab, label: 'Denník', icon: BookOpen },
+    { id: 'diary' as NavTab, label: 'Aktivita', icon: Activity },
     { id: 'stats' as NavTab, label: 'Štatistiky', icon: BarChart3 },
   ];
 

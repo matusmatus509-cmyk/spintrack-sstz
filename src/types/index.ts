@@ -47,6 +47,37 @@ export interface RacketSetup {
   dateCreated: string;
 }
 
+export type ActivityCategory = 'tréning' | 'priatelsky' | 'turnaj' | 'liga' | 'podujatie';
+export type ActivityVisibility = 'private' | 'friends' | 'community';
+export type ActivityOpponentRubber = 'in' | 'long_pips' | 'short_pips' | 'anti';
+
+export interface ActivityRecord {
+  id: string;
+  category: ActivityCategory;
+  date: string; // YYYY-MM-DD
+  durationMinutes: number;
+  focusDrills: string[];
+  customTags?: string[];
+  // Opponent / Players (optional)
+  opponentName?: string;
+  opponentId?: string;
+  opponentGrip?: 'left' | 'right';
+  opponentFhRubber?: ActivityOpponentRubber;
+  opponentBhRubber?: ActivityOpponentRubber;
+  matchScore?: string;
+  matchResult?: 'WIN' | 'LOSS';
+  photos?: string[];
+  // Details & Visibility
+  location: string;
+  publicNote?: string;
+  privateNote?: string;
+  visibility: ActivityVisibility;
+  addEquipmentWear: boolean;
+  racketId?: string;
+  intensity?: number;
+  createdAt: string;
+}
+
 export interface TrainingSession {
   id: string;
   date: string; // ISO date string
