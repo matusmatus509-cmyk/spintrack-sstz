@@ -995,7 +995,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (!snapRes.ok || cancelled) return;
         const data = await snapRes.json();
         if (cancelled) return;
-        applySstzPayload(data, true);
+        // `isAllSeasons` odvodíme z toho, koľko sezón snapshot naozaj obsahuje.
+        applySstzPayload(data, (data.seasons?.length || 0) > 1);
       } catch {
         /* offline režim bez snapshotu je v poriadku */
       }
