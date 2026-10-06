@@ -723,7 +723,223 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetStopwatch = () => {};
   const saveStopwatchAsSession = () => {};
 
-  // SSTZ Integration calls (supports allSeasons: true)
+  // SSTZ Integration calls (allSeasons = celá kariéra 2018/19 – 2026/27)
+  /**
+   * Z reálnych dát portálu poskladá profil a zapíše zápasy do denníka.
+   * Používa sa pre živý sync aj pre uložený snapshot (vtedy `source.mode === 'snapshot'`).
+   */
+  const applySstzPayload = (data: any, allSeasons: boolean): SSTZProfile => {
+      // Portál zverejňuje dátumy ako DD.MM.YYYY – v aplikácii používame YYYY-MM-DD.
+      const isoDate = (value?: string): string => {
+        const m = String(value || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+        return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : (value || '');
+      };
+
+      const warnings: string[] = [...(data.warnings || [])];
+      const source = data.source || null;
+      const isSnapshot = source?.mode === 'snapshot';
+      if (isSnapshot) {
+        warnings.unshift(
+          `Zobrazujú sa uložené dáta (snapshot) z ${new Date(source.fetchedAt || data.syncedAt).toLocaleString('sk-SK')}${
+            source.liveError ? ` – živé spojenie zlyhalo: ${source.liveError}` : ''
+          }. Nič sa nedopĺňa.`
+        );
+      }
+
+      const singles = Array.isArray(data.matches) ? data.matches : [];
+      const doubles = Array.isArray(data.doublesMatches) ? data.doublesMatches : [];
+      const clubName =
+        singles.find((m: any) => m.clubName)?.clubName ||
+        doubles.find((m: any) => m.clubName)?.clubName ||
+        undefined;
+
+      const profile: SSTZProfile = {
+        id: String(data.id),
+        name: data.name || `Hráč #${data.id}`,
+        association: source?.publisher || 'SSTZ',
+        clubName,
+        profileUrl: data.profileUrl || source?.profileUrl,
+        leagueSlug: selectedLeagueSlug,
+        isAllSeasons: allSeasons,
+        syncedSeasonsCount: data.seasons?.length || 1,
+        singlesStats: {
+          ...{ won: 0, played: 0, lost: 0, winRate: 0 },
+          ...(data.singlesStats || {}),
+        },
+        doublesStats: {
+          ...{ won: 0, played: 0, lost: 0, winRate: 0 },
+          ...(data.doublesStats || {}),
+        },
+        doublesMatches: [],
+        verification: data.verification,
+        seasons: data.seasons,
+        source,
+        warnings,
+        lastSync: source?.fetchedAt || data.syncedAt || new Date().toISOString(),
+      };
+
+      setSstzProfile(profile);
+
+      if (data.clubId) {
+        setSelectedClubId(data.clubId);
+      }
+
+      if (singles.length > 0) {
+        const importedMatches: MatchRecord[] = singles.map((m: any) => ({
+          id: `sstz-${m.id}`,
+          date: isoDate(m.date),
+          season: m.season || undefined,
+          competition: 'SSTZ Liga' as const,
+          leagueName: m.competitionLabel || m.competition || undefined,
+          round: m.round || undefined,
+          stage: m.stage || undefined,
+          duelLabel: m.duelLabel || undefined,
+          teamHome: m.homeTeam || undefined,
+          teamAway: m.awayTeam || undefined,
+          teamScore: m.teamScore || undefined,
+          playerIsHome: typeof m.playerIsHome === 'boolean' ? m.playerIsHome : undefined,
+          clubName: m.clubName || undefined,
+          opponentName: m.opponentName || '—',
+          opponentId: m.opponentId || undefined,
+          result: m.result === 'WIN' ? 'WIN' : m.result === 'LOSS' ? 'LOSS' : null,
+          score: m.score || '—',
+          sets: m.sets || [],
+          officialSets: m.sets || [],
+          setDetails: m.setDetails || [],
+          walkover: !!m.walkover,
+          totalPointsWon: m.totalPointsWon || 0,
+          totalPointsLost: m.totalPointsLost || 0,
+          racketId: activeRacketId,
+          sstzMatchId: m.id,
+          source: 'SSTZ' as const,
+          profileUrl: m.profileUrl,
+          notes:
+            `Importované z SSTZ${m.homeTeam && m.awayTeam ? ` (${m.homeTeam} – ${m.awayTeam}${m.teamScore ? ` ${m.teamScore}` : ''})` : ''}` +
+            (m.duelLabel ? `, duel ${m.duelLabel}` : ''),
+        }));
+
+        setMatches(prev => {
+          const existingIds = new Set(prev.map(p => p.sstzMatchId).filter(Boolean));
+          const newToAdd = importedMatches.filter(im => !existingIds.has(im.sstzMatchId));
+          const combined = [...newToAdd, ...prev];
+          setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
+          return combined;
+        });
+      }
+
+      if (doubles.length > 0) {
+        const importedDoubles: DoublesMatchRecord[] = doubles.map((dm: any) => {
+          const opponents = Array.isArray(dm.opponents) ? dm.opponents : [];
+          return {
+            id: `sstz-${dm.id}`,
+            teamMatchId: dm.sstzMatchId || undefined,
+            season: dm.season || undefined,
+            leagueName: dm.competitionLabel || dm.competition || undefined,
+            date: isoDate(dm.date),
+            round: dm.round || undefined,
+            teams: dm.homeTeam && dm.awayTeam ? `${dm.homeTeam} – ${dm.awayTeam}` : undefined,
+            partnerName: dm.partnerName || '—',
+            partnerId: dm.partnerId || undefined,
+            opponentPair: opponents.map((o: any) => o.name).join(' / ') || dm.opponentName || '—',
+            opponents: opponents.map((o: any) => ({ id: String(o.id), name: o.name })),
+            result: dm.result === 'WIN' ? 'WIN' : dm.result === 'LOSS' ? 'LOSS' : null,
+            score: dm.score || '—',
+            sets: dm.sets || [],
+            setDetails: dm.setDetails || [],
+            totalPointsWon: dm.totalPointsWon || 0,
+            totalPointsLost: dm.totalPointsLost || 0,
+            source: 'SSTZ' as const,
+            type: 'doubles' as const,
+          };
+        });
+        setDoublesMatches(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          const newToAdd = importedDoubles.filter(d => !existingIds.has(d.id));
+          return [...newToAdd, ...prev];
+        });
+      }
+
+    setSstzProfile(profile);
+    if (data.clubId) setSelectedClubId(data.clubId);
+
+    if (singles.length > 0) {
+      const importedMatches: MatchRecord[] = singles.map((m: any) => ({
+        id: `sstz-${m.id}`,
+        date: isoDate(m.date),
+        season: m.season || undefined,
+        competition: 'SSTZ Liga' as const,
+        leagueName: m.competitionLabel || m.competition || undefined,
+        round: m.round || undefined,
+        stage: m.stage || undefined,
+        duelLabel: m.duelLabel || undefined,
+        teamHome: m.homeTeam || undefined,
+        teamAway: m.awayTeam || undefined,
+        teamScore: m.teamScore || undefined,
+        playerIsHome: typeof m.playerIsHome === 'boolean' ? m.playerIsHome : undefined,
+        clubName: m.clubName || undefined,
+        opponentName: m.opponentName || '—',
+        opponentId: m.opponentId || undefined,
+        result: m.result === 'WIN' ? 'WIN' : m.result === 'LOSS' ? 'LOSS' : null,
+        score: m.score || '—',
+        sets: m.sets || [],
+        officialSets: m.sets || [],
+        setDetails: m.setDetails || [],
+        walkover: !!m.walkover,
+        totalPointsWon: m.totalPointsWon || 0,
+        totalPointsLost: m.totalPointsLost || 0,
+        racketId: activeRacketId,
+        sstzMatchId: m.id,
+        source: 'SSTZ' as const,
+        profileUrl: m.profileUrl,
+        notes:
+          `Importované z SSTZ${m.homeTeam && m.awayTeam ? ` (${m.homeTeam} – ${m.awayTeam}${m.teamScore ? ` ${m.teamScore}` : ''})` : ''}` +
+          (m.duelLabel ? `, duel ${m.duelLabel}` : ''),
+      }));
+
+      setMatches(prev => {
+        const existingIds = new Set(prev.map(p => p.sstzMatchId).filter(Boolean));
+        const newToAdd = importedMatches.filter(im => !existingIds.has(im.sstzMatchId));
+        const combined = [...newToAdd, ...prev];
+        setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
+        return combined;
+      });
+    }
+
+    if (doubles.length > 0) {
+      const importedDoubles: DoublesMatchRecord[] = doubles.map((dm: any) => {
+        const opponents = Array.isArray(dm.opponents) ? dm.opponents : [];
+        return {
+          id: `sstz-${dm.id}`,
+          teamMatchId: dm.sstzMatchId || undefined,
+          season: dm.season || undefined,
+          leagueName: dm.competitionLabel || dm.competition || undefined,
+          date: isoDate(dm.date),
+          round: dm.round || undefined,
+          teams: dm.homeTeam && dm.awayTeam ? `${dm.homeTeam} – ${dm.awayTeam}` : undefined,
+          partnerName: dm.partnerName || '—',
+          partnerId: dm.partnerId || undefined,
+          opponentPair: opponents.map((o: any) => o.name).join(' / ') || dm.opponentName || '—',
+          opponents: opponents.map((o: any) => ({ id: String(o.id), name: o.name })),
+          result: dm.result === 'WIN' ? 'WIN' : dm.result === 'LOSS' ? 'LOSS' : null,
+          score: dm.score || '—',
+          sets: dm.sets || [],
+          setDetails: dm.setDetails || [],
+          totalPointsWon: dm.totalPointsWon || 0,
+          totalPointsLost: dm.totalPointsLost || 0,
+          source: 'SSTZ' as const,
+          type: 'doubles' as const,
+        };
+      });
+      setDoublesMatches(prev => {
+        const existingIds = new Set(prev.map(p => p.id));
+        const newToAdd = importedDoubles.filter(d => !existingIds.has(d.id));
+        return [...newToAdd, ...prev];
+      });
+    }
+
+    return profile;
+  };
+
   const syncSstzPlayer = async (playerId: string, allSeasons: boolean = false): Promise<boolean> => {
     setIsSstzLoading(true);
     setSstzError(null);
@@ -733,79 +949,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : `/api/sstz/player/${playerId}`;
       const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`);
+        const payload = await res.json().catch(() => null);
+        throw new Error(
+          payload?.error ? `SSTZ: ${payload.error}` : `Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`
+        );
       }
       const data = await res.json();
-
-      const profile: SSTZProfile = {
-        id: data.id,
-        name: data.name,
-        association: data.association,
-        clubName: data.clubName,
-        clubId: data.clubId,
-        leagueSlug: selectedLeagueSlug,
-        isAllSeasons: !!data.isAllSeasons,
-        syncedSeasonsCount: data.syncedSeasonsCount || 1,
-        singlesStats: data.singlesStats || data.singles || { won: 0, played: 0, lost: 0, winRate: 0 },
-        doublesStats: data.doublesStats || data.doubles || { won: 0, played: 0, lost: 0, winRate: 0 },
-        lastSync: new Date().toISOString()
-      };
-
-      setSstzProfile(profile);
-
-      if (data.clubId) {
-        setSelectedClubId(data.clubId);
+      const profile = applySstzPayload(data, allSeasons);
+      try {
+        localStorage.setItem('spintrack_sstz_player_id', String(profile.id));
+      } catch {
+        /* localStorage môže byť nedostupný – nie je kritický */
       }
-
-      if (data.matches && data.matches.length > 0) {
-        const importedMatches: MatchRecord[] = data.matches.map((m: any) => ({
-          id: `sstz-${m.id}`,
-          date: m.date || new Date().toISOString().split('T')[0],
-          season: m.season || '2026/27',
-          competition: 'SSTZ Liga',
-          round: m.round,
-          teamHome: m.teams ? m.teams.split('-')[0]?.trim() : '',
-          teamAway: m.teams ? m.teams.split('-')[1]?.trim() : '',
-          opponentName: m.opponentName || 'Neznámy súper',
-          opponentId: m.opponentId,
-          result: m.result === 'WIN' ? 'WIN' : 'LOSS',
-          score: m.score || '3:1',
-          sets: m.sets || [],
-          setDetails: m.setDetails || [],
-          totalPointsWon: m.totalPointsWon || 0,
-          totalPointsLost: m.totalPointsLost || 0,
-          racketId: activeRacketId,
-          sstzMatchId: m.id,
-          source: 'SSTZ',
-          notes: `Importované z SSTZ (${m.teams || ''})`,
-          tacticsNote: ''
-        }));
-
-        setMatches(prev => {
-          const existingIds = new Set(prev.map(p => p.sstzMatchId).filter(Boolean));
-          const newToAdd = importedMatches.filter(im => !existingIds.has(im.sstzMatchId));
-          const combined = [...newToAdd, ...prev];
-
-          // Auto-update opponents directory from pure singles matches
-          setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
-
-          return combined;
-        });
-      }
-
-      if (data.doublesMatches && data.doublesMatches.length > 0) {
-        const importedDoubles: DoublesMatchRecord[] = data.doublesMatches.map((dm: any) => ({
-          ...dm,
-          source: 'SSTZ',
-          type: 'doubles'
-        }));
-        setDoublesMatches(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newToAdd = importedDoubles.filter(d => !existingIds.has(d.id));
-          return [...newToAdd, ...prev];
-        });
-      }
-
       updateBadgeProgress('badge-sstz-connected', 1);
       setIsSstzLoading(false);
       return true;
@@ -816,6 +971,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
   };
+
+  // Pri štarte skús načítať uložený snapshot (aby aplikácia fungovala aj bez
+  // prístupu na portál). Žiadne dáta sa nedopĺňajú – buď je snapshot, alebo nie.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const listRes = await fetch('/api/sstz/snapshots');
+        if (!listRes.ok) return;
+        const list = await listRes.json();
+        const items = Array.isArray(list) ? list : list?.snapshots || [];
+        if (!items.length || cancelled) return;
+        let stored: string | null = null;
+        try {
+          stored = localStorage.getItem('spintrack_sstz_player_id');
+        } catch {
+          stored = null;
+        }
+        const pick = items.find((s: any) => String(s.id) === String(stored)) || items[0];
+        if (!pick) return;
+        const snapRes = await fetch(`/api/sstz/snapshot/${pick.id}`);
+        if (!snapRes.ok || cancelled) return;
+        const data = await snapRes.json();
+        if (cancelled) return;
+        applySstzPayload(data, true);
+      } catch {
+        /* offline režim bez snapshotu je v poriadku */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const syncTeamSchedule = async (leagueSlug: string, clubId?: string): Promise<boolean> => {
     setIsSstzLoading(true);

@@ -9,7 +9,11 @@
     "vite": "vite",
     "server": "node server/index.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "sstz:sync": "node scripts/sstz-sync.mjs",
+    "sstz:check": "node scripts/sstz-check.mjs",
+    "sstz:probe": "node scripts/sstz-probe.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
