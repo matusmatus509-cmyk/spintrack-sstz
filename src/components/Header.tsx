@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Play, Pause, RotateCcw, ShieldCheck, AlertCircle, RefreshCw, Settings, Trophy } from 'lucide-react';
+import { PwaInstallPrompt } from './PwaInstallPrompt';
+import { Play, Pause, RotateCcw, ShieldCheck, AlertCircle, Settings } from 'lucide-react';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -18,8 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
     pauseStopwatch,
     resetStopwatch,
     saveStopwatchAsSession,
-    sstzProfile,
-    isSstzLoading
+    sstzProfile
   } = useApp();
 
   const formatTimer = (totalSecs: number) => {
@@ -35,23 +35,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
   const bhHealth = bhRubber ? getRubberHealth(bhRubber) : null;
 
   return (
-    <header className="glass-panel" style={{
-      margin: '12px 16px 0 16px',
-      padding: '12px 20px',
+    <header className="glass-panel app-header" style={{
+      margin: '8px 12px 0 12px',
+      padding: '10px 16px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '16px',
+      gap: '12px',
       position: 'sticky',
-      top: '12px',
-      zIndex: 40
+      top: '8px',
+      zIndex: 40,
+      flexWrap: 'wrap'
     }}>
       {/* Brand & Active Racket */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '12px',
+          width: '38px',
+          height: '38px',
+          borderRadius: '11px',
           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           display: 'flex',
           alignItems: 'center',
@@ -59,28 +60,31 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
           boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
           color: '#ffffff',
           fontWeight: 800,
-          fontSize: '1.2rem',
-          letterSpacing: '-0.02em'
+          fontSize: '1.1rem',
+          letterSpacing: '-0.02em',
+          flexShrink: 0
         }}>
           ST
         </div>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
               SpinTrack <span style={{ color: '#10b981' }}>SSTZ</span>
             </span>
             {sstzProfile ? (
-              <span className="badge-pill badge-green" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                <ShieldCheck size={12} /> SSTZ Overené
+              <span className="badge-pill badge-green d-none-xs" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                <ShieldCheck size={11} /> Overené
               </span>
             ) : (
-              <span className="badge-pill badge-amber" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                <AlertCircle size={12} /> SSTZ Neaktívne
+              <span className="badge-pill badge-amber d-none-xs" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                <AlertCircle size={11} /> Offline
               </span>
             )}
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Raketa: <strong style={{ color: 'var(--text-main)' }}>{activeRacket?.name || 'Nevybraná'}</strong></span>
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeRacket?.name || 'Raketa'}
+            </span>
             {fhHealth && (
               <span style={{ color: fhHealth.percent < 40 ? '#f87171' : '#34d399', fontWeight: 600 }}>
                 • FH: {fhHealth.percent}%
@@ -96,23 +100,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
       </div>
 
       {/* Center / Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+        {/* PWA Download / Install Button */}
+        <PwaInstallPrompt compact />
+
         {/* Live Stopwatch Mini-bar */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           background: 'rgba(10, 13, 20, 0.65)',
           border: '1px solid var(--border-subtle)',
-          padding: '6px 12px',
+          padding: '5px 10px',
           borderRadius: 'var(--radius-full)'
         }}>
           <span style={{
             fontFamily: 'var(--font-mono)',
             fontWeight: 700,
-            fontSize: '0.95rem',
+            fontSize: '0.88rem',
             color: isStopwatchRunning ? '#10b981' : 'var(--text-main)',
-            minWidth: '50px',
+            minWidth: '42px',
             textAlign: 'center'
           }}>
             {formatTimer(stopwatchSeconds)}
@@ -127,15 +134,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
                 border: '1px solid rgba(239, 68, 68, 0.4)',
                 color: '#f87171',
                 borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+                width: '26px',
+                height: '26px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer'
               }}
             >
-              <Pause size={14} />
+              <Pause size={13} />
             </button>
           ) : (
             <button
@@ -146,15 +153,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
                 border: '1px solid rgba(16, 185, 129, 0.4)',
                 color: '#34d399',
                 borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+                width: '26px',
+                height: '26px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer'
               }}
             >
-              <Play size={14} style={{ marginLeft: '2px' }} />
+              <Play size={13} style={{ marginLeft: '1px' }} />
             </button>
           )}
 
@@ -168,8 +175,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
                   color: '#fff',
                   border: 'none',
                   borderRadius: 'var(--radius-full)',
-                  padding: '2px 8px',
-                  fontSize: '0.7rem',
+                  padding: '2px 7px',
+                  fontSize: '0.65rem',
                   fontWeight: 700,
                   cursor: 'pointer'
                 }}
@@ -188,17 +195,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
                   alignItems: 'center'
                 }}
               >
-                <RotateCcw size={13} />
+                <RotateCcw size={12} />
               </button>
             </>
           )}
         </div>
 
-        {/* Quick Log Action */}
+        {/* Quick Log Action (Visible on medium+ screens, icon on xs) */}
         <button
           onClick={onOpenQuickLog}
-          className="btn-primary"
-          style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+          className="btn-primary d-none-xs"
+          style={{ padding: '7px 12px', fontSize: '0.8rem' }}
         >
           + Tréning
         </button>
@@ -211,19 +218,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenQuickLog }
             background: 'var(--bg-card)',
             border: '1px solid var(--border-subtle)',
             color: 'var(--text-muted)',
-            width: '38px',
-            height: '38px',
+            width: '36px',
+            height: '36px',
             borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            transition: 'color 0.2s'
+            transition: 'color 0.2s',
+            flexShrink: 0
           }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--text-main)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
-          <Settings size={18} />
+          <Settings size={17} />
         </button>
       </div>
     </header>

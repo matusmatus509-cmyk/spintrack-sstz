@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Navigation, NavTab } from './components/Navigation';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { DashboardView } from './views/DashboardView';
 import { SstzHubView } from './views/SstzHubView';
 import { OpponentsView } from './views/OpponentsView';
@@ -69,6 +70,9 @@ const AppContent: React.FC = () => {
         onOpenQuickLog={() => setShowQuickLog(true)}
       />
 
+      {/* PWA Install Banner */}
+      <PwaInstallPrompt />
+
       {/* Main Container */}
       <div className="app-container">
         {/* Navigation (Sidebar desktop + bottom mobile) */}
@@ -109,21 +113,24 @@ const AppContent: React.FC = () => {
 
       {/* Quick Log Modal */}
       {showQuickLog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 150,
-          padding: '20px'
-        }}>
-          <div className="glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '24px' }}>
+        <div
+          className="mobile-sheet-container"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 150,
+            padding: '20px'
+          }}
+        >
+          <div className="glass-panel mobile-sheet-content" style={{ maxWidth: '440px', width: '100%', padding: '24px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '14px' }}>
               Rýchly záznam tréningu
             </h3>
@@ -176,21 +183,24 @@ const AppContent: React.FC = () => {
 
       {/* Quick Match Modal */}
       {showQuickMatch && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 150,
-          padding: '20px'
-        }}>
-          <div className="glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '24px' }}>
+        <div
+          className="mobile-sheet-container"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 150,
+            padding: '20px'
+          }}
+        >
+          <div className="glass-panel mobile-sheet-content" style={{ maxWidth: '440px', width: '100%', padding: '24px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '14px' }}>
               Rýchly záznam zápasu
             </h3>

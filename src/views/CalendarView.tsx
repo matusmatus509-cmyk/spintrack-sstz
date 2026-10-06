@@ -285,21 +285,24 @@ export const CalendarView: React.FC = () => {
 
       {/* Modal: Zaznamenať do denníka */}
       {showLogModal && selectedMatch && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '20px'
-        }}>
-          <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div
+          className="mobile-sheet-container"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: '20px'
+          }}
+        >
+          <div className="glass-panel mobile-sheet-content" style={{ maxWidth: '480px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Zapísať ligový duel do denníka</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               {selectedMatch.round} • {selectedMatch.homeTeam} vs {selectedMatch.awayTeam} ({selectedMatch.dateTime})

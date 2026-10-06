@@ -3,20 +3,28 @@
   "short_name": "SpinTrack",
   "description": "Sledovanie stolnotenisového vybavenia, poťahov a dreva s priamym prepojením na SSTZ výsledky, ligy a rozpis zápasov.",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#0a0d14",
   "theme_color": "#0a0d14",
   "orientation": "portrait",
+  "categories": ["sports", "fitness", "utilities"],
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23121824'/><circle cx='96' cy='96' r='70' fill='%2310b981'/><path d='M96 26a70 70 0 0 1 70 70c0 38.66-31.34 70-70 70S26 134.66 26 96' fill='%23ef4444'/><circle cx='96' cy='96' r='16' fill='%23ffffff'/></svg>",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23121824'/><circle cx='256' cy='256' r='180' fill='%2310b981'/><path d='M256 76a180 180 0 0 1 180 180c0 99.41-80.59 180-180 180S76 355.41 76 256' fill='%23ef4444'/><circle cx='256' cy='256' r='40' fill='%23ffffff'/></svg>",
+      "src": "/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

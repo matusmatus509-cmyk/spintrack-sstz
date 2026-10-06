@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="bladeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <linearGradient id="redRubberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#b91c1c" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#10b981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- App Background with rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#334155" stroke-width="2" opacity="0.4" />
+
+  <!-- Table Tennis Racket -->
+  <g transform="translate(60, 60)" filter="url(#glow)">
+    <!-- Handle -->
+    <path d="M190 280 L290 380 C296 386 296 396 290 402 L282 410 C276 416 266 416 260 410 L160 310 Z" fill="url(#handleGrad)" stroke="#78350f" stroke-width="4" stroke-linejoin="round" />
+    <path d="M225 315 L260 350" stroke="#fde68a" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+    <path d="M210 330 L245 365" stroke="#fde68a" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- Blade Head Outer Rim -->
+    <ellipse cx="160" cy="160" rx="140" ry="148" fill="#1e293b" stroke="#475569" stroke-width="6" />
+
+    <!-- Rubber Surface Left (Green/Spin) -->
+    <path d="M160 12 A140 148 0 0 0 160 308 Z" fill="url(#bladeGrad)" />
+
+    <!-- Rubber Surface Right (Red/Power) -->
+    <path d="M160 12 A140 148 0 0 1 160 308 Z" fill="url(#redRubberGrad)" />
+
+    <!-- Center Line highlight -->
+    <line x1="160" y1="12" x2="160" y2="308" stroke="#ffffff" stroke-width="3" opacity="0.25" />
+
+    <!-- Ping Pong Ball with motion trail -->
+    <circle cx="310" cy="90" r="32" fill="#ffffff" filter="drop-shadow(0 4px 12px rgba(255,255,255,0.6))" />
+    <circle cx="310" cy="90" r="30" fill="#f8fafc" />
+    <circle cx="304" cy="84" r="10" fill="#ffffff" opacity="0.8" />
+
+    <!-- Ball motion curves -->
+    <path d="M260 140 Q 280 120 300 115" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+    <path d="M230 160 Q 260 145 285 135" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.5" />
+  </g>
+</svg>

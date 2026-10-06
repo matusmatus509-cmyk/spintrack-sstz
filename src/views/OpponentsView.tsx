@@ -617,31 +617,37 @@ export const OpponentsView: React.FC = () => {
 
       {/* OPPONENT DETAIL & SCOUTING MODAL */}
       {(selectedOpponent || isNewOpponentModal) && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '16px'
-        }}>
-          <div className="glass-panel" style={{
-            width: '100%',
-            maxWidth: '820px',
-            maxHeight: '92vh',
-            overflowY: 'auto',
-            padding: '24px',
-            borderRadius: 'var(--radius-xl)',
-            background: 'var(--bg-main)',
-            border: '1px solid var(--border-subtle)',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)'
-          }}>
+        <div
+          className="mobile-sheet-container"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: '16px'
+          }}
+        >
+          <div
+            className="glass-panel mobile-sheet-content"
+            style={{
+              width: '100%',
+              maxWidth: '820px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              padding: '24px',
+              borderRadius: 'var(--radius-xl)',
+              background: 'var(--bg-main)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)'
+            }}
+          >
             
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>

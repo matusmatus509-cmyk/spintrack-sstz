@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { PwaInstallPrompt } from './PwaInstallPrompt';
 import {
   X,
   Download,
@@ -8,7 +9,8 @@ import {
   ShieldCheck,
   Check,
   Copy,
-  Info
+  Info,
+  Smartphone
 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -64,30 +66,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 200,
-      padding: '20px'
-    }}>
-      <div className="glass-panel" style={{
-        maxWidth: '520px',
-        width: '100%',
-        padding: '24px',
+    <div
+      className="mobile-sheet-container"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        maxHeight: '90vh',
-        overflowY: 'auto'
-      }}>
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 200,
+        padding: '20px'
+      }}
+    >
+      <div
+        className="glass-panel mobile-sheet-content"
+        style={{
+          maxWidth: '520px',
+          width: '100%',
+          padding: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '18px',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Nastavenia & Záloha</h3>
@@ -103,6 +111,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           >
             <X size={20} />
           </button>
+        </div>
+
+        {/* PWA Mobile App Section */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
+          borderRadius: 'var(--radius-md)',
+          padding: '16px',
+          border: '1px solid rgba(14, 165, 233, 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8' }}>
+            <Smartphone size={16} /> Mobilná webová aplikácia (PWA)
+          </h4>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Nainštaluj si SpinTrack priamo na plochu smartfónu. Aplikácia sa otvorí bez líšt prehliadača v samostatnom okne a funguje aj bez internetového pripojenia.
+          </p>
+          <div>
+            <PwaInstallPrompt compact />
+          </div>
         </div>
 
         {/* Export Section */}
