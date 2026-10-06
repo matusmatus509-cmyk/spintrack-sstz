@@ -269,6 +269,107 @@ export const SstzHubView: React.FC = () => {
             </div>
           </div>
 
+          {/* Pravdivosť dát: zdroj, overenie, sezóny, upozornenia */}
+          {(() => {
+            const verification = sstzProfile.verification;
+            const source = sstzProfile.source;
+            const warnings = sstzProfile.warnings || [];
+            const verified = verification?.status === 'verified';
+            const checks = verification?.seasons?.flatMap(s => s.checks.map(c => ({ ...c, season: s.label }))) || [];
+            const failed = checks.filter(c => !c.ok);
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px',
+                  fontSize: '0.78rem', color: 'var(--text-muted)'
+                }}>
+                  <span className="badge-pill" style={{
+                    background: verified ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    color: verified ? '#34d399' : '#fbbf24',
+                    border: `1px solid ${verified ? 'rgba(16,185,129,0.35)' : 'rgba(245,158,11,0.35)'}`,
+                    fontSize: '0.7rem', padding: '2px 8px'
+                  }}>
+                    {verified ? <ShieldCheck size={12} /> : <AlertCircle size={12} />}
+                    {verified
+                      ? `Overené voči oficiálnym súhrnom (${checks.length} kontrol)`
+                      : 'NEPOTVRDENÉ – údaje sa nezhodujú s oficiálnym súhrnom'}
+                  </span>
+                  <span>
+                    Zdroj: <strong>{(source?.name || 'stolnytenis.info')}</strong>
+                    {source?.publisher ? ` • ${source.publisher}` : ''}
+                    {source?.fetchedAt ? ` • načítané ${new Date(source.fetchedAt).toLocaleString('sk-SK')}` : ''}
+                    {source?.mode === 'snapshot' ? ' • SNAPSHOT (uložené dáta)' : ' • ŽIVÉ dáta'}
+                  </span>
+                  {(source?.profileUrl || sstzProfile.profileUrl) && (
+                    <a href={source?.profileUrl || sstzProfile.profileUrl} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>
+                      overiť na portáli <ExternalLink size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
+                    </a>
+                  )}
+                </div>
+
+                {failed.length > 0 && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                    background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                    fontSize: '0.8rem', color: '#fca5a5'
+                  }}>
+                    <strong>Nezhody s oficiálnym súhrnom ({(failed[0] as any).season}):</strong>
+                    <ul style={{ margin: '6px 0 0 18px' }}>
+                      {failed.slice(0, 5).map((c, i) => (
+                        <li key={i}>
+                          {c.name}: portál uvádza <strong>{c.expected ?? c.official ?? '—'}</strong>, aplikácia načítala <strong>{c.actual ?? c.computed ?? '—'}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {warnings.length > 0 && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                    background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.3)',
+                    fontSize: '0.78rem', color: '#fcd34d'
+                  }}>
+                    <strong>Poznámky k synchronizácii:</strong>
+                    <ul style={{ margin: '6px 0 0 18px' }}>
+                      {warnings.slice(0, 6).map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {(sstzProfile.seasons || []).length > 0 && (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                      <thead>
+                        <tr style={{ color: 'var(--text-dim)', textAlign: 'left' }}>
+                          <th style={{ padding: '4px 8px' }}>Sezóna</th>
+                          <th style={{ padding: '4px 8px' }}>Súťaže / družstvá</th>
+                          <th style={{ padding: '4px 8px' }}>Duelov</th>
+                          <th style={{ padding: '4px 8px' }}>Overenie</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(sstzProfile.seasons || []).map((season, i) => (
+                          <tr key={i} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '4px 8px', fontWeight: 700 }}>{season.label}</td>
+                            <td style={{ padding: '4px 8px', color: 'var(--text-muted)' }}>
+                              {(season.competitions || []).filter(c => c && c !== 'celý profil').join(', ') || '—'}
+                            </td>
+                            <td style={{ padding: '4px 8px' }}>{season.matches}</td>
+                            <td style={{ padding: '4px 8px', color: season.verification?.verified ? '#34d399' : '#fbbf24' }}>
+                              {season.verification?.verified ? '✓ overené' : 'nepotvrdené'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Official SSTZ Metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>

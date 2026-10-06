@@ -43,6 +43,30 @@ npm run dev
   - Výpočet úspešnosti a indexu výkonnosti pre každú tvoju zostavu.
 
 ### 2. 🇸🇰 Prepojenie so Slovenským zväzom (SSTZ / StolnyTenis.info)
+
+> **Garancia pravdivosti:** aplikácia nikdy nezobrazuje vymyslené zápasy ani skóre.
+> Každý duel, set, súper a tím pochádza výhradne z oficiálneho portálu
+> `stolnytenis.info` a výsledok sa krížovo overuje voči oficiálnym súhrnom
+> „Úspešnosť – Dvojhry/Štvorhry". Ak sa údaje nezhodujú, aplikácia to
+> **prizná** (červený odznak „nepotvrdené"), nič „nedopočíta".
+
+#### Ako dostať do aplikácie svoje reálne zápasy
+
+Server potrebuje prístup na internet (portál je dostupný len odtiaľ). Postup:
+
+```bash
+npm install                     # raz
+npm run sstz:probe -- 5723      # diagnostika: zistí, ako portál prepína sezónu
+npm run sstz:sync -- 5723 --all # stiahne VŠETKY sezóny (2018/19 – 2026/27) a uloží snapshot
+npm run dev                     # spustí aplikáciu; tá si snapshot načíta
+```
+
+Snapshot sa ukladá do `data/sstz/<id>.json` – dá sa commitnúť do repozitára,
+takže aplikácia funguje aj na stroji bez prístupu na portál (vtedy údaje
+zobrazuje ako „snapshot" s dátumom stiahnutia).
+
+CLI skončí s návratovým kódom `0` len vtedy, keď všetky stiahnuté sezóny
+prejdú overením voči oficiálnym súhrnom.
 - **Všetkých 126 slovenských líg z 39 regiónov:**
   - Republikové súťaže SSTZ (Extraliga, 1. liga Západ/Východ, mládež), krajské zväzy (KSTZ Bratislava, Trnava, Nitra, Trenčín, Banská Bystrica, Žilina, VSSTZ) aj okresné/oblastné zväzy (ObSTZ / OSTZ).
   - Živé oficiálne ligové tabuľky (poradie, Z, V, R, P, skóre, body) a kompletné rozpisy zápasov s prepojením na oficiálny zápis.

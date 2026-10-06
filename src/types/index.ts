@@ -96,6 +96,13 @@ export interface SetDetail {
   opponentPoints: number;
   display: string; // e.g. "11:8"
   won: boolean;
+  /**
+   * Oficiálna hodnota setu presne tak, ako je na portáli (napr. "+4", "-10").
+   * Portál zverejňuje iba rozdiel loptičiek, preto sa skóre odvodzuje –
+   * a odvodené hodnoty sú vždy označené `derived: true`.
+   */
+  officialValue?: string;
+  derived?: boolean;
 }
 
 export interface MatchRecord {
@@ -120,6 +127,16 @@ export interface MatchRecord {
   tacticsNote?: string; // čo na neho fungovalo / čo si vedel hrať
   sstzMatchId?: string;
   source?: 'SSTZ' | 'manual';
+  // --- polia reálneho zápisu z portálu (SSTZ) ---
+  stage?: string;            // napr. "Základná čast + odveta"
+  duelLabel?: string;        // napr. "A-X"
+  teamScore?: string;        // skóre tímového stretnutia, napr. "5:13"
+  playerIsHome?: boolean;    // či hráč hral v prvom (domácom) tíme
+  walkover?: boolean;        // kontumácia – vtedy sa sety neuvádzajú
+  competitionLabel?: string; // napr. "2. liga ŠKST Bratislava B"
+  clubName?: string;         // klub/team hráča podľa portálu
+  officialSets?: string[];   // ±N hodnoty setov presne z portálu
+  profileUrl?: string;       // odkaz na oficiálny profil
 }
 
 export type Handedness = 'right' | 'left' | 'unknown';
@@ -177,6 +194,37 @@ export interface DoublesPartnerStat {
   matches: DoublesMatchRecord[];
 }
 
+export interface SstzVerificationCheck {
+  name: string;
+  ok: boolean;
+  /** hodnota zverejnená portálom (napr. „10 z 12") */
+  expected?: string;
+  /** čo aplikácia naozaj načítala z portálu */
+  actual?: string;
+  official?: string;
+  computed?: string;
+  detail?: string;
+}
+
+export interface SstzSeasonReport {
+  seasonId: string | null;
+  label: string;
+  competitions: string[];
+  matches: number;
+  verification: { verified: boolean; checks: SstzVerificationCheck[] };
+}
+
+export interface SstzSource {
+  name: string;              // "stolnytenis.info"
+  publisher: string;         // "SSTZ"
+  profileUrl: string;
+  fetchedAt: string;
+  live: boolean;
+  mode?: 'live' | 'snapshot';
+  liveError?: string;
+  note?: string;
+}
+
 export interface SSTZProfile {
   id: string;
   name: string;
@@ -184,6 +232,7 @@ export interface SSTZProfile {
   clubName?: string;
   clubId?: string;
   leagueSlug?: string;
+  profileUrl?: string;
   isAllSeasons?: boolean;
   syncedSeasonsCount?: number;
   singlesStats: {
@@ -193,6 +242,13 @@ export interface SSTZProfile {
     winRate: number;
     home?: { won: number; total: number };
     away?: { won: number; total: number };
+    /** oficiálne súčty z portálu („Celkom N z M"), podľa inštancie tímu */
+    official?: {
+      competition?: string | null;
+      season?: string | null;
+      singles?: { played: number | null; won: number | null; home?: any; away?: any };
+      doubles?: { played: number | null; won: number | null; home?: any; away?: any };
+    }[];
   };
   doublesStats: {
     won: number;
@@ -201,6 +257,15 @@ export interface SSTZProfile {
     winRate: number;
   };
   doublesMatches?: DoublesMatchRecord[];
+  /** Krížové overenie voči oficiálnym súhrnom – bez neho sa nič nezobrazuje ako „overené". */
+  verification?: {
+    status: 'verified' | 'unverified';
+    allSeasonsVerified?: boolean;
+    seasons: { label: string; verified: boolean; matches: number; checks: SstzVerificationCheck[] }[];
+  };
+  seasons?: SstzSeasonReport[];
+  source?: SstzSource;
+  warnings?: string[];
   lastSync: string;
 }
 

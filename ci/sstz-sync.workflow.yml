@@ -1,0 +1,64 @@
+# SpinTrack SSTZ – voliteľná synchronizácia z GitHub Actions.
+#
+# PREČO: portál stolnytenis.info je dostupný len z prostredia s otvoreným
+# internetom. Ak aplikáciu prevádzkuješ na serveri bez prístupu na portál
+# (alebo chceš dáta aktualizovať pravidelne), skopíruj tento súbor do
+# `.github/workflows/sstz-sync.yml` priamo na GitHube
+# (Add file → Create new file → názov `.github/workflows/sstz-sync.yml` → vlož obsah).
+#
+# Čo robí:
+#   1. stiahne reálne zápasy zvoleného hráča z portálu (vrátane histórie),
+#   2. overí ich voči oficiálnym súhrnom na portáli,
+#   3. uloží snapshot do `data/sstz/<id>.json` a commitne ho.
+# Nič sa nevymýšľa – skript skončí chybou, ak sa overenie nedá spraviť.
+#
+# Spustenie: Actions → SSTZ Sync → Run workflow → zadaj ID hráča (napr. 5723).
+
+name: SSTZ Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      player:
+        description: 'ID hráča alebo URL profilu (napr. 5723 alebo https://www.stolnytenis.info/hrac/5723)'
+        required: true
+      all_seasons:
+        description: 'Stiahnuť všetky sezóny (2018/19 – 2026/27)?'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Probe portal (diagnostics)
+        continue-on-error: true
+        run: node scripts/sstz-probe.mjs "${{ inputs.player }}"
+
+      - name: Sync player career from SSTZ
+        run: |
+          if [ "${{ inputs.all_seasons }}" = "true" ]; then
+            node scripts/sstz-sync.mjs "${{ inputs.player }}" --all --out data/sstz
+          else
+            node scripts/sstz-sync.mjs "${{ inputs.player }}" --out data/sstz
+          fi
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "sstz-sync[bot]"
+          git config user.email "sstz-sync@users.noreply.github.com"
+          git add data/sstz
+          git commit -m "data(sstz): sync player ${{ inputs.player }}" || echo "nothing to commit"
+          git push
