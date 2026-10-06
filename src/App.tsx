@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { Header } from './components/Header';
+import { AppTopBar } from './components/AppTopBar';
 import { Navigation, NavTab } from './components/Navigation';
-import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { DashboardView } from './views/DashboardView';
 import { SstzHubView } from './views/SstzHubView';
 import { OpponentsView } from './views/OpponentsView';
@@ -64,14 +63,8 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Header
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenQuickLog={() => setShowQuickLog(true)}
-      />
-
-      {/* PWA Install Banner */}
-      <PwaInstallPrompt />
+      {/* Sleek Minimal App Top Bar */}
+      <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} />
 
       {/* Main Container */}
       <div className="app-container">

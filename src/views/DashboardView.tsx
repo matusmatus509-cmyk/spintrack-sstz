@@ -60,63 +60,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 4);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Top Banner / Hero Card */}
       <div className="glass-panel" style={{
-        padding: '24px',
+        padding: '16px',
         position: 'relative',
         overflow: 'hidden',
         background: 'linear-gradient(135deg, rgba(18, 24, 36, 0.95) 0%, rgba(24, 32, 50, 0.85) 100%)',
-        border: '1px solid var(--border-subtle)'
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-lg)'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '-40px',
-          right: '-40px',
-          width: '200px',
-          height: '200px',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)',
-          borderRadius: '50%',
-          pointerEvents: 'none'
-        }} />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span className="badge-pill badge-green">
-                <Flame size={12} /> SpinTrack Stolnotenisový Denník
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>
+                <Flame size={11} /> SpinTrack
               </span>
               {sstzProfile && (
-                <span className="badge-pill badge-blue">
-                  <ShieldCheck size={12} /> {sstzProfile.clubName || 'SSTZ Klub'}
+                <span className="badge-pill badge-blue" style={{ fontSize: '0.65rem' }}>
+                  <ShieldCheck size={11} /> {sstzProfile.clubName || 'SSTZ'}
                 </span>
               )}
             </div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '4px' }}>
-              Vitaj späť, {sstzProfile ? sstzProfile.name : 'Hráč'}! 🏓
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+              Ahoj, {sstzProfile ? sstzProfile.name.split(' ')[0] : 'hráč'}! 🏓
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '600px' }}>
-              Sleduj opotrebovanie svojich poťahov, eviduj tréningy so stopkami a maj kompletný rozpis a výsledky SSTZ líg na jednom mieste.
-            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {!isStopwatchRunning && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {!isStopwatchRunning ? (
               <button
                 onClick={startStopwatch}
                 className="btn-primary"
-                style={{ padding: '10px 18px', fontSize: '0.9rem' }}
+                style={{ padding: '8px 14px', fontSize: '0.82rem' }}
               >
-                <Play size={16} /> Spustiť tréning
+                <Play size={14} /> Stopky
+              </button>
+            ) : (
+              <button
+                onClick={startStopwatch}
+                className="btn-secondary"
+                style={{ padding: '8px 14px', fontSize: '0.82rem', color: '#10b981' }}
+              >
+                <Clock size={14} /> Bežia stopky
               </button>
             )}
             <button
               onClick={onOpenMatchModal}
               className="btn-secondary"
-              style={{ padding: '10px 18px', fontSize: '0.9rem' }}
+              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
             >
               + Zápas
+            </button>
+            <button
+              onClick={onOpenQuickLog}
+              className="btn-secondary"
+              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+            >
+              + Tréning
             </button>
           </div>
         </div>

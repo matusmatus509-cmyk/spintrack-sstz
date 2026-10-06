@@ -242,94 +242,84 @@ export const OpponentsView: React.FC = () => {
   }, [selectedOpponentMatches]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
-      {/* Banner */}
-      <div className="glass-panel" style={{
-        padding: '24px 20px',
-        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.16) 0%, rgba(18, 24, 36, 0.96) 100%)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span className="badge-pill badge-red" style={{ fontSize: '0.72rem' }}>
-                <Target size={14} /> Skauting & Databáza Súperov
-              </span>
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '6px' }}>
-              Databáza Súperov & Skauting
-            </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '720px' }}>
-              Kompletná evidencia všetkých súperov zo všetkých líg a sezón. Eviduj si ich ruku (pravák/ľavák), typ poťahov (soft, tráva, sendvič, anti-spin), herný štýl, silné a slabé stránky a podrobné taktické zápisky z každého odohraného vzájomného duelu.
-            </p>
+      {/* Top Compact Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="badge-pill badge-red" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+              <Target size={12} /> Skauting
+            </span>
           </div>
-
-          <button
-            onClick={() => {
-              setEditForm({
-                id: `opp-${Date.now()}`,
-                name: '',
-                clubName: '',
-                association: 'SSTZ',
-                handedness: 'right',
-                forehandRubber: 'soft',
-                backhandRubber: 'soft',
-                forehandModel: '',
-                backhandModel: '',
-                bladeModel: '',
-                playStyle: 'allround',
-                notes: '',
-                strengths: '',
-                weaknesses: ''
-              });
-              setIsNewOpponentModal(true);
-            }}
-            className="btn-primary"
-            style={{ padding: '10px 18px', fontSize: '0.88rem' }}
-          >
-            <Plus size={16} /> Pridať nového súpera
-          </button>
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
+            Súperi & Skauting
+          </h1>
         </div>
 
-        {/* Global Statistics Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '20px' }}>
-          <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-              Súperi v databáze
-            </span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '2px' }}>
-              {totalOpponents}
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-              z {totalMatchesAgainstOpponents} vzájomných zápasov
-            </span>
-          </div>
+        <button
+          onClick={() => {
+            setEditForm({
+              id: `opp-${Date.now()}`,
+              name: '',
+              clubName: '',
+              association: 'SSTZ',
+              handedness: 'right',
+              forehandRubber: 'soft',
+              backhandRubber: 'soft',
+              forehandModel: '',
+              backhandModel: '',
+              bladeModel: '',
+              playStyle: 'allround',
+              notes: '',
+              strengths: '',
+              weaknesses: ''
+            });
+            setIsNewOpponentModal(true);
+          }}
+          className="btn-primary"
+          style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+        >
+          <Plus size={14} /> Nový súper
+        </button>
+      </div>
 
-          <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-              Celková úspešnosť proti súperom
-            </span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: overallOpponentWinRate >= 50 ? '#34d399' : '#f87171', marginTop: '2px' }}>
-              {overallOpponentWinRate}%
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-              {totalWinsAgainstOpponents} výhier / {totalMatchesAgainstOpponents - totalWinsAgainstOpponents} prehier
-            </span>
+      {/* Global Statistics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+        <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+            Súperi v databáze
+          </span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '2px' }}>
+            {totalOpponents}
           </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+            z {totalMatchesAgainstOpponents} duelov
+          </span>
+        </div>
 
-          <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-              Hráči s materiálom (Tráva / Sendvič / Anti)
-            </span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
-              {allOpponentsList.filter(o => o.forehandRubber !== 'soft' || o.backhandRubber !== 'soft').length}
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-              evidovaní s neštandardným poťahom
-            </span>
+        <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+            Úspešnosť proti nim
+          </span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: overallOpponentWinRate >= 50 ? '#34d399' : '#f87171', marginTop: '2px' }}>
+            {overallOpponentWinRate}%
           </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+            {totalWinsAgainstOpponents}V / {totalMatchesAgainstOpponents - totalWinsAgainstOpponents}P
+          </span>
+        </div>
+
+        <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+            Materiál (Tráva / Sendvič / Anti)
+          </span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+            {allOpponentsList.filter(o => o.forehandRubber !== 'soft' || o.backhandRubber !== 'soft').length}
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+            špecifické poťahy
+          </span>
         </div>
       </div>
 

@@ -121,14 +121,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentTab, onSelectTab 
         borderTop: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
-        padding: '6px 4px',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+        padding: '5px 2px',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5px)',
         zIndex: 50,
         boxShadow: '0 -4px 25px rgba(0, 0, 0, 0.6)',
-        overflowX: 'auto',
-        scrollbarWidth: 'none',
-        WebkitOverflowScrolling: 'touch',
-        justifyContent: 'space-around'
+        justifyContent: 'space-between'
       }}>
         {tabs.map(tab => {
           const Icon = tab.icon;
@@ -147,31 +144,32 @@ export const Navigation: React.FC<NavigationProps> = ({ currentTab, onSelectTab 
                 border: 'none',
                 color: isActive ? '#34d399' : 'var(--text-muted)',
                 cursor: 'pointer',
-                padding: '4px 6px',
-                minWidth: '48px',
-                flex: '1 0 auto',
-                fontSize: '0.67rem',
+                padding: '4px 2px',
+                minWidth: 0,
+                flex: 1,
+                fontSize: '0.62rem',
                 fontWeight: isActive ? 800 : 500,
                 transition: 'all 0.15s ease',
                 touchAction: 'manipulation'
               }}
             >
               <div style={{
-                padding: '3px 10px',
+                padding: '3px 8px',
                 borderRadius: 'var(--radius-full)',
-                background: isActive ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                background: isActive ? 'rgba(16, 185, 129, 0.22)' : 'transparent',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.15s ease'
               }}>
-                <Icon size={19} color={isActive ? '#34d399' : 'currentColor'} />
+                <Icon size={18} color={isActive ? '#34d399' : 'currentColor'} />
               </div>
               <span style={{
-                maxWidth: '60px',
+                width: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                textAlign: 'center'
               }}>
                 {tab.label}
               </span>

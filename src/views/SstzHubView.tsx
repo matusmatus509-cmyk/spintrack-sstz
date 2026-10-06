@@ -167,62 +167,50 @@ export const SstzHubView: React.FC = () => {
   const leaguesInCategory = currentCategoryObj?.leagues || [];
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
-      {/* Top Banner */}
-      <div className="glass-panel" style={{
-        padding: '24px 20px',
-        background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(18, 24, 36, 0.95) 100%)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span className="badge-pill badge-blue" style={{ fontSize: '0.72rem' }}>
-                <Shield size={14} /> Oficiálna Integrácia SSTZ (stolnytenis.info)
-              </span>
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '6px' }}>
-              SSTZ Hub • Tabuľky, Rozpisy & Hráči
-            </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '700px' }}>
-              Priame prepojenie so všetkými 126 ligami a zväzmi SSTZ na Slovensku. Sleduj reálne tabuľky, oficiálne vyžrebovania, a prepoj svoj profil s presnými bodmi a výsledkami.
-            </p>
+      {/* Top Compact Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+              <Shield size={12} /> SSTZ Oficiálne
+            </span>
           </div>
-
-          {sstzProfile && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => syncSstzPlayer(sstzProfile.id, false)}
-                disabled={isSstzLoading}
-                className="btn-secondary"
-                style={{ padding: '8px 14px', fontSize: '0.82rem' }}
-                title="Stiahne zápasy len pre aktuálnu sezónu"
-              >
-                <RefreshCw size={14} />
-                {isSstzLoading ? 'Sťahujem...' : 'Aktuálna sezóna (2026/27)'}
-              </button>
-              <button
-                onClick={() => syncSstzPlayer(sstzProfile.id, true)}
-                disabled={isSstzLoading}
-                className="btn-primary"
-                style={{ padding: '8px 16px', fontSize: '0.82rem' }}
-                title="Stiahne kompletnú históriu zápasov zo všetkých minulých sezón"
-              >
-                <Trophy size={14} />
-                {isSstzLoading ? 'Sťahujem celú kariéru...' : 'Všetky minulé sezóny (celá kariéra)'}
-              </button>
-              <button
-                onClick={disconnectSstz}
-                className="btn-secondary"
-                style={{ padding: '8px 12px', fontSize: '0.82rem', color: '#f87171' }}
-              >
-                Odpojiť
-              </button>
-            </div>
-          )}
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
+            SSTZ Hub • Ligy & Tabuľky
+          </h1>
         </div>
+
+        {sstzProfile && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => syncSstzPlayer(sstzProfile.id, false)}
+              disabled={isSstzLoading}
+              className="btn-secondary"
+              style={{ padding: '6px 10px', fontSize: '0.74rem' }}
+              title="Stiahne zápasy len pre aktuálnu sezónu"
+            >
+              <RefreshCw size={12} /> 2026/27
+            </button>
+            <button
+              onClick={() => syncSstzPlayer(sstzProfile.id, true)}
+              disabled={isSstzLoading}
+              className="btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.74rem' }}
+              title="Stiahne kompletnú históriu zápasov zo všetkých minulých sezón"
+            >
+              <Trophy size={12} /> Celá kariéra
+            </button>
+            <button
+              onClick={disconnectSstz}
+              className="btn-secondary"
+              style={{ padding: '6px 10px', fontSize: '0.74rem', color: '#f87171' }}
+            >
+              Odpojiť
+            </button>
+          </div>
+        )}
       </div>
 
       {sstzError && (

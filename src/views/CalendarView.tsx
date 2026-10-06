@@ -65,56 +65,45 @@ export const CalendarView: React.FC = () => {
   const nextMatch = teamSchedule.find(m => !m.isPlayed);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
-      {/* Top Banner & Next Match Card */}
-      <div className="glass-panel" style={{
-        padding: '24px',
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
-        border: '1px solid var(--border-subtle)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span className="badge-pill badge-blue">
-                <CalendarIcon size={14} /> Oficiálny Kalendár Súťaže
-              </span>
-              {sstzProfile?.clubName && (
-                <span className="badge-pill badge-green">
-                  <Shield size={12} /> {sstzProfile.clubName}
-                </span>
-              )}
-            </div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '6px' }}>
-              Rozpis & Kalendár Zápasov Tímu
-            </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '700px' }}>
-              Kompletné vyžrebovanie a termíny ligových kôl priamo zo systému SSTZ. Sleduj nadchádzajúce zápasy, výsledky a zapisuj si odohrané duely priamo do svojho vybavenia.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Celkovo zápasov: <strong style={{ color: '#fff' }}>{teamSchedule.length}</strong>
+      {/* Top Compact Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+              <CalendarIcon size={12} /> SSTZ Rozpis
             </span>
+            {sstzProfile?.clubName && (
+              <span className="badge-pill badge-green" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                <Shield size={10} /> {sstzProfile.clubName}
+              </span>
+            )}
           </div>
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
+            Kalendár & Rozpis Zápasov
+          </h1>
         </div>
 
-        {/* Highlight: Next Upcoming Fixture */}
-        {nextMatch && (
-          <div style={{
-            marginTop: '20px',
-            background: 'var(--bg-card)',
-            borderRadius: 'var(--radius-md)',
-            padding: '16px 20px',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Zápasov: <strong style={{ color: '#38bdf8' }}>{teamSchedule.length}</strong>
+        </span>
+      </div>
+
+      {/* Highlight: Next Upcoming Fixture */}
+      {nextMatch && (
+        <div className="glass-panel" style={{
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '16px',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
                 background: 'rgba(16, 185, 129, 0.15)',
                 color: '#10b981',
@@ -146,12 +135,11 @@ export const CalendarView: React.FC = () => {
               >
                 + Zapísať do denníka
               </button>
-            </div>
-          </div>
-        )}
-      </div>
+              </div>
+              </div>
+              )}
 
-      {/* Filter Tabs */}
+              {/* Filter Tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
           {[
