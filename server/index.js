@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import {
   searchSSTZ,
@@ -96,6 +97,27 @@ app.get('/api/sstz/all-leagues', async (req, res) => {
   }
 });
 
+// System info & local mobile IP detection
+app.get('/api/info', (req, res) => {
+  const interfaces = os.networkInterfaces();
+  const addresses = [];
+  for (const k in interfaces) {
+    for (const addr of interfaces[k]) {
+      if (addr.family === 'IPv4' && !addr.internal) {
+        addresses.push(addr.address);
+      }
+    }
+  }
+  const mainIp = addresses[0] || '127.0.0.1';
+  res.json({
+    status: 'ok',
+    networkIp: mainIp,
+    port: PORT,
+    mobileViteUrl: `http://${mainIp}:5173/`,
+    mobileServerUrl: `http://${mainIp}:${PORT}/`
+  });
+});
+
 // Popular leagues list
 app.get('/api/sstz/popular-leagues', (req, res) => {
   res.json(getPopularLeagues());
@@ -110,6 +132,11 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`SpinTrack SSTZ backend running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`SpinTrack SSTZ backend running on http://0.0.0.0:${PORT}`);
+    console.log(`Mobile access ready: http://localhost:${PORT}`);
+  });
+}
+
+export default app;

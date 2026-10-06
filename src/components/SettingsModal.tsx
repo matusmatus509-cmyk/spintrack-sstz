@@ -23,6 +23,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [mobileUrl, setMobileUrl] = useState<string>('');
+
+  React.useEffect(() => {
+    fetch('/api/info')
+      .then(r => r.json())
+      .then(data => {
+        if (data.mobileViteUrl) setMobileUrl(data.mobileViteUrl);
+      })
+      .catch(() => {});
+  }, []);
 
   if (!isOpen) return null;
 
@@ -132,6 +142,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <div>
             <PwaInstallPrompt compact />
           </div>
+          {mobileUrl && (
+            <div style={{
+              fontSize: '0.8rem',
+              background: 'rgba(0, 0, 0, 0.35)',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap'
+            }}>
+              <span>Wi-Fi adresa pre mobil: <strong style={{ color: '#38bdf8' }}>{mobileUrl}</strong></span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(mobileUrl);
+                  alert(`Odkaz pre mobil bol skopírovaný: ${mobileUrl}`);
+                }}
+                className="btn-secondary"
+                style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+              >
+                Kopírovať
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Export Section */}
