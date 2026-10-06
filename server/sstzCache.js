@@ -13,15 +13,38 @@
  * Cache nikdy nevymýšľa dáta: obsahuje presne to, čo vrátil portál (parsed).
  */
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const CACHE_DIR = process.env.SSTZ_CACHE_DIR
-  ? path.resolve(process.env.SSTZ_CACHE_DIR)
-  : path.join(__dirname, '..', 'data', 'sstz', 'cache');
+function isWritable(dir) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const probe = path.join(dir, `.probe-${process.pid}-${Date.now()}`);
+    fs.writeFileSync(probe, 'ok', 'utf8');
+    fs.unlinkSync(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveCacheDir() {
+  const preferred = process.env.SSTZ_CACHE_DIR
+    ? path.resolve(process.env.SSTZ_CACHE_DIR)
+    : path.join(__dirname, '..', 'data', 'sstz', 'cache');
+  if (isWritable(preferred)) return preferred;
+  // Read-only filesystem (napr. Vercel/AWS Lambda: /var/task) – cache sa
+  // presunie do /tmp, aby fungovala aspoň v rámci bežiacej inštancie.
+  const tmp = path.join(os.tmpdir(), 'sstz-cache');
+  if (isWritable(tmp)) return tmp;
+  return preferred; // zápisy budú ticho padať (writeCache má try/catch)
+}
+
+export const CACHE_DIR = resolveCacheDir();
 
 /** Aktuálna sezóna podľa dátumu (sezóna prechádza 1. júla). */
 export function currentSeasonSlug(date = new Date()) {
