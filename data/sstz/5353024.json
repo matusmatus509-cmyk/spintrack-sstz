@@ -1,0 +1,848 @@
+{
+  "id": "5353024",
+  "name": "Očovan Matúš",
+  "profileUrl": "https://www.stolnytenis.info/hrac/5353024",
+  "source": {
+    "name": "stolnytenis.info",
+    "publisher": "SSTZ (Slovenský stolnotenisový zväz)",
+    "profileUrl": "https://www.stolnytenis.info/hrac/5353024",
+    "fetchedAt": "2026-10-07T18:55:34.804Z",
+    "live": false,
+    "note": "Réžim snapshot: obsahuje presne to, čo bolo zachytené z portálu stolnytenis.info. Hodnoty setov sú pôvodné (±N z portálu), skóre setov je z nich odvodené a označené ako „derived\".",
+    "mode": "snapshot",
+    "capturedPages": [
+      "tests/fixtures/hrac-5353024-2liga-2026-27.txt",
+      "tests/fixtures/hrac-5353024-1liga-2026-27.txt"
+    ],
+    "snapshotSavedAt": "2026-10-07T18:55:34.805Z"
+  },
+  "seasons": [
+    {
+      "seasonId": null,
+      "label": "2026/27",
+      "competitions": [
+        "3\\. ligaMŠK Žiar nad Hronom A"
+      ],
+      "matches": 9,
+      "verification": {
+        "verified": true,
+        "checks": [
+          {
+            "name": "Počty setov v každom dueli sedia s oficiálnym záznamom",
+            "ok": true,
+            "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
+          },
+          {
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "ok": true,
+            "expected": "1 z 7",
+            "actual": "1 z 7"
+          },
+          {
+            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "ok": true,
+            "expected": "0 z 2",
+            "actual": "0 z 2"
+          }
+        ]
+      }
+    }
+  ],
+  "singlesStats": {
+    "played": 7,
+    "won": 1,
+    "lost": 6,
+    "winRate": 14,
+    "home": {
+      "won": 1,
+      "total": 4
+    },
+    "away": {
+      "won": 0,
+      "total": 3
+    },
+    "official": [
+      {
+        "season": "2026/27",
+        "competition": "3\\. ligaMŠK Žiar nad Hronom A",
+        "singles": {
+          "played": 7,
+          "won": 1,
+          "home": {
+            "won": 1,
+            "played": 4
+          },
+          "away": {
+            "won": 0,
+            "played": 3
+          }
+        },
+        "doubles": {
+          "played": 2,
+          "won": 0,
+          "home": {
+            "won": 0,
+            "played": 1
+          },
+          "away": {
+            "won": 0,
+            "played": 1
+          }
+        }
+      }
+    ]
+  },
+  "doublesStats": {
+    "played": 2,
+    "won": 0,
+    "lost": 2,
+    "winRate": 0,
+    "home": {
+      "won": 0,
+      "total": 1
+    },
+    "away": {
+      "won": 0,
+      "total": 1
+    }
+  },
+  "matches": [
+    {
+      "id": "2026/27-all-r-d-B-Z-1214",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "ŠKST B. Štiavnica - Hont. Nemce A",
+      "awayTeam": "MŠK Žiar nad Hronom A",
+      "teamScore": "11:7",
+      "playerIsHome": false,
+      "type": "singles",
+      "duelLabel": "B-Z",
+      "opponentName": "Coplák Peter",
+      "opponentId": "1214",
+      "opponents": [
+        {
+          "id": "1214",
+          "name": "Coplák Peter"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "0:3",
+      "sets": [
+        "-5",
+        "-9",
+        "-7"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 5,
+          "opponentPoints": 11,
+          "display": "5:11",
+          "won": false,
+          "officialValue": "-5",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 9,
+          "opponentPoints": 11,
+          "display": "9:11",
+          "won": false,
+          "officialValue": "-9",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 7,
+          "opponentPoints": 11,
+          "display": "7:11",
+          "won": false,
+          "officialValue": "-7",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 21,
+      "totalPointsLost": 33,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-D-U-7309841",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "MŠK Žiar nad Hronom A",
+      "awayTeam": "OST Mladost Lučatín B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "D-U",
+      "opponentName": "Hruška Miroslav",
+      "opponentId": "7309841",
+      "opponents": [
+        {
+          "id": "7309841",
+          "name": "Hruška Miroslav"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "2:3",
+      "sets": [
+        "-9",
+        "+7",
+        "-7",
+        "+7",
+        "-8"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 9,
+          "opponentPoints": 11,
+          "display": "9:11",
+          "won": false,
+          "officialValue": "-9",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 7,
+          "opponentPoints": 11,
+          "display": "7:11",
+          "won": false,
+          "officialValue": "-7",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
+          "derived": true
+        },
+        {
+          "setNumber": 5,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 46,
+      "totalPointsLost": 47,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-D-Z-18621",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "MŠK Žiar nad Hronom A",
+      "awayTeam": "OST Mladost Lučatín B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "D-Z",
+      "opponentName": "Patráš Milan st.",
+      "opponentId": "18621",
+      "opponents": [
+        {
+          "id": "18621",
+          "name": "Patráš Milan st."
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "WIN",
+      "score": "3:0",
+      "sets": [
+        "+13",
+        "+9",
+        "+4"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 15,
+          "opponentPoints": 13,
+          "display": "15:13",
+          "won": true,
+          "officialValue": "+13",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 11,
+          "opponentPoints": 9,
+          "display": "11:9",
+          "won": true,
+          "officialValue": "+9",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 4,
+          "display": "11:4",
+          "won": true,
+          "officialValue": "+4",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 37,
+      "totalPointsLost": 26,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-D-Y-3454",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "MŠK Žiar nad Hronom A",
+      "awayTeam": "OST Mladost Lučatín B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "D-Y",
+      "opponentName": "Hruška Samuel",
+      "opponentId": "3454",
+      "opponents": [
+        {
+          "id": "3454",
+          "name": "Hruška Samuel"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "0:3",
+      "sets": [
+        "-10",
+        "-8",
+        "-8"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 10,
+          "opponentPoints": 12,
+          "display": "10:12",
+          "won": false,
+          "officialValue": "-10",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 26,
+      "totalPointsLost": 34,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-D-X-4905",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "MŠK Žiar nad Hronom A",
+      "awayTeam": "OST Mladost Lučatín B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "singles",
+      "duelLabel": "D-X",
+      "opponentName": "Kováč Milan",
+      "opponentId": "4905",
+      "opponents": [
+        {
+          "id": "4905",
+          "name": "Kováč Milan"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "1:3",
+      "sets": [
+        "+10",
+        "-5",
+        "-7",
+        "-6"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 12,
+          "opponentPoints": 10,
+          "display": "12:10",
+          "won": true,
+          "officialValue": "+10",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 5,
+          "opponentPoints": 11,
+          "display": "5:11",
+          "won": false,
+          "officialValue": "-5",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 7,
+          "opponentPoints": 11,
+          "display": "7:11",
+          "won": false,
+          "officialValue": "-7",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 6,
+          "opponentPoints": 11,
+          "display": "6:11",
+          "won": false,
+          "officialValue": "-6",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 30,
+      "totalPointsLost": 43,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-C-X-9415",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "STK Lutila",
+      "awayTeam": "MŠK Žiar nad Hronom A",
+      "teamScore": "13:5",
+      "playerIsHome": false,
+      "type": "singles",
+      "duelLabel": "C-X",
+      "opponentName": "Širáň Peter",
+      "opponentId": "9415",
+      "opponents": [
+        {
+          "id": "9415",
+          "name": "Širáň Peter"
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "1:3",
+      "sets": [
+        "-12",
+        "-10",
+        "+7",
+        "-6"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 12,
+          "opponentPoints": 14,
+          "display": "12:14",
+          "won": false,
+          "officialValue": "-12",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 10,
+          "opponentPoints": 12,
+          "display": "10:12",
+          "won": false,
+          "officialValue": "-10",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 7,
+          "display": "11:7",
+          "won": true,
+          "officialValue": "+7",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 6,
+          "opponentPoints": 11,
+          "display": "6:11",
+          "won": false,
+          "officialValue": "-6",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 39,
+      "totalPointsLost": 44,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-D-X-2797",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "STK Lutila",
+      "awayTeam": "MŠK Žiar nad Hronom A",
+      "teamScore": "13:5",
+      "playerIsHome": false,
+      "type": "singles",
+      "duelLabel": "D-X",
+      "opponentName": "Gustiňák Ferdinand st.",
+      "opponentId": "2797",
+      "opponents": [
+        {
+          "id": "2797",
+          "name": "Gustiňák Ferdinand st."
+        }
+      ],
+      "partnerName": null,
+      "partnerId": null,
+      "result": "LOSS",
+      "score": "1:3",
+      "sets": [
+        "-5",
+        "+5",
+        "-9",
+        "-8"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 5,
+          "opponentPoints": 11,
+          "display": "5:11",
+          "won": false,
+          "officialValue": "-5",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 11,
+          "opponentPoints": 5,
+          "display": "11:5",
+          "won": true,
+          "officialValue": "+5",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 9,
+          "opponentPoints": 11,
+          "display": "9:11",
+          "won": false,
+          "officialValue": "-9",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 33,
+      "totalPointsLost": 38,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    }
+  ],
+  "doublesMatches": [
+    {
+      "id": "2026/27-all-r-d-Štvorhra-1214+1666",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "ŠKST B. Štiavnica - Hont. Nemce A",
+      "awayTeam": "MŠK Žiar nad Hronom A",
+      "teamScore": "11:7",
+      "playerIsHome": false,
+      "type": "doubles",
+      "duelLabel": "Štvorhra",
+      "opponentName": "Coplák Peter",
+      "opponentId": "1214",
+      "opponents": [
+        {
+          "id": "1214",
+          "name": "Coplák Peter"
+        },
+        {
+          "id": "1666",
+          "name": "Dodok Roland"
+        }
+      ],
+      "partnerName": "Kováč Martin",
+      "partnerId": "371650",
+      "result": "LOSS",
+      "score": "0:3",
+      "sets": [
+        "-10",
+        "-9",
+        "-8"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 10,
+          "opponentPoints": 12,
+          "display": "10:12",
+          "won": false,
+          "officialValue": "-10",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 9,
+          "opponentPoints": 11,
+          "display": "9:11",
+          "won": false,
+          "officialValue": "-9",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 27,
+      "totalPointsLost": 34,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    },
+    {
+      "id": "2026/27-all-r-d-Štvorhra-18621+7309841",
+      "sstzMatchId": null,
+      "season": "2026/27",
+      "seasonId": null,
+      "competition": "3\\. liga",
+      "competitionLabel": "3\\. ligaMŠK Žiar nad Hronom A",
+      "clubName": "MŠK Žiar nad Hronom A",
+      "stage": "Základná časť",
+      "round": null,
+      "date": null,
+      "homeTeam": "MŠK Žiar nad Hronom A",
+      "awayTeam": "OST Mladost Lučatín B",
+      "teamScore": "9:9",
+      "playerIsHome": true,
+      "type": "doubles",
+      "duelLabel": "Štvorhra",
+      "opponentName": "Patráš Milan st.",
+      "opponentId": "18621",
+      "opponents": [
+        {
+          "id": "18621",
+          "name": "Patráš Milan st."
+        },
+        {
+          "id": "7309841",
+          "name": "Hruška Miroslav"
+        }
+      ],
+      "partnerName": "Kováč Martin",
+      "partnerId": "371650",
+      "result": "LOSS",
+      "score": "2:3",
+      "sets": [
+        "+12",
+        "-5",
+        "+5",
+        "-8",
+        "-9"
+      ],
+      "setDetails": [
+        {
+          "setNumber": 1,
+          "playerPoints": 14,
+          "opponentPoints": 12,
+          "display": "14:12",
+          "won": true,
+          "officialValue": "+12",
+          "derived": true
+        },
+        {
+          "setNumber": 2,
+          "playerPoints": 5,
+          "opponentPoints": 11,
+          "display": "5:11",
+          "won": false,
+          "officialValue": "-5",
+          "derived": true
+        },
+        {
+          "setNumber": 3,
+          "playerPoints": 11,
+          "opponentPoints": 5,
+          "display": "11:5",
+          "won": true,
+          "officialValue": "+5",
+          "derived": true
+        },
+        {
+          "setNumber": 4,
+          "playerPoints": 8,
+          "opponentPoints": 11,
+          "display": "8:11",
+          "won": false,
+          "officialValue": "-8",
+          "derived": true
+        },
+        {
+          "setNumber": 5,
+          "playerPoints": 9,
+          "opponentPoints": 11,
+          "display": "9:11",
+          "won": false,
+          "officialValue": "-9",
+          "derived": true
+        }
+      ],
+      "walkover": false,
+      "totalPointsWon": 47,
+      "totalPointsLost": 50,
+      "source": "SSTZ",
+      "profileUrl": "https://www.stolnytenis.info/hrac/5353024"
+    }
+  ],
+  "verification": {
+    "status": "verified",
+    "allSeasonsVerified": true,
+    "seasons": [
+      {
+        "label": "2026/27",
+        "verified": true,
+        "matches": 9,
+        "checks": [
+          {
+            "name": "Počty setov v každom dueli sedia s oficiálnym záznamom",
+            "ok": true,
+            "detail": "každý duel má rovnaký počet vyhraných/prehraných setov, ako uvádza web"
+          },
+          {
+            "name": "Dvojhry – súčet voči oficiálnej úspešnosti",
+            "ok": true,
+            "expected": "1 z 7",
+            "actual": "1 z 7"
+          },
+          {
+            "name": "Štvorhry – súčet voči oficiálnej úspešnosti",
+            "ok": true,
+            "expected": "0 z 2",
+            "actual": "0 z 2"
+          }
+        ]
+      }
+    ]
+  },
+  "warnings": [
+    "Snapshot bol vytvorený z verbatim zachytených stránok portálu stolnytenis.info (priečinok tests/fixtures).",
+    "Obsahuje len sezóny, ktoré boli zachytené: 2026/27.",
+    "Pre úplnú kariéru (2018/19 – 2026/27) spusti na stroji s internetom: npm run sstz:sync -- 5353024 --all"
+  ],
+  "syncedAt": "2026-10-07T18:55:34.805Z"
+}
