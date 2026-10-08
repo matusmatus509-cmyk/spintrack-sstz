@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { AppProvider } from './context/AppContext';
 import { AppTopBar } from './components/AppTopBar';
 import { Navigation, NavTab } from './components/Navigation';
 import { DashboardView } from './views/DashboardView';
@@ -17,8 +17,15 @@ const AppContent: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showAddActivity, setShowAddActivity] = useState(false);
 
+  const selectTab = (tab: NavTab) => {
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    requestAnimationFrame(() => document.getElementById('main-content')?.focus({ preventScroll: true }));
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">Prejsť na obsah</a>
       {/* Sleek Minimal App Top Bar */}
       <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} />
 
@@ -27,14 +34,14 @@ const AppContent: React.FC = () => {
         {/* Navigation (Sidebar desktop + bottom mobile) */}
         <Navigation
           currentTab={currentTab}
-          onSelectTab={tab => setCurrentTab(tab)}
+          onSelectTab={selectTab}
         />
 
         {/* Dynamic View Content */}
-        <main className="main-content">
+        <main id="main-content" className="main-content" tabIndex={-1}>
           {currentTab === 'dashboard' && (
             <DashboardView
-              onNavigate={tab => setCurrentTab(tab)}
+              onNavigate={selectTab}
               onOpenQuickLog={() => setShowAddActivity(true)}
               onOpenMatchModal={() => setShowAddActivity(true)}
             />

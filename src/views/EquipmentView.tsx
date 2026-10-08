@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { CATALOG_RUBBERS, CATALOG_BLADES } from '../data/gearCatalog';
@@ -124,21 +125,15 @@ export const EquipmentView: React.FC = () => {
     alert(`Drevo ${catBlade.brand} ${catBlade.model} bolo pridané do tvojej výbavy!`);
   };
 
-  useEffect(() => {
-    if (showNewRacketModal || showNewRubberModal) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [showNewRacketModal, showNewRubberModal]);
+  const dialogRef = useDialog(showNewRacketModal || showNewRubberModal, () => { setShowNewRacketModal(false); setShowNewRubberModal(false); });
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="page-view equipment-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      <div className="page-header"><div><span className="eyebrow">VYBAVENIE PRE TVOJU HRU</span><h1>Moja výstroj</h1><p>Rakety, poťahy a ich kondícia pod kontrolou.</p></div></div>
+
       {/* Sub Tabs Navigation */}
-      <div style={{
+      <div className="scroll-tabs" style={{
         display: 'flex',
         gap: '8px',
         overflowX: 'auto',
@@ -146,11 +141,11 @@ export const EquipmentView: React.FC = () => {
         borderBottom: '1px solid var(--border-subtle)'
       }}>
         {[
-          { id: 'rackets', label: `Moje Rakety (${rackets.length})` },
-          { id: 'rubbers', label: `Poťahy & Zdravie (${rubbers.length})` },
+          { id: 'rackets', label: `Rakety (${rackets.length})` },
+          { id: 'rubbers', label: `Poťahy (${rubbers.length})` },
           { id: 'blades', label: `Drevá (${blades.length})` },
-          { id: 'catalog', label: 'Katalóg & Wishlist' },
-          { id: 'compare', label: 'Porovnávač výbavy' },
+          { id: 'catalog', label: 'Katalóg' },
+          { id: 'compare', label: 'Porovnanie' },
         ].map(tab => (
           <button
             key={tab.id}
@@ -176,9 +171,9 @@ export const EquipmentView: React.FC = () => {
       {/* 1. RACKETS VIEW */}
       {activeSubTab === 'rackets' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Zostavy Rakiet (Racket Setups)</h2>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Moje rakety</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 Skombinuj svoje drevo a poťahy do hernej zostavy. Sleduj celkový čas a úspešnosť.
               </p>
@@ -192,13 +187,13 @@ export const EquipmentView: React.FC = () => {
               }}
               className="btn-primary"
             >
-              <Plus size={16} /> Poskladať novú raketu
+              <Plus size={16} /> Nová raketa
             </button>
           </div>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
             gap: '16px'
           }}>
             {rackets.map(racket => {
@@ -225,7 +220,7 @@ export const EquipmentView: React.FC = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="equipment-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{racket.name}</h3>
                         {isActive && (
                           <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>
@@ -272,7 +267,7 @@ export const EquipmentView: React.FC = () => {
                       <strong>{b ? `${b.brand} ${b.model} (${b.plies})` : 'Nezvolené'}</strong>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: 'var(--text-muted)' }}>FH Poťah:</span>
                       <div style={{ textAlign: 'right' }}>
                         <strong>{fh ? `${fh.brand} ${fh.model}` : 'Nezvolený'}</strong>
@@ -284,7 +279,7 @@ export const EquipmentView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: 'var(--text-muted)' }}>BH Poťah:</span>
                       <div style={{ textAlign: 'right' }}>
                         <strong>{bh ? `${bh.brand} ${bh.model}` : 'Nezvolený'}</strong>
@@ -323,7 +318,7 @@ export const EquipmentView: React.FC = () => {
       {/* 2. RUBBERS & HEALTH VIEW */}
       {activeSubTab === 'rubbers' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Sledovanie Zdravia & Opotrebovania Poťahov</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
@@ -340,7 +335,7 @@ export const EquipmentView: React.FC = () => {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
             gap: '16px'
           }}>
             {rubbers.map(rubber => {
@@ -404,7 +399,7 @@ export const EquipmentView: React.FC = () => {
                     flexDirection: 'column',
                     gap: '8px'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Stav poťahu (Grip & Odskok)</span>
                       <span style={{
                         fontSize: '0.9rem',
@@ -498,7 +493,7 @@ export const EquipmentView: React.FC = () => {
       {/* 3. BLADES VIEW */}
       {activeSubTab === 'blades' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Inventár Driev</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
@@ -522,7 +517,7 @@ export const EquipmentView: React.FC = () => {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
             gap: '16px'
           }}>
             {blades.map(b => (
@@ -583,7 +578,7 @@ export const EquipmentView: React.FC = () => {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
             gap: '16px'
           }}>
             {CATALOG_RUBBERS.map((cr, idx) => (
@@ -592,7 +587,7 @@ export const EquipmentView: React.FC = () => {
                 className="glass-panel"
                 style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>POŤAH</span>
                   <div style={{ display: 'flex', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     <span>SPD: <strong>{cr.speed}</strong></span>
@@ -636,7 +631,7 @@ export const EquipmentView: React.FC = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="comparison-selectors" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '20px' }}>
             {/* Item A */}
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
@@ -705,7 +700,7 @@ export const EquipmentView: React.FC = () => {
                 overflow: 'hidden',
                 border: '1px solid var(--border-subtle)'
               }}>
-                <div style={{
+                <div className="comparison-row" style={{
                   display: 'grid',
                   gridTemplateColumns: '2fr 1fr 1fr',
                   padding: '12px 16px',
@@ -721,6 +716,7 @@ export const EquipmentView: React.FC = () => {
                 {metrics.map((m, i) => (
                   <div
                     key={i}
+                    className="comparison-row"
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '2fr 1fr 1fr',
@@ -754,7 +750,7 @@ export const EquipmentView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Poskladať novú raketu */}
+      {/* Modal: Nová raketa */}
       {showNewRacketModal && createPortal(
         <div
           className="mobile-sheet-container"
@@ -781,6 +777,7 @@ export const EquipmentView: React.FC = () => {
         >
           <div
             className="glass-panel mobile-sheet-content"
+            ref={dialogRef} role="dialog" aria-modal="true" aria-label="Výstroj" tabIndex={-1}
             onClick={e => e.stopPropagation()}
             style={{
               maxWidth: '480px',
@@ -793,7 +790,7 @@ export const EquipmentView: React.FC = () => {
               margin: 'auto'
             }}
           >
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Poskladať novú raketu</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Nová raketa</h3>
 
             <form onSubmit={handleCreateRacket} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
@@ -928,6 +925,7 @@ export const EquipmentView: React.FC = () => {
         >
           <div
             className="glass-panel mobile-sheet-content"
+            ref={dialogRef} role="dialog" aria-modal="true" aria-label="Výstroj" tabIndex={-1}
             onClick={e => e.stopPropagation()}
             style={{
               maxWidth: '480px',
@@ -943,7 +941,7 @@ export const EquipmentView: React.FC = () => {
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Pridať poťah do výbavy</h3>
 
             <form onSubmit={handleCreateRubber} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Značka</label>
                   <input
@@ -967,7 +965,7 @@ export const EquipmentView: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Farba</label>
                   <select

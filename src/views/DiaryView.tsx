@@ -81,10 +81,10 @@ export const DiaryView: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="page-view diary-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Top Header: Aktivita */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="badge-pill badge-green" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
@@ -118,7 +118,7 @@ export const DiaryView: React.FC = () => {
 
       {/* Filter kategórií: Tréning, Priateľský, Turnaj, Liga, Podujatie */}
       <div className="glass-panel" style={{ padding: '8px 10px', borderRadius: 'var(--radius-lg)' }}>
-        <div style={{
+        <div className="scroll-tabs" style={{
           display: 'flex',
           gap: '6px',
           overflowX: 'auto',

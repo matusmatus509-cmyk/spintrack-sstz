@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
@@ -62,24 +63,16 @@ export const CalendarView: React.FC = () => {
     alert('Zápas bol úspešne pridaný do tvojho denníka a pripočítal čas k aktívnej rakete!');
   };
 
-  useEffect(() => {
-    if (showLogModal && selectedMatch) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [showLogModal, selectedMatch]);
+  const dialogRef = useDialog(showLogModal && !!selectedMatch, () => { setShowLogModal(false); });
 
   // Next upcoming match
   const nextMatch = teamSchedule.find(m => !m.isPlayed);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="page-view calendar-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Top Compact Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
@@ -92,7 +85,7 @@ export const CalendarView: React.FC = () => {
             )}
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            Kalendár & Rozpis Zápasov
+            Kalendár zápasov
           </h1>
         </div>
 
@@ -152,13 +145,13 @@ export const CalendarView: React.FC = () => {
 
               {/* Filter Tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+        <div className="scroll-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
           {[
-            { id: 'all', label: `Všetky zápasy (${teamSchedule.length})` },
+            { id: 'all', label: `Všetky (${teamSchedule.length})` },
             { id: 'upcoming', label: `Nadchádzajúce (${teamSchedule.filter(m => !m.isPlayed).length})` },
             { id: 'played', label: `Odohrané (${teamSchedule.filter(m => m.isPlayed).length})` },
-            { id: 'home', label: 'Zápasy Doma' },
-            { id: 'away', label: 'Zápasy Vonku' }
+            { id: 'home', label: 'Doma' },
+            { id: 'away', label: 'Vonku' }
           ].map(f => (
             <button
               key={f.id}
@@ -179,7 +172,7 @@ export const CalendarView: React.FC = () => {
             return (
               <div
                 key={m.id}
-                className="glass-panel"
+                className="glass-panel fixture-row"
                 style={{
                   padding: '16px 20px',
                   display: 'flex',
@@ -206,7 +199,7 @@ export const CalendarView: React.FC = () => {
                 </div>
 
                 {/* Center: Teams & Result */}
-                <div style={{
+                <div className="fixture-teams" style={{
                   flex: 1,
                   display: 'flex',
                   alignItems: 'center',
@@ -309,6 +302,7 @@ export const CalendarView: React.FC = () => {
         >
           <div
             className="glass-panel mobile-sheet-content"
+            ref={dialogRef} role="dialog" aria-modal="true" aria-label="Zapísať ligový duel" tabIndex={-1}
             onClick={e => e.stopPropagation()}
             style={{
               maxWidth: '480px',

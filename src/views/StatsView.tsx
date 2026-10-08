@@ -58,8 +58,10 @@ export const StatsView: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="page-view stats-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
+      <div className="page-header"><div><span className="eyebrow">KAŽDÝ KROK VPRED SA POČÍTA</span><h1>Tvoj progres</h1><p>Výsledky, herné hodiny a osobné míľniky.</p></div></div>
+
       {/* Top XP & Level Banner */}
       <div className="glass-panel" style={{
         padding: '24px',
@@ -71,7 +73,7 @@ export const StatsView: React.FC = () => {
         flexWrap: 'wrap',
         gap: '20px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        <div className="stats-level-heading" style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
           <div style={{
             width: '64px',
             height: '64px',
@@ -89,8 +91,8 @@ export const StatsView: React.FC = () => {
           </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Úroveň {level} • Stolnotenisový Bojovník</h2>
+            <div className="stats-level-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Úroveň {level}</h2>
               <span className="badge-pill badge-amber">
                 <Zap size={12} /> {xp} XP
               </span>
@@ -128,11 +130,11 @@ export const StatsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Gear Performance Index (GPI) Rankings */}
+      {/* Výkonnosť podľa rakety Rankings */}
       <div className="glass-panel" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Gear Performance Index (GPI)</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Výkonnosť podľa rakety</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               S akou raketou dosahuješ najvyššiu efektivitu a víťazstvá?
             </p>
@@ -215,7 +217,7 @@ export const StatsView: React.FC = () => {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
           gap: '16px'
         }}>
           {badges.map(b => {

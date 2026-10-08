@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { SetBreakdown } from '../components/SetBreakdown';
@@ -297,24 +298,16 @@ export const OpponentsView: React.FC = () => {
     };
   }, [selectedOpponentMatches]);
 
-  useEffect(() => {
-    if (selectedOpponent || isNewOpponentModal) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [selectedOpponent, isNewOpponentModal]);
+  const dialogRef = useDialog(!!selectedOpponent || isNewOpponentModal, () => { setSelectedOpponent(null); setIsNewOpponentModal(false); setIsEditing(false); });
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="page-view opponents-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Top Header & Segmented Mode Switch */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-            {mainMode === 'singles' ? 'Súperi & Skauting (Dvojhry)' : 'Štvorhry & Spoluhráči'}
+            {mainMode === 'singles' ? 'Moji súperi' : 'Štvorhry a spoluhráči'}
           </h1>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             {mainMode === 'singles' ? '100% individuálne duely 1 na 1' : 'Zápasy a bilancia vo štvorhre'}
@@ -370,7 +363,7 @@ export const OpponentsView: React.FC = () => {
       {mainMode === 'singles' && (
         <>
           {/* Global Statistics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
             <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Súperi (1v1)
@@ -502,7 +495,7 @@ export const OpponentsView: React.FC = () => {
           {filteredOpponents.length > 0 ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
               gap: '14px'
             }}>
               {filteredOpponents.map(opp => {
@@ -687,7 +680,7 @@ export const OpponentsView: React.FC = () => {
       {mainMode === 'doubles' && (
         <>
           {/* Doubles Global Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px' }}>
             <div style={{ background: 'var(--bg-card)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Odohrané štvorhry
@@ -733,7 +726,7 @@ export const OpponentsView: React.FC = () => {
 
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))',
                 gap: '10px'
               }}>
                 {doublesStatsByPartner.map(p => {
@@ -877,6 +870,7 @@ export const OpponentsView: React.FC = () => {
         >
           <div
             className="glass-panel mobile-sheet-content"
+            ref={dialogRef} role="dialog" aria-modal="true" aria-label="Súper a skauting" tabIndex={-1}
             onClick={e => e.stopPropagation()}
             style={{
               width: '100%',
@@ -962,7 +956,7 @@ export const OpponentsView: React.FC = () => {
 
             {/* TAB SELECTOR: Matches History vs Scouting */}
             {!isNewOpponentModal && (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
+              <div className="opponent-modal-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>
                 <button
                   onClick={() => setModalTab('matches')}
                   className={modalTab === 'matches' ? 'btn-primary' : 'btn-secondary'}
@@ -1171,7 +1165,7 @@ export const OpponentsView: React.FC = () => {
                 {isEditing || isNewOpponentModal ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {isNewOpponentModal && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                             Meno súpera *
@@ -1215,7 +1209,7 @@ export const OpponentsView: React.FC = () => {
                       </div>
                     )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Dominantná ruka
@@ -1265,7 +1259,7 @@ export const OpponentsView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Forehand (FH) Poťah
@@ -1383,7 +1377,7 @@ export const OpponentsView: React.FC = () => {
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
                       <div>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Dominantná ruka</span>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px' }}>
