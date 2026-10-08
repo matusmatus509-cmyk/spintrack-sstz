@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { SetBreakdown } from '../components/SetBreakdown';
+import { SstzMatchHistory } from '../components/SstzMatchHistory';
 import {
   Users,
   Search,
@@ -45,8 +46,8 @@ export const OpponentsView: React.FC = () => {
     doublesMatches
   } = useApp();
 
-  // Top mode: 'singles' (Dvojhry) vs 'doubles' (Štvorhry)
-  const [mainMode, setMainMode] = useState<'singles' | 'doubles'>('singles');
+  // Opponent records and complete SSTZ match history
+  const [mainMode, setMainMode] = useState<'singles' | 'doubles' | 'history'>('singles');
 
   // Singles search & filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -307,16 +308,19 @@ export const OpponentsView: React.FC = () => {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-            {mainMode === 'singles' ? 'Moji súperi' : 'Štvorhry a spoluhráči'}
+            {mainMode === 'history' ? 'História zápasov' : mainMode === 'singles' ? 'Moji súperi' : 'Štvorhry a spoluhráči'}
           </h1>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {mainMode === 'singles' ? '100% individuálne duely 1 na 1' : 'Zápasy a bilancia vo štvorhre'}
+            {mainMode === 'history' ? 'Všetky ligy a sezóny na jednom mieste' : mainMode === 'singles' ? 'Vzájomná bilancia, sety a body po kliknutí na súpera' : 'Zápasy a bilancia vo štvorhre'}
           </span>
         </div>
 
-        {/* Mode Toggle: Dvojhry vs Štvorhry */}
+        {/* Opponents and match history navigation */}
         <div style={{
           display: 'flex',
+          flexWrap: 'wrap',
+          maxWidth: '100%',
+          gap: '4px',
           background: 'var(--bg-card)',
           padding: '3px',
           borderRadius: 'var(--radius-full)',
@@ -324,6 +328,7 @@ export const OpponentsView: React.FC = () => {
         }}>
           <button
             onClick={() => setMainMode('singles')}
+            aria-pressed={mainMode === 'singles'}
             style={{
               padding: '6px 14px',
               borderRadius: 'var(--radius-full)',
@@ -340,6 +345,7 @@ export const OpponentsView: React.FC = () => {
           </button>
           <button
             onClick={() => setMainMode('doubles')}
+            aria-pressed={mainMode === 'doubles'}
             style={{
               padding: '6px 14px',
               borderRadius: 'var(--radius-full)',
@@ -354,8 +360,18 @@ export const OpponentsView: React.FC = () => {
           >
             👥 Štvorhry ({totalDoublesMatches})
           </button>
+          <button
+            className="btn-secondary"
+            onClick={() => setMainMode('history')}
+            aria-pressed={mainMode === 'history'}
+            style={{ borderRadius: 'var(--radius-full)', border: 'none', padding: '6px 14px', fontSize: '0.8rem', background: mainMode === 'history' ? 'var(--accent-tt-green)' : 'transparent', color: mainMode === 'history' ? '#fff' : 'var(--text-muted)' }}
+          >
+            Všetky zápasy
+          </button>
         </div>
       </div>
+
+      {mainMode === 'history' && <SstzMatchHistory />}
 
       {/* ========================================================
           MODE 1: DVOJHRY (SINGLES OPPONENTS DATABASE & SCOUTING)
