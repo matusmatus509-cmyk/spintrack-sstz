@@ -391,23 +391,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     badges
   ]);
 
-  // Load default verified SSTZ player profile if none saved in storage
-  useEffect(() => {
-    if (!saved?.sstzProfile) {
-      fetch('/api/sstz/default-player')
-        .then(res => {
-          if (res.ok) return res.json();
-          return null;
-        })
-        .then(data => {
-          if (data) {
-            applySstzPayload(data);
-          }
-        })
-        .catch(() => {});
-    }
-  }, []);
-
   // Active racket getter
   const activeRacket = rackets.find(r => r.id === activeRacketId) || rackets[0];
 
@@ -745,8 +728,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!data) return;
 
     const profile: SSTZProfile = {
-      id: data.id ? data.id.toString() : '5353024',
-      name: data.name || 'Očovan Matúš',
+      id: data.id.toString(),
+      name: data.name || `Hráč #${data.id}`,
       association: data.association || 'SSTZ',
       clubName: data.clubName || '',
       clubId: data.clubId || '',
@@ -765,7 +748,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedClubId(data.clubId);
     }
 
-    if (data.matches && data.matches.length > 0) {
+    if (Array.isArray(data.matches)) {
       const importedMatches: MatchRecord[] = data.matches.map((m: any) => ({
         id: `sstz-${m.id}`,
         date: m.date || new Date().toISOString().split('T')[0],
@@ -773,6 +756,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         competition: m.competition || m.leagueName || 'SSTZ Liga',
         leagueName: m.leagueName || 'SSTZ Liga',
         round: m.round,
+        teams: m.teams || '',
         teamHome: m.teams ? m.teams.split('-')[0]?.trim() : '',
         teamAway: m.teams ? m.teams.split('-')[1]?.trim() : '',
         playerClub: m.playerClub || '',
@@ -801,7 +785,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    if (data.doublesMatches && data.doublesMatches.length > 0) {
+    if (Array.isArray(data.doublesMatches)) {
       const importedDoubles: DoublesMatchRecord[] = data.doublesMatches.map((dm: any) => ({
         ...dm,
         competition: dm.competition || dm.leagueName || 'SSTZ Liga',
@@ -824,28 +808,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const url = allSeasons
         ? `/api/sstz/player/${playerId}?allSeasons=true`
-        : `/api/sstz/player/${playerId}`;
+        : `/api/sstz/player/${playerId}?allSeasons=false`;
       const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`);
+        const failure = await res.json().catch(() => null);
+        throw new Error(failure?.error || `Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`);
       }
       const data = await res.json();
       applySstzPayload(data);
       setIsSstzLoading(false);
       return true;
     } catch (err: any) {
-      console.error('Error syncing SSTZ player live, trying snapshot fallback:', err);
-      try {
-        const snapRes = await fetch(`/api/sstz/snapshot/${playerId}`);
-        if (snapRes.ok) {
-          const snapData = await snapRes.json();
-          applySstzPayload(snapData);
-          setIsSstzLoading(false);
-          return true;
-        }
-      } catch (snapErr) {
-        // ignore
-      }
       setSstzError(err.message || 'Nepodarilo sa načítať profil z SSTZ.');
       setIsSstzLoading(false);
       return false;

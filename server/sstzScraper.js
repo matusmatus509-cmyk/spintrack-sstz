@@ -1,7 +1,11 @@
 // SSTZ and stolnytenis.info scraper & parser
 // Extracts 100% authentic league matches, sets, scores, and player statistics without fabrication.
 
-import { saveSnapshot, loadSnapshot } from './sstzStore.js';
+import { saveSnapshot } from './sstzStore.js';
+import * as http from 'node:http';
+
+// Node 24 supports the cloud's outbound HTTPS proxy for native fetch.
+if (typeof http.setGlobalProxyFromEnv === 'function') http.setGlobalProxyFromEnv();
 
 const BASE_URL = 'https://www.stolnytenis.info';
 
@@ -13,17 +17,66 @@ const DEFAULT_HEADERS = {
   'Pragma': 'no-cache'
 };
 
-export const ALL_SEASONS = [
-  { slug: '2026-27', label: '2026/27' },
-  { slug: '2025-26', label: '2025/26' },
-  { slug: '2024-25', label: '2024/25' },
-  { slug: '2023-24', label: '2023/24' },
-  { slug: '2022-23', label: '2022/23' },
-  { slug: '2021-22', label: '2021/22' },
-  { slug: '2020-21', label: '2020/21' },
-  { slug: '2019-20', label: '2019/20' },
-  { slug: '2018-19', label: '2018/19' }
-];
+// Discover the archive from SSTZ instead of assuming a fixed range of years.
+export function parseAvailableSeasons(html) {
+  const seasons = new Map();
+  for (const link of html.matchAll(/<a\b[^>]*onclick=["'][^"']*Gss\.setSeason\(\d+\)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const label = link[1].replace(/<[^>]*>/g, '').match(/(\d{4})\/(\d{2})/);
+    if (label) seasons.set(`${label[1]}-${label[2]}`, { slug: `${label[1]}-${label[2]}`, label: label[0] });
+  }
+  // Also support ordinary archive links, including archives outside the dropdown.
+  for (const link of html.matchAll(/href=["'][^"']*\/sezona\/(\d{4})-(\d{2})\/svk["']/gi)) {
+    seasons.set(`${link[1]}-${link[2]}`, { slug: `${link[1]}-${link[2]}`, label: `${link[1]}/${link[2]}` });
+  }
+  return [...seasons.values()].sort((a, b) => b.slug.localeCompare(a.slug));
+}
+
+export function parsePlayerTabs(html, playerId) {
+  const tabs = new Map();
+  for (const link of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    if (!/class=["'][^"']*\btabs2__nav__link\b/.test(link[1])) continue;
+    const href = link[1].match(/href=["']([^"']+)["']/i)?.[1];
+    if (!href) throw new Error('SSTZ ligová záložka nemá odkaz.');
+    const url = new URL(href.replace(/&amp;/g, '&'), BASE_URL);
+    if (url.origin !== BASE_URL || url.pathname !== `/hrac/${playerId}`) {
+      throw new Error('Neplatný odkaz ligovej záložky SSTZ.');
+    }
+    const spans = [...link[2].matchAll(/<span\b[^>]*class=["']([^"']*)["'][^>]*>([^<]*)<\/span>/gi)];
+    const text = cls => spans.find(m => cls(m[1].split(/\s+/)))?.[2]?.trim() || '';
+    tabs.set(url.href, {
+      href: url.href,
+      league: text(c => c.includes('fw-bold')),
+      team: text(c => c.includes('d-block') && !c.includes('fw-bold'))
+    });
+  }
+  return [...tabs.values()];
+}
+
+// Every stage (regular season, play-offs, etc.) publishes its own totals.
+export function assertCompleteDuels(html, duels) {
+  for (const [kind, title] of [['singles', 'Dvojhry'], ['doubles', 'Štvorhry']]) {
+    const blocks = [...html.matchAll(new RegExp(`Úspešnosť\\s*-\\s*${title}([\\s\\S]*?)(?=Úspešnosť|<section|$)`, 'gi'))];
+    if (!blocks.length) continue;
+    const totals = blocks.map(m => m[1].replace(/<[^>]*>/g, ' ').match(/Celkom\s*(\d+)\s*z\s*(\d+)/i));
+    if (totals.some(m => !m)) throw new Error('Nepodarilo sa overiť počty zápasov SSTZ.');
+    const expected = totals.reduce((sum, m) => sum + Number(m[2]), 0);
+    // SSTZ success totals can exclude walkovers that remain in the protocol.
+    const played = duels[kind].filter(m => !m.isWalkover).length;
+    if (duels[kind].length < expected || played > expected) {
+      throw new Error(`Neúplný import SSTZ (${title}): načítané ${duels[kind].length} z ${expected}.`);
+    }
+  }
+}
+
+async function fetchSstz(url, headers = DEFAULT_HEADERS, redirect = 'follow') {
+  const response = await fetch(url, { headers, redirect, signal: AbortSignal.timeout(30000) });
+  if (!response.ok && !(redirect === 'manual' && response.status >= 300 && response.status < 400)) {
+    const error = new Error(`SSTZ HTTP ${response.status}: ${url}`);
+    error.status = response.status;
+    throw error;
+  }
+  return response;
+}
 
 // Simple in-memory cache with TTL (15 minutes)
 const cache = new Map();
@@ -193,6 +246,7 @@ export async function searchSSTZ(query) {
  * preserving genuine official sets and strictly separating singles from doubles.
  */
 export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27', tabLeagueName = '', tabTeamName = '') {
+  playerId = String(playerId);
   const singlesMatches = [];
   const doublesMatches = [];
 
@@ -277,6 +331,7 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
 
         const inItem1 = item1Players.some(p => p.id === playerId);
         const inItem2 = item2Players.some(p => p.id === playerId);
+        if (!inItem1 && !inItem2) continue;
         const isPlayerHome = inItem1;
 
         const myScore = isPlayerHome ? s1 : s2;
@@ -292,7 +347,7 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
           const setDetails = [];
           let totalPtsWon = 0;
           let totalPtsLost = 0;
-          let hasWalkover = false;
+          let hasWalkover = blockHtml.includes('tml2__match__is-wo') || blockHtml.includes('tml2__match__wo');
 
           for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
             const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
@@ -354,7 +409,7 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
             const setDetails = [];
             let totalPtsWon = 0;
             let totalPtsLost = 0;
-            let hasWalkover = false;
+            let hasWalkover = blockHtml.includes('tml2__match__is-wo') || blockHtml.includes('tml2__match__wo');
 
             for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
               const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
@@ -417,15 +472,20 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
  * Get detailed player profile including all authentic duels, sets, points, stats, and win rates
  * Scans all league tabs across seasons to ensure 100% complete data with no fabrications.
  */
-export async function getPlayerProfile(playerId, options = { allSeasons: false }) {
+export async function getPlayerProfile(playerId, options = {}) {
   if (!playerId) return null;
 
-  const shouldFetchAllSeasons = !!options?.allSeasons;
+  playerId = String(playerId);
+  if (!/^\d+$/.test(playerId)) throw new Error('Neplatné SSTZ ID hráča.');
+  const shouldFetchAllSeasons = options.allSeasons !== false;
   const cacheKey = `player:${playerId}:allSeasons=${shouldFetchAllSeasons}`;
   const cached = getFromCache(cacheKey);
   if (cached) return cached;
 
-  const targetSeasons = shouldFetchAllSeasons ? ALL_SEASONS : [ALL_SEASONS[0]];
+  const initial = await fetchSstz(`${BASE_URL}/hrac/${playerId}`);
+  const availableSeasons = parseAvailableSeasons(await initial.text());
+  if (!availableSeasons.length) throw new Error('Nepodarilo sa načítať zoznam sezón SSTZ.');
+  const targetSeasons = shouldFetchAllSeasons ? availableSeasons : availableSeasons.slice(0, 1);
 
   try {
     let allSingles = [];
@@ -445,23 +505,19 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
       const season = targetSeasons[seasonIndex];
 
       // Switch season on stolnytenis.info via GET /sezona/<slug>/svk to obtain session cookie
-      const resSeason = await fetch(`${BASE_URL}/sezona/${season.slug}/svk`, {
-        headers: DEFAULT_HEADERS,
-        redirect: 'manual'
-      });
-      const setCookies = resSeason.headers.getSetCookie ? resSeason.headers.getSetCookie() : [resSeason.headers.get('set-cookie')];
-      const cookieHeader = setCookies.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
-
-      const resPlayer = await fetch(`${BASE_URL}/hrac/${playerId}`, {
-        headers: { ...DEFAULT_HEADERS, 'Cookie': cookieHeader }
-      });
-
-      if (!resPlayer.ok) {
-        if (seasonIndex === 0) {
-          throw new Error(`HTTP ${resPlayer.status} fetching player ${playerId}`);
+      const resSeason = await fetchSstz(`${BASE_URL}/sezona/${season.slug}/svk`, DEFAULT_HEADERS, 'manual');
+      const cookieJar = new Map();
+      const addCookies = response => {
+        for (const cookie of response.headers.getSetCookie()) {
+          const pair = cookie.split(';')[0];
+          cookieJar.set(pair.split('=')[0], pair);
         }
-        continue;
-      }
+      };
+      addCookies(resSeason);
+      if (!cookieJar.size) throw new Error(`SSTZ nepotvrdilo prepnutie sezóny ${season.label}.`);
+      const headers = () => ({ ...DEFAULT_HEADERS, Cookie: [...cookieJar.values()].join('; ') });
+      const resPlayer = await fetchSstz(`${BASE_URL}/hrac/${playerId}`, headers());
+      addCookies(resPlayer);
 
       const html = await resPlayer.text();
 
@@ -511,9 +567,8 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
         }
       }
 
-      // Detect all tabs in this season (swipers / tabs2__nav__item)
-      const tabRegex = /<div class="swiper-slide w-auto tabs2__nav__item[^"]*">([\s\S]*?)<\/div>/gi;
-      const tabMatches = [...html.matchAll(tabRegex)];
+      // Follow every competition/team tab, regardless of markup class order.
+      const tabMatches = parsePlayerTabs(html, playerId);
 
       let seasonSingles = 0;
       let seasonDoubles = 0;
@@ -523,6 +578,7 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
 
       if (tabMatches.length === 0) {
         const duels = parsePlayerDuelsFromHtml(html, playerId, season.label, '', '');
+        assertCompleteDuels(html, duels);
         for (const m of duels.singles) {
           if (!seenMatchIds.has(m.id)) {
             seenMatchIds.add(m.id);
@@ -540,28 +596,17 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
           }
         }
       } else {
-        for (const tm of tabMatches) {
-          const content = tm[1];
-          const league = content.match(/<span class="d-block fw-bold">([\s\S]*?)<\/span>/i)?.[1]?.trim() || '';
-          const team = content.match(/<span class="d-block">([\s\S]*?)<\/span>/i)?.[1]?.trim() || '';
-          const href = content.match(/href="([^"]+)"/i)?.[1];
+        for (const { href, league, team } of tabMatches) {
           if (league) seasonLeagues.add(league);
           if (!primaryClub && team) primaryClub = team;
-
           let tabHtml = html;
-          if (href && href !== `${BASE_URL}/hrac/${playerId}` && !content.includes('active')) {
-            const url = href.startsWith('http') ? href : `${BASE_URL}${href}`;
-            try {
-              const resTab = await fetch(url, {
-                headers: { ...DEFAULT_HEADERS, 'Cookie': cookieHeader }
-              });
-              if (resTab.ok) tabHtml = await resTab.text();
-            } catch (err) {
-              console.warn(`Error fetching tab ${url}:`, err.message);
-            }
+          if (href !== `${BASE_URL}/hrac/${playerId}`) {
+            const resTab = await fetchSstz(href, headers());
+            addCookies(resTab);
+            tabHtml = await resTab.text();
           }
-
           const duels = parsePlayerDuelsFromHtml(tabHtml, playerId, season.label, league, team);
+          assertCompleteDuels(tabHtml, duels);
           for (const m of duels.singles) {
             if (!seenMatchIds.has(m.id)) {
               seenMatchIds.add(m.id);
@@ -637,7 +682,8 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
       totalMatches: allSingles.length,
       totalDoublesMatches: allDoubles.length,
       isAllSeasons: shouldFetchAllSeasons,
-      syncedSeasonsCount: seasonsBreakdown.length || 1,
+      syncedSeasonsCount: targetSeasons.length,
+      scannedSeasons: targetSeasons,
       seasonsBreakdown,
       source: 'SSTZ',
       syncedAt: new Date().toISOString()
@@ -645,20 +691,14 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
 
     setInCache(cacheKey, profile);
     // Persist snapshot to disk
-    saveSnapshot(playerId, profile);
+    if (options.persist !== false) saveSnapshot(playerId, profile);
 
     return profile;
   } catch (err) {
     console.error(`Error loading live player ${playerId}:`, err.message);
 
-    // Fallback: load existing verified snapshot if available
-    const snapshot = loadSnapshot(playerId);
-    if (snapshot) {
-      console.log(`Loaded authentic snapshot fallback for player ${playerId}`);
-      return snapshot;
-    }
-
-    return null;
+    // An old snapshot must never masquerade as a successful full career sync.
+    throw err;
   }
 }
 

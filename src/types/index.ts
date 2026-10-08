@@ -107,6 +107,7 @@ export interface MatchRecord {
   leagueName?: string;
   round?: string;
   teamHome?: string;
+  teams?: string;
   teamAway?: string;
   playerClub?: string;
   opponentName: string;

@@ -45,7 +45,7 @@ app.get('/api/sstz/search', async (req, res) => {
 // Player profile (supports ?allSeasons=true)
 app.get('/api/sstz/player/:id', async (req, res) => {
   const { id } = req.params;
-  const allSeasons = req.query.allSeasons === 'true';
+  const allSeasons = req.query.allSeasons !== 'false';
   try {
     const profile = await getPlayerProfile(id, { allSeasons });
     if (!profile) {
@@ -53,7 +53,7 @@ app.get('/api/sstz/player/:id', async (req, res) => {
     }
     res.json(profile);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status === 404 ? 404 : 502).json({ error: err.message });
   }
 });
 
