@@ -8,384 +8,148 @@ import {
   Trophy,
   TrendingUp,
   Plus,
-  ShieldCheck,
   ChevronRight,
-  Flame
+  ArrowUpRight,
+  Shield,
+  Activity,
 } from 'lucide-react';
-
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
   onOpenQuickLog?: () => void;
   onOpenMatchModal?: () => void;
 }
-
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const {
-    totalPlayHours,
-    overallWinRate,
-    matches,
-    sstzProfile,
-    teamSchedule
-  } = useApp();
-
+  const { totalPlayHours, overallWinRate, matches, sstzProfile, teamSchedule } =
+    useApp();
   const [showAddActivityModal, setShowAddActivityModal] = useState(false);
-
-  // Next upcoming match from teamSchedule
-  const upcomingMatch = teamSchedule.find(m => !m.isPlayed);
-  const totalWins = matches.filter(m => m.result === 'WIN').length;
-
+  const upcomingMatch = teamSchedule.find((m) => !m.isPlayed);
+  const totalWins = matches.filter((m) => m.result === 'WIN').length;
   return (
-    <div
-      className="animate-fade-in"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-        maxWidth: '720px',
-        margin: '0 auto',
-        width: '100%',
-        paddingBottom: '8px'
-      }}
-    >
-      {/* 1. Header with Profile & Add Activity Button */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '12px'
-        }}
-      >
+    <div className="page-view dashboard-view animate-fade-in">
+      <div className="page-header dashboard-heading">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="badge-pill badge-green" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-              <Flame size={11} /> Prehľad
-            </span>
-            {sstzProfile && (
-              <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-                <ShieldCheck size={11} /> {sstzProfile.clubName || 'SSTZ'}
-              </span>
-            )}
-          </div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', margin: '2px 0 0 0' }}>
-            {sstzProfile ? sstzProfile.name : 'Môj SpinTrack'}
+          <span className="eyebrow">TVOJ STOLNOTENISOVÝ DENNÍK</span>
+          <h1>
+            {sstzProfile ? sstzProfile.name : 'Tvoja hra na jednom mieste.'}
           </h1>
+          <p>
+            {sstzProfile?.clubName ||
+              'Sleduj tréningy, výsledky a každý krok vpred.'}
+          </p>
         </div>
-
         <button
-          onClick={() => setShowAddActivityModal(true)}
           className="btn-primary"
-          style={{
-            padding: '9px 16px',
-            fontSize: '0.85rem',
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            whiteSpace: 'nowrap'
-          }}
+          onClick={() => setShowAddActivityModal(true)}
         >
-          <Plus size={16} /> Pridať aktivitu
+          <Plus size={19} /> Pridať aktivitu
         </button>
       </div>
-
-      {/* 2. KARTA: ĎALŠÍ ZÁPAS */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '18px 20px',
-          borderRadius: 'var(--radius-xl)',
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              className="badge-pill badge-blue"
-              style={{ fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px' }}
-            >
-              <Calendar size={12} /> Ďalší zápas
-            </span>
-            {upcomingMatch?.round && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                {upcomingMatch.round}
-              </span>
-            )}
-          </div>
-
+      <section className="next-match-card" aria-labelledby="next-match-title">
+        <div className="next-match-top">
+          <span className="eyebrow" id="next-match-title">
+            <span className="status-dot" /> NAJBLIŽŠÍ ZÁPAS
+          </span>
           <button
+            className="text-button"
             onClick={() => onNavigate('calendar')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#38bdf8',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px'
-            }}
           >
-            Kalendár <ChevronRight size={14} />
+            Kalendár <ArrowUpRight size={17} />
           </button>
         </div>
-
         {upcomingMatch ? (
-          <div>
-            {/* Teams Duel */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                padding: '12px 14px',
-                background: 'rgba(0, 0, 0, 0.35)',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Domáci
-                </div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
-                  {upcomingMatch.homeTeam}
-                </div>
+          <>
+            <div className="match-teams">
+              <div>
+                <span className="team-caption">Domáci</span>
+                <h2>{upcomingMatch.homeTeam}</h2>
               </div>
-
-              <div
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(59, 130, 246, 0.2)',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
-                  color: '#60a5fa',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  fontFamily: 'var(--font-mono)'
-                }}
-              >
-                VS
-              </div>
-
-              <div style={{ flex: 1, textAlign: 'right' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  Hostia
-                </div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
-                  {upcomingMatch.awayTeam}
-                </div>
+              <span className="match-vs">VS</span>
+              <div>
+                <span className="team-caption">Hostia</span>
+                <h2>{upcomingMatch.awayTeam}</h2>
               </div>
             </div>
-
-            {/* Date & Time footer */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '10px',
-                fontSize: '0.8rem',
-                color: 'var(--text-muted)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Clock size={14} color="#34d399" />
-                <span style={{ color: '#fff', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                  {upcomingMatch.dateTime}
-                </span>
-              </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                SSTZ Oficiálny rozpis
+            <div className="match-footer">
+              <span>
+                <Calendar size={16} /> {upcomingMatch.dateTime}
               </span>
+              {upcomingMatch.round && <span>{upcomingMatch.round}</span>}
             </div>
-          </div>
+          </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '16px 10px' }}>
-            <Calendar size={32} color="var(--text-dim)" style={{ margin: '0 auto 8px auto' }} />
-            <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>
-              Žiadny naplánovaný zápas
+          <div className="next-match-empty">
+            <span className="empty-icon">
+              <Calendar size={29} />
+            </span>
+            <div>
+              <h2>Priprav sa na ďalší zápas.</h2>
+              <p>Pripoj svoju ligu a maj rozpis vždy po ruke.</p>
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '4px 0 10px 0' }}>
-              Pozri si ligovú tabuľku alebo kalendár v SSTZ Hub.
-            </p>
             <button
-              onClick={() => onNavigate('sstz')}
               className="btn-secondary"
-              style={{ padding: '6px 14px', fontSize: '0.78rem' }}
+              onClick={() => onNavigate('sstz')}
             >
-              Prejsť na SSTZ Hub
+              Nájsť moju ligu <ChevronRight size={17} />
             </button>
           </div>
         )}
-      </div>
-
-      {/* 3. HLAVNÉ METRIKY: Úspešnosť, Počet zápasov, Odohrané hodiny */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '12px'
-        }}
-      >
-        {/* Metrika 1: Úspešnosť */}
-        <div
-          className="glass-panel"
-          style={{
-            padding: '18px 16px',
-            borderRadius: 'var(--radius-xl)',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Úspešnosť výhier
+      </section>
+      <section className="dashboard-metrics" aria-label="Tvoje výsledky">
+        {[
+          {
+            label: 'Úspešnosť',
+            value: `${overallWinRate}%`,
+            detail: `${totalWins} výhier z ${matches.length} zápasov`,
+            icon: TrendingUp,
+            tone: 'green',
+          },
+          {
+            label: 'Odohrané zápasy',
+            value: matches.length,
+            detail: 'Každý duel je skúsenosť.',
+            icon: Trophy,
+            tone: 'blue',
+          },
+          {
+            label: 'Čas pri stole',
+            value: `${totalPlayHours} h`,
+            detail: 'Tréningy a zápasy spolu.',
+            icon: Clock,
+            tone: 'amber',
+          },
+        ].map(({ label, value, detail, icon: Icon, tone }) => (
+          <article className={`metric-card metric-${tone}`} key={label}>
+            <span className="metric-icon">
+              <Icon size={21} />
             </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <TrendingUp size={16} />
-            </div>
-          </div>
-
-          <div
-            style={{
-              fontSize: '2.1rem',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              color: overallWinRate >= 50 ? '#34d399' : '#f87171',
-              lineHeight: 1
-            }}
-          >
-            {overallWinRate}%
-          </div>
-
-          <div style={{ fontSize: '0.76rem', color: 'var(--text-dim)' }}>
-            <strong style={{ color: '#34d399' }}>{totalWins}</strong> výhier z <strong>{matches.length}</strong> zápasov
-          </div>
-        </div>
-
-        {/* Metrika 2: Počet zápasov */}
-        <div
-          className="glass-panel"
-          style={{
-            padding: '18px 16px',
-            borderRadius: 'var(--radius-xl)',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Počet zápasov
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(56, 189, 248, 0.15)',
-                color: '#38bdf8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Trophy size={16} />
-            </div>
-          </div>
-
-          <div
-            style={{
-              fontSize: '2.1rem',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              color: '#fff',
-              lineHeight: 1
-            }}
-          >
-            {matches.length}
-          </div>
-
-          <div style={{ fontSize: '0.76rem', color: 'var(--text-dim)' }}>
-            Celkovo odohraných duelov
-          </div>
-        </div>
-
-        {/* Metrika 3: Počet odohratých hodín */}
-        <div
-          className="glass-panel"
-          style={{
-            padding: '18px 16px',
-            borderRadius: 'var(--radius-xl)',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Odohrané hodiny
-            </span>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: '#f59e0b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Clock size={16} />
-            </div>
-          </div>
-
-          <div
-            style={{
-              fontSize: '2.1rem',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              color: '#f59e0b',
-              lineHeight: 1
-            }}
-          >
-            {totalPlayHours} <span style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>h</span>
-          </div>
-
-          <div style={{ fontSize: '0.76rem', color: 'var(--text-dim)' }}>
-            Tréningy a zápasy celkom
-          </div>
-        </div>
-      </div>
-
-      {/* Add Activity Modal */}
+            <span className="metric-label">{label}</span>
+            <strong className="metric-value">{value}</strong>
+            <span className="metric-detail">{detail}</span>
+          </article>
+        ))}
+      </section>
+      <section className="dashboard-shortcuts" aria-label="Rýchly prístup">
+        <button onClick={() => onNavigate('sstz')} className="shortcut-card">
+          <span className="shortcut-icon">
+            <Shield size={23} />
+          </span>
+          <span>
+            <strong>Celá tvoja kariéra</strong>
+            <small>Všetky sezóny a ligy zo SSTZ</small>
+          </span>
+          <ChevronRight size={19} />
+        </button>
+        <button onClick={() => onNavigate('diary')} className="shortcut-card">
+          <span className="shortcut-icon">
+            <Activity size={23} />
+          </span>
+          <span>
+            <strong>Tréningový denník</strong>
+            <small>Malé kroky. Veľký progres.</small>
+          </span>
+          <ChevronRight size={19} />
+        </button>
+      </section>
       <AddActivityModal
         isOpen={showAddActivityModal}
         onClose={() => setShowAddActivityModal(false)}

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   LayoutDashboard,
   Shield,
@@ -6,177 +7,184 @@ import {
   Calendar,
   Activity,
   BarChart3,
-  Target
+  Target,
+  MoreHorizontal,
+  ChevronRight,
+  X,
 } from 'lucide-react';
+import { useDialog } from '../hooks/useDialog';
 
-export type NavTab = 'dashboard' | 'sstz' | 'opponents' | 'equipment' | 'calendar' | 'diary' | 'stats';
-
+export type NavTab =
+  | 'dashboard'
+  | 'sstz'
+  | 'opponents'
+  | 'equipment'
+  | 'calendar'
+  | 'diary'
+  | 'stats';
 interface NavigationProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
 }
+export const NAV_TABS = [
+  {
+    id: 'dashboard' as NavTab,
+    label: 'Prehľad',
+    icon: LayoutDashboard,
+    description: 'Tvoj deň pri stole',
+  },
+  {
+    id: 'sstz' as NavTab,
+    label: 'SSTZ',
+    icon: Shield,
+    description: 'Ligy a celá kariéra',
+  },
+  {
+    id: 'diary' as NavTab,
+    label: 'Aktivita',
+    icon: Activity,
+    description: 'Tréningy a zápasy',
+  },
+  {
+    id: 'calendar' as NavTab,
+    label: 'Kalendár',
+    icon: Calendar,
+    description: 'Najbližšie stretnutia',
+  },
+  {
+    id: 'opponents' as NavTab,
+    label: 'Súperi',
+    icon: Target,
+    description: 'Bilancia a taktika',
+  },
+  {
+    id: 'equipment' as NavTab,
+    label: 'Výstroj',
+    icon: Layers,
+    description: 'Rakety, drevá a poťahy',
+  },
+  {
+    id: 'stats' as NavTab,
+    label: 'Štatistiky',
+    icon: BarChart3,
+    description: 'Výkonnosť a odznaky',
+  },
+];
 
-export const Navigation: React.FC<NavigationProps> = ({ currentTab, onSelectTab }) => {
-  const tabs = [
-    { id: 'dashboard' as NavTab, label: 'Prehľad', icon: LayoutDashboard },
-    { id: 'sstz' as NavTab, label: 'SSTZ Hub', icon: Shield, badge: 'SSTZ' },
-    { id: 'opponents' as NavTab, label: 'Súperi', icon: Target, badge: 'Skauting' },
-    { id: 'equipment' as NavTab, label: 'Výstroj', icon: Layers },
-    { id: 'calendar' as NavTab, label: 'Kalendár', icon: Calendar },
-    { id: 'diary' as NavTab, label: 'Aktivita', icon: Activity },
-    { id: 'stats' as NavTab, label: 'Štatistiky', icon: BarChart3 },
-  ];
-
+export const Navigation: React.FC<NavigationProps> = ({
+  currentTab,
+  onSelectTab,
+}) => {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const dialogRef = useDialog(isMoreOpen, () => setIsMoreOpen(false));
+  const primaryTabs = NAV_TABS.slice(0, 4);
+  const moreTabs = NAV_TABS.slice(4);
+  const select = (tab: NavTab) => {
+    setIsMoreOpen(false);
+    onSelectTab(tab);
+  };
+  const moreActive = moreTabs.some((tab) => tab.id === currentTab);
   return (
     <>
-      {/* Desktop / Tablet Sidebar */}
-      <aside className="d-none d-md-flex desktop-sidebar" style={{
-        width: '230px',
-        padding: '20px 14px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        borderRight: '1px solid var(--border-subtle)',
-        background: 'rgba(10, 13, 20, 0.4)',
-        minHeight: 'calc(100vh - 80px)'
-      }}>
-        <div style={{
-          fontSize: '0.72rem',
-          fontWeight: 800,
-          color: 'var(--text-dim)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          padding: '4px 12px 10px 12px'
-        }}>
-          Navigácia
+      <aside className="desktop-sidebar">
+        <span className="nav-eyebrow">TVOJ HERNÝ PRIESTOR</span>
+        <nav aria-label="Hlavná navigácia" className="sidebar-links">
+          {NAV_TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              className={`sidebar-link ${currentTab === id ? 'is-active' : ''}`}
+              aria-current={currentTab === id ? 'page' : undefined}
+              onClick={() => select(id)}
+            >
+              <Icon size={20} strokeWidth={1.8} />
+              <span>{label}</span>
+              {currentTab === id && <span className="nav-active-dot" />}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-note">
+          <span className="status-dot" />
+          <div>
+            Každý tréning sa počíta.
+            <small>Všetko o tvojej hre na jednom mieste.</small>
+          </div>
         </div>
-
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = currentTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onSelectTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 14px',
-                borderRadius: 'var(--radius-md)',
-                background: isActive ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                color: isActive ? '#34d399' : 'var(--text-muted)',
-                fontWeight: isActive ? 700 : 500,
-                fontSize: '0.9rem',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-                width: '100%',
-                position: 'relative'
-              }}
-              onMouseEnter={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'var(--bg-card-hover)';
-                  e.currentTarget.style.color = 'var(--text-main)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
-              }}
-            >
-              <Icon size={19} color={isActive ? '#10b981' : 'currentColor'} />
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: '0.65rem',
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(59, 130, 246, 0.2)',
-                  color: '#60a5fa',
-                  fontWeight: 700
-                }}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
       </aside>
-
-      {/* Native-style Mobile Bottom Navigation Bar */}
-      <nav className="mobile-bottom-nav d-md-none" style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'rgba(15, 23, 42, 0.96)',
-        backdropFilter: 'blur(25px)',
-        WebkitBackdropFilter: 'blur(25px)',
-        borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '5px 2px',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5px)',
-        zIndex: 50,
-        boxShadow: '0 -4px 25px rgba(0, 0, 0, 0.6)',
-        justifyContent: 'space-between'
-      }}>
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = currentTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onSelectTab(tab.id)}
-              className="mobile-nav-btn"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '2px',
-                background: 'transparent',
-                border: 'none',
-                color: isActive ? '#34d399' : 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '4px 2px',
-                minWidth: 0,
-                flex: 1,
-                fontSize: '0.62rem',
-                fontWeight: isActive ? 800 : 500,
-                transition: 'all 0.15s ease',
-                touchAction: 'manipulation'
-              }}
-            >
-              <div style={{
-                padding: '3px 8px',
-                borderRadius: 'var(--radius-full)',
-                background: isActive ? 'rgba(16, 185, 129, 0.22)' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s ease'
-              }}>
-                <Icon size={18} color={isActive ? '#34d399' : 'currentColor'} />
-              </div>
-              <span style={{
-                width: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                textAlign: 'center'
-              }}>
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+      <nav className="mobile-bottom-nav" aria-label="Mobilná navigácia">
+        {primaryTabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            className={`mobile-nav-btn ${currentTab === id ? 'is-active' : ''}`}
+            aria-current={currentTab === id ? 'page' : undefined}
+            onClick={() => select(id)}
+          >
+            <span className="mobile-nav-icon">
+              <Icon size={22} strokeWidth={1.8} />
+            </span>
+            <span>{label}</span>
+          </button>
+        ))}
+        <button
+          className={`mobile-nav-btn ${moreActive || isMoreOpen ? 'is-active' : ''}`}
+          aria-label="Viac sekcií"
+          aria-expanded={isMoreOpen}
+          aria-haspopup="dialog"
+          onClick={() => setIsMoreOpen(true)}
+        >
+          <span className="mobile-nav-icon">
+            <MoreHorizontal size={23} />
+          </span>
+          <span>Viac</span>
+        </button>
       </nav>
+      {isMoreOpen &&
+        createPortal(
+          <div
+            className="mobile-sheet-container nav-sheet-backdrop"
+            onClick={() => setIsMoreOpen(false)}
+          >
+            <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="more-menu-title"
+              tabIndex={-1}
+              className="mobile-sheet-content nav-sheet"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="dialog-header">
+                <div>
+                  <span className="eyebrow">SPINTRACK</span>
+                  <h2 id="more-menu-title">Viac z tvojej hry</h2>
+                </div>
+                <button
+                  className="icon-button"
+                  aria-label="Zavrieť menu"
+                  onClick={() => setIsMoreOpen(false)}
+                >
+                  <X size={21} />
+                </button>
+              </div>
+              {moreTabs.map(({ id, label, icon: Icon, description }) => (
+                <button
+                  key={id}
+                  className={`more-menu-link ${currentTab === id ? 'is-active' : ''}`}
+                  onClick={() => select(id)}
+                >
+                  <span className="more-menu-icon">
+                    <Icon size={23} />
+                  </span>
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                  </span>
+                  <ChevronRight size={19} />
+                </button>
+              ))}
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

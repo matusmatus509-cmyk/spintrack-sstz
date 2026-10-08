@@ -59,10 +59,21 @@ export const SstzHubView: React.FC = () => {
   const [activeLeagueTab, setActiveLeagueTab] = useState<'standings' | 'matches'>('standings');
 
   // Matches interactive filters
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPageSize = 12;
+  const matchHistoryRef = React.useRef<HTMLDivElement>(null);
+  const goToHistoryPage = (page: number) => {
+    setHistoryPage(page);
+    requestAnimationFrame(() => matchHistoryRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' }));
+  };
   const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('all');
   const [selectedLeagueFilter, setSelectedLeagueFilter] = useState<string>('all');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<'all' | 'singles' | 'doubles'>('all');
   const [matchSearch, setMatchSearch] = useState('');
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [selectedSeasonFilter, selectedLeagueFilter, selectedTypeFilter, matchSearch, sstzProfile?.id, matches.length, doublesMatches.length]);
 
   // Load all 126 Slovak leagues on mount
   useEffect(() => {
@@ -231,10 +242,10 @@ export const SstzHubView: React.FC = () => {
   const leaguesInCategory = currentCategoryObj?.leagues || [];
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div className="page-view sstz-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
       {/* Top Compact Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
@@ -245,7 +256,7 @@ export const SstzHubView: React.FC = () => {
             </span>
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            SSTZ Hub • Ligy, Zápasy & Kariéra
+            Ligy a moja kariéra
           </h1>
         </div>
 
@@ -291,7 +302,7 @@ export const SstzHubView: React.FC = () => {
       {/* Connected Profile Card */}
       {sstzProfile ? (
         <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+          <div className="sstz-profile-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{
                 width: '56px',
@@ -309,7 +320,7 @@ export const SstzHubView: React.FC = () => {
                 {sstzProfile.name.split(' ').map(n => n[0]).join('')}
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="sstz-profile-identity" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>{sstzProfile.name}</h2>
                   <span className="badge-pill badge-green" style={{ fontSize: '0.7rem' }}>
                     <ShieldCheck size={13} /> SSTZ ID #{sstzProfile.id}
@@ -328,7 +339,7 @@ export const SstzHubView: React.FC = () => {
           </div>
 
           {/* Official SSTZ Metrics */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+          <div className="profile-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
                 Kariérne Dvojhry (1v1)
@@ -496,8 +507,8 @@ export const SstzHubView: React.FC = () => {
             </span>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+          <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabuľka súťaží" style={{ overflowX: 'auto' }}>
+            <table className="season-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                   <th style={{ padding: '10px 12px' }}>Sezóna</th>
@@ -516,6 +527,14 @@ export const SstzHubView: React.FC = () => {
                     <tr
                       key={sb.season}
                       onClick={() => setSelectedSeasonFilter(isFiltered ? 'all' : sb.season)}
+                      tabIndex={0}
+                      aria-label={`Filtrovať sezónu ${sb.season}`}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedSeasonFilter(isFiltered ? 'all' : sb.season);
+                        }
+                      }}
                       style={{
                         borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                         background: isFiltered ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
@@ -529,10 +548,10 @@ export const SstzHubView: React.FC = () => {
                         if (!isFiltered) e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      <td style={{ padding: '12px', fontWeight: 800, color: '#38bdf8' }}>
+                      <td data-label="Sezóna" style={{ padding: '12px', fontWeight: 800, color: '#38bdf8' }}>
                         {sb.season}
                       </td>
-                      <td style={{ padding: '12px' }}>
+                      <td data-label="Ligy a súťaže" style={{ padding: '12px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                           {sb.leagues.map(l => (
                             <span key={l} className="badge-pill" style={{ fontSize: '0.68rem', background: 'rgba(255, 255, 255, 0.06)' }}>
@@ -541,21 +560,21 @@ export const SstzHubView: React.FC = () => {
                           ))}
                         </div>
                       </td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                      <td data-label="Dvojhry · výhry / prehry" style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
                         <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.singlesWon}</span> /{' '}
                         <span style={{ color: '#f87171' }}>{sb.singlesLost}</span>
                       </td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.singlesWinRate >= 50 ? '#34d399' : '#f87171' }}>
+                      <td data-label="Úspešnosť dvojhier" style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.singlesWinRate >= 50 ? '#34d399' : '#f87171' }}>
                         {sb.singlesWinRate}%
                       </td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                      <td data-label="Štvorhry · výhry / prehry" style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
                         <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.doublesWon}</span> /{' '}
                         <span style={{ color: '#f87171' }}>{sb.doublesLost}</span>
                       </td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.doublesWinRate >= 50 ? '#a855f7' : 'var(--text-muted)' }}>
+                      <td data-label="Úspešnosť štvorhier" style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.doublesWinRate >= 50 ? '#a855f7' : 'var(--text-muted)' }}>
                         {sb.doublesWinRate}%
                       </td>
-                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
+                      <td data-label="Zápasy spolu" style={{ padding: '12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
                         {sb.total}
                       </td>
                     </tr>
@@ -587,7 +606,7 @@ export const SstzHubView: React.FC = () => {
           {/* Filters Bar */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: '10px',
             marginBottom: '16px',
             background: 'rgba(255, 255, 255, 0.02)',
@@ -693,8 +712,8 @@ export const SstzHubView: React.FC = () => {
           </div>
 
           {/* Matches List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
-            {filteredMatches.map(m => {
+          <div ref={matchHistoryRef} className="history-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {filteredMatches.slice((historyPage - 1) * historyPageSize, historyPage * historyPageSize).map(m => {
               const isWin = m.result === 'WIN';
               const isDoubles = m.duelType === 'doubles';
 
@@ -801,6 +820,14 @@ export const SstzHubView: React.FC = () => {
               );
             })}
           </div>
+          {filteredMatches.length === 0 && <p className="history-empty">Pre tieto filtre sa nenašli žiadne zápasy.</p>}
+          {filteredMatches.length > historyPageSize && (
+            <nav className="history-pagination" aria-label="Stránkovanie zápasov">
+              <button className="btn-secondary" aria-label="Predchádzajúce zápasy" disabled={historyPage === 1} onClick={() => goToHistoryPage(historyPage - 1)}>Predošlé</button>
+              <span aria-live="polite">{(historyPage - 1) * historyPageSize + 1}–{Math.min(historyPage * historyPageSize, filteredMatches.length)} z {filteredMatches.length}</span>
+              <button className="btn-secondary" aria-label="Ďalšie zápasy" disabled={historyPage * historyPageSize >= filteredMatches.length} onClick={() => goToHistoryPage(historyPage + 1)}>Ďalšie</button>
+            </nav>
+          )}
         </div>
       )}
 
@@ -821,7 +848,7 @@ export const SstzHubView: React.FC = () => {
         </div>
 
         {/* 3 Step Selectors */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '14px', marginTop: '16px' }}>
           
           {/* 1. Region / Category Dropdown */}
           <div>
@@ -984,7 +1011,7 @@ export const SstzHubView: React.FC = () => {
 
           {/* TAB 1: STANDINGS TABLE */}
           {activeLeagueTab === 'standings' && (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabuľka súťaží" style={{ overflowX: 'auto' }}>
               {leagueData.standings && leagueData.standings.length > 0 ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                   <thead>
@@ -1065,11 +1092,12 @@ export const SstzHubView: React.FC = () => {
 
           {/* TAB 2: LEAGUE MATCHES */}
           {activeLeagueTab === 'matches' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '500px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {leagueData.matches && leagueData.matches.length > 0 ? (
                 leagueData.matches.map(m => (
                   <div
                     key={m.id}
+                    className="fixture-row"
                     style={{
                       padding: '10px 14px',
                       background: 'var(--bg-card)',
@@ -1091,7 +1119,7 @@ export const SstzHubView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', minWidth: '240px' }}>
+                    <div className="fixture-teams" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', minWidth: '240px' }}>
                       <span style={{ fontWeight: 600, fontSize: '0.9rem', textAlign: 'right', flex: 1 }}>{m.homeTeam}</span>
                       <span style={{
                         padding: '4px 10px',
@@ -1144,7 +1172,7 @@ export const SstzHubView: React.FC = () => {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
             gap: '12px'
           }}>
             {opponentStats.map(opp => {

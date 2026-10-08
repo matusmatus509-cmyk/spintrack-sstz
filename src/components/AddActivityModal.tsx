@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
@@ -97,6 +98,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   const [addEquipmentWear, setAddEquipmentWear] = useState(true);
   const [selectedRacketId, setSelectedRacketId] = useState(activeRacket?.id || '');
 
+  const dialogRef = useDialog(isOpen, onClose);
   if (!isOpen) return null;
 
   // Toggle drill tag
@@ -189,15 +191,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     onClose();
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [isOpen]);
+
 
   const formatHoursDisplay = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -233,6 +227,11 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     >
       <div
         className="glass-panel mobile-sheet-content"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pridať aktivitu"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%',
@@ -255,12 +254,13 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
               Pridať aktivitu
             </h2>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Manuálne zadanie tréningu, zápasu alebo podujatia spätne
+              Zaznamenaj tréning, zápas alebo podujatie.
             </span>
           </div>
 
           <button
             onClick={onClose}
+            aria-label="Zavrieť"
             className="btn-secondary"
             style={{ padding: '7px', borderRadius: 'var(--radius-full)' }}
           >
@@ -277,7 +277,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
             </label>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))',
               gap: '6px'
             }}>
               {[
@@ -584,7 +584,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 </div>
 
                 {/* Opponent Grip & Rubbers */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
                   {/* Grip */}
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>
@@ -680,7 +680,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 </div>
 
                 {/* Match Score (Optional if match was played) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>
                       Výsledok zápasu
@@ -812,7 +812,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
           {/* 5. DETAILY A VIDITEĽNOSŤ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Dátum a Miesto */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                   Dátum *
@@ -997,7 +997,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
           </div>
 
           {/* Uložiť tlačidlo */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
             <button
               type="button"
               onClick={onClose}

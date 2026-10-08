@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { PwaInstallPrompt } from './PwaInstallPrompt';
@@ -35,6 +36,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       .catch(() => {});
   }, []);
 
+  const dialogRef = useDialog(isOpen, onClose);
   if (!isOpen) return null;
 
   const handleExportDownload = () => {
@@ -69,15 +71,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [isOpen]);
+
 
   const handleReset = () => {
     if (window.confirm('Naozaj chceš vymazať všetky údaje a vrátiť aplikáciu do predvoleného stavu?')) {
@@ -112,6 +106,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     >
       <div
         className="glass-panel mobile-sheet-content"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nastavenia a záloha"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         style={{
           maxWidth: '520px',
@@ -128,10 +127,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Nastavenia & Záloha</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Nastavenia a záloha</h3>
           </div>
           <button
             onClick={onClose}
+            aria-label="Zavrieť"
             style={{
               background: 'transparent',
               border: 'none',
