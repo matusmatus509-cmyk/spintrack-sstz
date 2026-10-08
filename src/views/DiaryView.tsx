@@ -45,12 +45,11 @@ export const DiaryView: React.FC = () => {
     return activities.filter(a => a.category === categoryFilter);
   }, [activities, categoryFilter]);
 
-  // SSTZ League matches (visible under 'liga' or 'all')
-  const relevantLeagueMatches = useMemo(() => {
-    if (categoryFilter === 'all' || categoryFilter === 'liga') {
-      return matches.filter(m => m.source === 'SSTZ');
-    }
-    return [];
+  const leagueMatches = matches.filter(m => m.source === 'SSTZ');
+  const tournamentMatches = matches.filter(m => m.source === 'SSTZ_TOURNAMENT');
+  const relevantImportedMatches = useMemo(() => {
+    return matches.filter(m => (m.source === 'SSTZ' && (categoryFilter === 'all' || categoryFilter === 'liga'))
+      || (m.source === 'SSTZ_TOURNAMENT' && (categoryFilter === 'all' || categoryFilter === 'turnaj')));
   }, [matches, categoryFilter]);
 
   const getCategoryBadge = (cat: ActivityCategory) => {
@@ -126,11 +125,11 @@ export const DiaryView: React.FC = () => {
           WebkitOverflowScrolling: 'touch'
         }}>
           {[
-            { id: 'all', label: 'Všetky', count: activities.length + relevantLeagueMatches.length },
+            { id: 'all', label: 'Všetky', count: activities.length + leagueMatches.length + tournamentMatches.length },
             { id: 'tréning' as ActivityCategory, label: 'Tréning', count: activities.filter(a => a.category === 'tréning').length },
             { id: 'priatelsky' as ActivityCategory, label: 'Priateľský', count: activities.filter(a => a.category === 'priatelsky').length },
-            { id: 'turnaj' as ActivityCategory, label: 'Turnaj', count: activities.filter(a => a.category === 'turnaj').length },
-            { id: 'liga' as ActivityCategory, label: 'Liga', count: activities.filter(a => a.category === 'liga').length + relevantLeagueMatches.length },
+            { id: 'turnaj' as ActivityCategory, label: 'Turnaj', count: activities.filter(a => a.category === 'turnaj').length + tournamentMatches.length },
+            { id: 'liga' as ActivityCategory, label: 'Liga', count: activities.filter(a => a.category === 'liga').length + leagueMatches.length },
             { id: 'podujatie' as ActivityCategory, label: 'Podujatie', count: activities.filter(a => a.category === 'podujatie').length },
           ].map(tab => {
             const isSelected = categoryFilter === tab.id;
@@ -372,8 +371,8 @@ export const DiaryView: React.FC = () => {
           );
         })}
 
-        {/* SSTZ Ligové zápasy (ak sme pod filtrom 'liga' alebo 'all') */}
-        {relevantLeagueMatches.map(m => (
+        {/* Imported league and tournament duels */}
+        {relevantImportedMatches.map(m => (
           <div
             key={m.id}
             className="glass-panel"
@@ -389,7 +388,7 @@ export const DiaryView: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span className="badge-pill badge-purple" style={{ fontSize: '0.72rem', fontWeight: 800 }}>
-                  🛡️ SSTZ Liga
+                  {m.source === 'SSTZ_TOURNAMENT' ? '🏆 SSTZ Turnaj' : '🛡️ SSTZ Liga'}
                 </span>
                 <span className={`badge-pill ${m.result === 'WIN' ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.72rem', fontWeight: 800 }}>
                   {m.result === 'WIN' ? 'VÝHRA' : 'PREHRA'} {m.score}
@@ -414,9 +413,9 @@ export const DiaryView: React.FC = () => {
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Súper v dueli: </span>
                 <strong style={{ fontSize: '0.95rem' }}>{m.opponentName}</strong>
               </div>
-              {m.leagueName && (
+              {(m.leagueName || m.tournamentName) && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                  {m.leagueName}
+                  {m.leagueName || m.tournamentName}
                 </span>
               )}
             </div>
@@ -440,7 +439,7 @@ export const DiaryView: React.FC = () => {
         ))}
 
         {/* Prázdny stav */}
-        {filteredActivities.length === 0 && relevantLeagueMatches.length === 0 && (
+        {filteredActivities.length === 0 && relevantImportedMatches.length === 0 && (
           <div className="glass-panel" style={{ padding: '40px 20px', textAlign: 'center', borderRadius: 'var(--radius-lg)' }}>
             <Activity size={36} color="var(--text-dim)" style={{ margin: '0 auto 10px auto' }} />
             <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '4px' }}>

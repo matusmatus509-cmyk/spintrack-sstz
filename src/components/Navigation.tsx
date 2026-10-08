@@ -8,6 +8,7 @@ import {
   Activity,
   BarChart3,
   Target,
+  Trophy,
   MoreHorizontal,
   ChevronRight,
   X,
@@ -21,7 +22,8 @@ export type NavTab =
   | 'equipment'
   | 'calendar'
   | 'diary'
-  | 'stats';
+  | 'stats'
+  | 'tournaments';
 interface NavigationProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
@@ -56,6 +58,12 @@ export const NAV_TABS = [
     label: 'Súperi',
     icon: Target,
     description: 'Bilancia a taktika',
+  },
+  {
+    id: 'tournaments' as NavTab,
+    label: 'Turnaje',
+    icon: Trophy,
+    description: 'Turnajové zápasy zo SSTZ',
   },
   {
     id: 'equipment' as NavTab,

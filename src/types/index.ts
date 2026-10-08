@@ -122,7 +122,11 @@ export interface MatchRecord {
   notes?: string;
   tacticsNote?: string; // čo na neho fungovalo / čo si vedel hrať
   sstzMatchId?: string;
-  source?: 'SSTZ' | 'manual';
+  source?: 'SSTZ' | 'SSTZ_TOURNAMENT' | 'manual';
+  tournamentName?: string;
+  tournamentId?: string;
+  category?: string;
+  eventUrl?: string;
   isPlayerHome?: boolean;
   isWalkover?: boolean;
 }
@@ -170,7 +174,11 @@ export interface DoublesMatchRecord {
   totalPointsWon?: number;
   totalPointsLost?: number;
   notes?: string;
-  source?: 'SSTZ' | 'manual';
+  source?: 'SSTZ' | 'SSTZ_TOURNAMENT' | 'manual';
+  tournamentName?: string;
+  tournamentId?: string;
+  category?: string;
+  eventUrl?: string;
   type: 'doubles';
   isPlayerHome?: boolean;
   isWalkover?: boolean;
@@ -270,4 +278,12 @@ export interface Badge {
   unlockedAt?: string;
   progress: number;
   maxProgress: number;
+}
+
+export interface SSTZTournamentProfile {
+  id: string;
+  name: string;
+  clubName?: string;
+  lastSync: string;
+  complete: true;
 }

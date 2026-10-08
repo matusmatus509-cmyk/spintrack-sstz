@@ -817,7 +817,7 @@ export const OpponentsView: React.FC = () => {
                         </div>
 
                         <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '4px' }}>
-                          {dm.leagueName || 'SSTZ Liga'}
+                          {dm.tournamentName || dm.leagueName || 'SSTZ Liga'}
                         </div>
                       </div>
 
@@ -1070,7 +1070,7 @@ export const OpponentsView: React.FC = () => {
                               </div>
 
                               <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '4px' }}>
-                                {m.leagueName || 'SSTZ Liga'}
+                                {m.tournamentName || m.leagueName || 'SSTZ Liga'}
                               </div>
                               {m.teamHome && m.teamAway && (
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
