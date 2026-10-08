@@ -5,7 +5,6 @@ import {
   Search,
   Shield,
   ShieldCheck,
-  RefreshCw,
   Trophy,
   Users,
   CheckCircle2,
@@ -58,7 +57,6 @@ export const SstzHubView: React.FC = () => {
   const [isLoadingLeague, setIsLoadingLeague] = useState(false);
   const [activeOpponent, setActiveOpponent] = useState<string | null>(null);
   const [activeLeagueTab, setActiveLeagueTab] = useState<'standings' | 'matches'>('standings');
-  const [importAllSeasons, setImportAllSeasons] = useState(true);
 
   // Matches interactive filters
   const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('all');
@@ -137,7 +135,12 @@ export const SstzHubView: React.FC = () => {
   }, [searchQuery]);
 
   const handleSelectPlayer = async (playerId: string) => {
-    await syncSstzPlayer(playerId, importAllSeasons);
+    if (await syncSstzPlayer(playerId, true)) {
+      setSelectedSeasonFilter('all');
+      setSelectedLeagueFilter('all');
+      setSelectedTypeFilter('all');
+      setMatchSearch('');
+    }
   };
 
   const handleImportSchedule = async (onlyClub: boolean = true) => {
@@ -248,15 +251,6 @@ export const SstzHubView: React.FC = () => {
 
         {sstzProfile && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => syncSstzPlayer(sstzProfile.id, false)}
-              disabled={isSstzLoading}
-              className="btn-secondary"
-              style={{ padding: '6px 10px', fontSize: '0.74rem' }}
-              title="Stiahne zápasy len pre aktuálnu sezónu"
-            >
-              <RefreshCw size={12} className={isSstzLoading ? 'animate-spin' : ''} /> Aktuálna sezóna
-            </button>
             <button
               onClick={() => syncSstzPlayer(sstzProfile.id, true)}
               disabled={isSstzLoading}
@@ -428,17 +422,9 @@ export const SstzHubView: React.FC = () => {
             <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              <input
-                type="checkbox"
-                checked={importAllSeasons}
-                onChange={e => setImportAllSeasons(e.target.checked)}
-                style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#10b981' }}
-              />
-              <span>Stiahnuť aj minulé sezóny (všetky historické zápasy SSTZ od 2018/19)</span>
-            </label>
-          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '12px' }}>
+            Import zahŕňa všetky dostupné sezóny, všetky ligy aj nadstavby, v ktorých hráč nastúpil.
+          </p>
 
           {isSearching && (
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '12px' }}>

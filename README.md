@@ -85,3 +85,18 @@ npm run dev
 ### 7. 💾 Lokálna pamäť & Zálohovanie
 - Údaje sú bezpečne ukladané v prehliadači (offline-first).
 - Export a import JSON zálohy v sekcii Nastavenia.
+
+
+## Import celej kariéry SSTZ
+
+V SSTZ Hub vyhľadaj ľubovoľného hráča a pripoj jeho profil. Import automaticky prejde všetky sezóny dostupné na SSTZ a všetky hráčove ligové záložky v každej sezóne: súbežné ligy, družstvá, nadstavby aj kvalifikácie. Na obnovenie použi „Celá kariéra (všetky ligy)“.
+
+Zoznam sezón sa načítava zo SSTZ; nie je obmedzený pevne zadanými rokmi. História zahŕňa dvojhry, štvorhry a kontumácie. Ak niektorú sezónu alebo ligu nemožno stiahnuť alebo sa nepodarí overiť počet zápasov, import vypíše chybu a ponechá predchádzajúcu históriu. Starý snapshot sa neprezentuje ako úspešná živá synchronizácia.
+
+Snapshot ľubovoľného hráča možno obnoviť rovnakým importérom:
+
+```bash
+node scripts/generate-snapshot.mjs <SSTZ_ID_HRÁČA>
+```
+
+Živé načítanie vyžaduje HTTPS prístup k `www.stolnytenis.info`. V cloudovom prostredí s HTTPS proxy používaj Node 24.5 alebo novší; importér aktivuje podporu systémového proxy pre `fetch`.
