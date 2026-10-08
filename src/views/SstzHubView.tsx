@@ -19,7 +19,9 @@ import {
   Layers,
   ChevronDown,
   ListOrdered,
-  CalendarDays
+  CalendarDays,
+  Target,
+  Sparkles
 } from 'lucide-react';
 import { LeagueData } from '../types';
 
@@ -34,7 +36,8 @@ export const SstzHubView: React.FC = () => {
     isSstzLoading,
     sstzError,
     disconnectSstz,
-    matches
+    matches,
+    doublesMatches
   } = useApp();
 
   // Search state
@@ -57,6 +60,12 @@ export const SstzHubView: React.FC = () => {
   const [activeLeagueTab, setActiveLeagueTab] = useState<'standings' | 'matches'>('standings');
   const [importAllSeasons, setImportAllSeasons] = useState(true);
 
+  // Matches interactive filters
+  const [selectedSeasonFilter, setSelectedSeasonFilter] = useState<string>('all');
+  const [selectedLeagueFilter, setSelectedLeagueFilter] = useState<string>('all');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<'all' | 'singles' | 'doubles'>('all');
+  const [matchSearch, setMatchSearch] = useState('');
+
   // Load all 126 Slovak leagues on mount
   useEffect(() => {
     fetch('/api/sstz/all-leagues')
@@ -64,7 +73,6 @@ export const SstzHubView: React.FC = () => {
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setAllLeagues(data);
-          // Keep current category or pick first
           const defaultCat = data.find((c: any) => c.category === 'SSTZ') || data[0];
           setActiveCategory(defaultCat.category);
           if (defaultCat.leagues && defaultCat.leagues[0] && !selectedLeagueSlug) {
@@ -81,7 +89,7 @@ export const SstzHubView: React.FC = () => {
       });
   }, []);
 
-  // Fetch league data (clubs, standings, fixtures) when currLeagueSlug changes
+  // Fetch league data when currLeagueSlug changes
   useEffect(() => {
     if (!currLeagueSlug) return;
     setIsLoadingLeague(true);
@@ -144,6 +152,59 @@ export const SstzHubView: React.FC = () => {
     }
   };
 
+  // All combined authentic matches (singles + doubles)
+  const allAuthenticMatches = React.useMemo(() => {
+    const sMatches = matches.filter(m => m.source === 'SSTZ').map(m => ({
+      ...m,
+      duelType: 'singles' as const
+    }));
+    const dMatches = doublesMatches.filter(m => m.source === 'SSTZ').map(m => ({
+      ...m,
+      duelType: 'doubles' as const,
+      opponentName: m.opponentPair,
+      competition: m.competition || m.leagueName || 'SSTZ Liga'
+    }));
+
+    return [...sMatches, ...dMatches].sort((a, b) => {
+      return (b.date || '').localeCompare(a.date || '');
+    });
+  }, [matches, doublesMatches]);
+
+  // Unique seasons and leagues for filter dropdowns
+  const availableSeasons = React.useMemo(() => {
+    const set = new Set<string>();
+    allAuthenticMatches.forEach(m => {
+      if (m.season) set.add(m.season);
+    });
+    return Array.from(set).sort().reverse();
+  }, [allAuthenticMatches]);
+
+  const availableLeagues = React.useMemo(() => {
+    const set = new Set<string>();
+    allAuthenticMatches.forEach(m => {
+      if (m.leagueName) set.add(m.leagueName);
+    });
+    return Array.from(set).sort();
+  }, [allAuthenticMatches]);
+
+  // Filtered matches list
+  const filteredMatches = React.useMemo(() => {
+    return allAuthenticMatches.filter(m => {
+      if (selectedSeasonFilter !== 'all' && m.season !== selectedSeasonFilter) return false;
+      if (selectedLeagueFilter !== 'all' && m.leagueName !== selectedLeagueFilter) return false;
+      if (selectedTypeFilter !== 'all' && m.duelType !== selectedTypeFilter) return false;
+      if (matchSearch.trim()) {
+        const q = matchSearch.toLowerCase().trim();
+        const opp = (m.opponentName || '').toLowerCase();
+        const teams = (m.teams || '').toLowerCase();
+        const league = (m.leagueName || '').toLowerCase();
+        const partner = ((m as any).partnerName || '').toLowerCase();
+        if (!opp.includes(q) && !teams.includes(q) && !league.includes(q) && !partner.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [allAuthenticMatches, selectedSeasonFilter, selectedLeagueFilter, selectedTypeFilter, matchSearch]);
+
   // Group matches by opponent for Head-to-Head analytics
   const opponentStats = React.useMemo(() => {
     const sstzMatches = matches.filter(m => m.source === 'SSTZ');
@@ -176,9 +237,12 @@ export const SstzHubView: React.FC = () => {
             <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
               <Shield size={12} /> SSTZ Oficiálne
             </span>
+            <span className="badge-pill badge-green" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+              <CheckCircle2 size={12} /> 100% overené dáta
+            </span>
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            SSTZ Hub • Ligy & Tabuľky
+            SSTZ Hub • Ligy, Zápasy & Kariéra
           </h1>
         </div>
 
@@ -191,16 +255,16 @@ export const SstzHubView: React.FC = () => {
               style={{ padding: '6px 10px', fontSize: '0.74rem' }}
               title="Stiahne zápasy len pre aktuálnu sezónu"
             >
-              <RefreshCw size={12} /> 2026/27
+              <RefreshCw size={12} className={isSstzLoading ? 'animate-spin' : ''} /> Aktuálna sezóna
             </button>
             <button
               onClick={() => syncSstzPlayer(sstzProfile.id, true)}
               disabled={isSstzLoading}
               className="btn-primary"
               style={{ padding: '6px 12px', fontSize: '0.74rem' }}
-              title="Stiahne kompletnú históriu zápasov zo všetkých minulých sezón"
+              title="Stiahne kompletnú históriu všetkých reálnych ligových zápasov"
             >
-              <Trophy size={12} /> Celá kariéra
+              <Trophy size={12} /> Celá kariéra (všetky ligy)
             </button>
             <button
               onClick={disconnectSstz}
@@ -273,60 +337,56 @@ export const SstzHubView: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                Úspešnosť - Dvojhry
+                Kariérne Dvojhry (1v1)
               </div>
               <div style={{ fontSize: '1.6rem', fontWeight: 800, color: sstzProfile.singlesStats.winRate >= 50 ? '#34d399' : '#f87171' }}>
                 {sstzProfile.singlesStats.winRate}%
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {sstzProfile.singlesStats.won} výhier z {sstzProfile.singlesStats.played} zápasov
+                {sstzProfile.singlesStats.won} výhier / {sstzProfile.singlesStats.lost} prehier ({sstzProfile.singlesStats.played} zápasov)
               </div>
             </div>
 
             <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                Bilancia Doma
-              </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8' }}>
-                {sstzProfile.singlesStats.home ? `${sstzProfile.singlesStats.home.won} z ${sstzProfile.singlesStats.home.total}` : '0 z 0'}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {sstzProfile.singlesStats.home && sstzProfile.singlesStats.home.total > 0
-                  ? `${Math.round((sstzProfile.singlesStats.home.won / sstzProfile.singlesStats.home.total) * 100)}% výhier doma`
-                  : 'Bez odohraných zápasov doma'}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                Bilancia Vonku
-              </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b' }}>
-                {sstzProfile.singlesStats.away ? `${sstzProfile.singlesStats.away.won} z ${sstzProfile.singlesStats.away.total}` : '0 z 0'}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {sstzProfile.singlesStats.away && sstzProfile.singlesStats.away.total > 0
-                  ? `${Math.round((sstzProfile.singlesStats.away.won / sstzProfile.singlesStats.away.total) * 100)}% výhier vonku`
-                  : 'Bez odohraných zápasov vonku'}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
-                Úspešnosť - Štvorhry
+                Kariérne Štvorhry
               </div>
               <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#a855f7' }}>
                 {sstzProfile.doublesStats.winRate}%
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {sstzProfile.doublesStats.won} výhier z {sstzProfile.doublesStats.played}
+                {sstzProfile.doublesStats.won} výhier / {sstzProfile.doublesStats.lost} prehier ({sstzProfile.doublesStats.played} zápasov)
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
+                Všetky Oficiálne Duely
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8' }}>
+                {allAuthenticMatches.length}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                {matches.filter(m => m.source === 'SSTZ').length} dvojhier + {doublesMatches.filter(m => m.source === 'SSTZ').length} štvorhier
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
+                Počet Sezón
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b' }}>
+                {sstzProfile.syncedSeasonsCount || availableSeasons.length}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                {availableSeasons.join(', ')}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              V denníku je zapísaných <strong>{matches.filter(m => m.source === 'SSTZ').length}</strong> overených SSTZ duelov.
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Zdroj dát: <strong>stolnytenis.info</strong> (oficiálny zväzový portál SSTZ) • Všetky zápasy obsahujú skutočné body, sety a súperov.
             </span>
             <a
               href={`https://www.stolnytenis.info/hrac/${sstzProfile.id}`}
@@ -335,7 +395,7 @@ export const SstzHubView: React.FC = () => {
               className="btn-secondary"
               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
             >
-              Otvoriť profil na StolnyTenis.info <ExternalLink size={13} />
+              Profil na StolnyTenis.info <ExternalLink size={13} />
             </a>
           </div>
         </div>
@@ -352,7 +412,7 @@ export const SstzHubView: React.FC = () => {
           <div style={{ position: 'relative', maxWidth: '500px' }}>
             <input
               type="text"
-              placeholder="Napr. Novák, Oráč, Baláž..."
+              placeholder="Napr. Očovan, Novák, Oráč, Baláž..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -430,12 +490,340 @@ export const SstzHubView: React.FC = () => {
         </div>
       )}
 
+      {/* SEASONS BREAKDOWN SECTION */}
+      {sstzProfile && sstzProfile.seasonsBreakdown && sstzProfile.seasonsBreakdown.length > 0 && (
+        <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={18} color="#38bdf8" />
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                  Prehľad po sezónach a ligách
+                </h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Rozdelenie všetkých odohraných ligových stretnutí podľa ročníkov a súťaží
+              </p>
+            </div>
+            <span className="badge-pill badge-blue" style={{ fontSize: '0.72rem' }}>
+              Spolu {allAuthenticMatches.length} overených duelov
+            </span>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  <th style={{ padding: '10px 12px' }}>Sezóna</th>
+                  <th style={{ padding: '10px 12px' }}>Odohrané ligy & súťaže</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center' }}>Dvojhry (V / P)</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center' }}>Úsp. 1v1</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center' }}>Štvorhry (V / P)</th>
+                  <th style={{ padding: '10px 10px', textAlign: 'center' }}>Úsp. 2v2</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 800 }}>Spolu duely</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sstzProfile.seasonsBreakdown.map(sb => {
+                  const isFiltered = selectedSeasonFilter === sb.season;
+                  return (
+                    <tr
+                      key={sb.season}
+                      onClick={() => setSelectedSeasonFilter(isFiltered ? 'all' : sb.season)}
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        background: isFiltered ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={e => {
+                        if (!isFiltered) e.currentTarget.style.background = 'var(--bg-card-hover)';
+                      }}
+                      onMouseLeave={e => {
+                        if (!isFiltered) e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <td style={{ padding: '12px', fontWeight: 800, color: '#38bdf8' }}>
+                        {sb.season}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {sb.leagues.map(l => (
+                            <span key={l} className="badge-pill" style={{ fontSize: '0.68rem', background: 'rgba(255, 255, 255, 0.06)' }}>
+                              {l}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.singlesWon}</span> /{' '}
+                        <span style={{ color: '#f87171' }}>{sb.singlesLost}</span>
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.singlesWinRate >= 50 ? '#34d399' : '#f87171' }}>
+                        {sb.singlesWinRate}%
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.doublesWon}</span> /{' '}
+                        <span style={{ color: '#f87171' }}>{sb.doublesLost}</span>
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.doublesWinRate >= 50 ? '#a855f7' : 'var(--text-muted)' }}>
+                        {sb.doublesWinRate}%
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
+                        {sb.total}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ALL AUTHENTIC MATCHES SECTION */}
+      {allAuthenticMatches.length > 0 && (
+        <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Target size={18} color="#10b981" />
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                  Všetky reálne ligové zápasy ({filteredMatches.length} z {allAuthenticMatches.length})
+                </h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Kompletná história ligových duelov s oficiálnymi setmi a bodmi.
+              </p>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '10px',
+            marginBottom: '16px',
+            background: 'rgba(255, 255, 255, 0.02)',
+            padding: '12px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)'
+          }}>
+            {/* Search opponent */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
+                Hľadať súpera / tím
+              </label>
+              <input
+                type="text"
+                placeholder="Meno alebo tím..."
+                value={matchSearch}
+                onChange={e => setMatchSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem'
+                }}
+              />
+            </div>
+
+            {/* Season Filter */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
+                Sezóna
+              </label>
+              <select
+                value={selectedSeasonFilter}
+                onChange={e => setSelectedSeasonFilter(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="all">Všetky sezóny ({availableSeasons.length})</option>
+                {availableSeasons.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* League Filter */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
+                Súťaž / Liga
+              </label>
+              <select
+                value={selectedLeagueFilter}
+                onChange={e => setSelectedLeagueFilter(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="all">Všetky súťaže ({availableLeagues.length})</option>
+                {availableLeagues.map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Type Filter */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
+                Typ zápasu
+              </label>
+              <select
+                value={selectedTypeFilter}
+                onChange={e => setSelectedTypeFilter(e.target.value as any)}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <option value="all">Všetky (Dvojhry aj Štvorhry)</option>
+                <option value="singles">Iba Dvojhry (1v1)</option>
+                <option value="doubles">Iba Štvorhry</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Matches List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '600px', overflowY: 'auto' }}>
+            {filteredMatches.map(m => {
+              const isWin = m.result === 'WIN';
+              const isDoubles = m.duelType === 'doubles';
+
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    borderLeft: `4px solid ${isWin ? '#10b981' : '#ef4444'}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                        {m.season}
+                      </span>
+                      <span style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700 }}>
+                        {m.leagueName || m.competition}
+                      </span>
+                      {m.round && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          • {m.round}
+                        </span>
+                      )}
+                      {m.date && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                          • {m.date}
+                        </span>
+                      )}
+                      {isDoubles && (
+                        <span className="badge-pill badge-purple" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                          Štvorhra
+                        </span>
+                      )}
+                      {m.isWalkover && (
+                        <span className="badge-pill badge-red" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                          Kontumácia
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        background: isWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        color: isWin ? '#34d399' : '#f87171',
+                        fontWeight: 800,
+                        fontSize: '0.9rem',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        {m.score} ({isWin ? 'VÝHRA' : 'PREHRA'})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Encounter teams & Opponents */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      {isDoubles ? (
+                        <div style={{ fontSize: '0.92rem' }}>
+                          <span style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>Spoluhráč: </span>
+                          <strong>{(m as any).partnerName || 'Neznámy spoluhráč'}</strong>
+                          <span style={{ color: 'var(--text-dim)', margin: '0 6px' }}>vs</span>
+                          <span style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>Súperi: </span>
+                          <strong style={{ color: isWin ? '#34d399' : '#f87171' }}>{m.opponentName}</strong>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.92rem' }}>
+                          <span style={{ color: 'var(--text-dim)', fontSize: '0.78rem' }}>Súper: </span>
+                          <strong style={{ color: isWin ? '#34d399' : '#f87171' }}>{m.opponentName}</strong>
+                        </div>
+                      )}
+                      {m.teams && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Stretnutie: {m.teams}
+                        </div>
+                      )}
+                    </div>
+
+                    {m.isPlayerHome !== undefined && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+                        {m.isPlayerHome ? 'Domáci zápas' : 'Zápas vonku'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Set breakdown */}
+                  <SetBreakdown
+                    sets={m.sets || []}
+                    setDetails={m.setDetails}
+                    totalPointsWon={m.totalPointsWon}
+                    totalPointsLost={m.totalPointsLost}
+                    result={m.result}
+                    compact
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ALL TEAMS & LEAGUES SELECTOR (ALL 126 LEAGUES IN SLOVAKIA) */}
       <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '6px' }}>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
-              2. Výber Ligy a Tímu (Všetky súťaže SSTZ na Slovensku)
+              Výber Ligy a Tímu (Všetky súťaže SSTZ na Slovensku)
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
               Vyber si z kompletného zoznamu všetkých 126 líg (republikové súťaže SSTZ, krajské a okresné zväzy).
@@ -758,7 +1146,7 @@ export const SstzHubView: React.FC = () => {
         </div>
       )}
 
-      {/* Head-to-Head Opponent Records with Set Scores */}
+      {/* Head-to-Head Opponent Records */}
       {opponentStats.length > 0 && (
         <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px' }}>

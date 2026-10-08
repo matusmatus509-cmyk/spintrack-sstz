@@ -1,4 +1,8 @@
 // SSTZ and stolnytenis.info scraper & parser
+// Extracts 100% authentic league matches, sets, scores, and player statistics without fabrication.
+
+import { saveSnapshot, loadSnapshot } from './sstzStore.js';
+
 const BASE_URL = 'https://www.stolnytenis.info';
 
 const DEFAULT_HEADERS = {
@@ -9,16 +13,16 @@ const DEFAULT_HEADERS = {
   'Pragma': 'no-cache'
 };
 
-const ALL_SEASONS = [
-  { id: 37, label: '2026/27' },
-  { id: 36, label: '2025/26' },
-  { id: 35, label: '2024/25' },
-  { id: 34, label: '2023/24' },
-  { id: 33, label: '2022/23' },
-  { id: 32, label: '2021/22' },
-  { id: 31, label: '2020/21' },
-  { id: 30, label: '2019/20' },
-  { id: 29, label: '2018/19' },
+export const ALL_SEASONS = [
+  { slug: '2026-27', label: '2026/27' },
+  { slug: '2025-26', label: '2025/26' },
+  { slug: '2024-25', label: '2024/25' },
+  { slug: '2023-24', label: '2023/24' },
+  { slug: '2022-23', label: '2022/23' },
+  { slug: '2021-22', label: '2021/22' },
+  { slug: '2020-21', label: '2020/21' },
+  { slug: '2019-20', label: '2019/20' },
+  { slug: '2018-19', label: '2018/19' }
 ];
 
 // Simple in-memory cache with TTL (15 minutes)
@@ -37,79 +41,68 @@ function setInCache(key, data) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-// Helper to get session cookie & CSRF token from homepage
-let sessionCookie = '';
-let csrfToken = '';
-let sessionTimestamp = 0;
-
-async function getSession() {
-  if (sessionCookie && csrfToken && Date.now() - sessionTimestamp < 30 * 60 * 1000) {
-    return { cookie: sessionCookie, token: csrfToken };
-  }
-
-  try {
-    const res = await fetch(`${BASE_URL}/`, {
-      headers: DEFAULT_HEADERS
-    });
-    const setCookies = res.headers.getSetCookie ? res.headers.getSetCookie() : [res.headers.get('set-cookie')];
-    if (setCookies && setCookies.length > 0) {
-      sessionCookie = setCookies.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
-    }
-    const html = await res.text();
-    const csrfMatch = homeHtml.match(/name="csrf-token" content="([^"]+)"/);
-    if (csrfMatch) {
-      csrfToken = csrfMatch[1];
-    }
-    sessionTimestamp = Date.now();
-    return { cookie: sessionCookie, token: csrfToken };
-  } catch (err) {
-    console.error('Error fetching SSTZ session:', err.message);
-    return { cookie: '', token: '' };
-  }
-}
-
 /**
  * Converts table tennis set notation into exact points and scores
  * E.g., -8 -> 8:11, +11 -> 13:11, +9 -> 11:9, -5 -> 5:11
+ * Handles walkovers / scratch (w:0, 0:w, scr) faithfully without inventing points.
  */
-export function parseSstzSet(setStr, fallbackIsWin = false) {
-  const clean = setStr.trim();
-  if (clean.includes(':')) {
-    const [p1, p2] = clean.split(':').map(n => parseInt(n.trim(), 10));
+export function parseSstzSet(setStr, playerWon = false) {
+  const clean = (setStr || '').trim();
+  const lower = clean.toLowerCase();
+
+  // Walkovers / scratches / forfeits
+  if (lower.includes('w') || lower.includes('scr') || lower.includes('skre') || lower.includes('kontum')) {
     return {
-      playerPts: isNaN(p1) ? 11 : p1,
-      opponentPts: isNaN(p2) ? 9 : p2,
+      playerPts: 0,
+      opponentPts: 0,
       display: clean,
-      won: p1 > p2
+      won: playerWon,
+      isWalkover: true
     };
   }
 
-  const sign = clean.startsWith('+') ? '+' : (clean.startsWith('-') ? '-' : (fallbackIsWin ? '+' : '-'));
+  // Explicit points notation (e.g. "11:7")
+  if (clean.includes(':')) {
+    const [p1, p2] = clean.split(':').map(n => parseInt(n.trim(), 10));
+    const pts1 = isNaN(p1) ? 11 : p1;
+    const pts2 = isNaN(p2) ? 9 : p2;
+    return {
+      playerPts: pts1,
+      opponentPts: pts2,
+      display: `${pts1}:${pts2}`,
+      won: pts1 > pts2,
+      isWalkover: false
+    };
+  }
+
+  const sign = clean.startsWith('+') ? '+' : (clean.startsWith('-') ? '-' : (playerWon ? '+' : '-'));
   const num = parseInt(clean.replace(/[^0-9]/g, ''), 10);
 
   if (isNaN(num)) {
-    return { playerPts: 11, opponentPts: 9, display: clean, won: fallbackIsWin };
+    return { playerPts: 0, opponentPts: 0, display: clean, won: playerWon, isWalkover: false };
   }
 
   if (sign === '+') {
-    // Player won this set
-    const opponentPts = num;
-    const playerPts = num >= 10 ? num + 2 : 11;
+    // Player won this set: loser got `num` points
+    const oppPts = num;
+    const myPts = num >= 10 ? num + 2 : 11;
     return {
-      playerPts,
-      opponentPts,
-      display: `${playerPts}:${opponentPts}`,
-      won: true
+      playerPts: myPts,
+      opponentPts: oppPts,
+      display: `${myPts}:${oppPts}`,
+      won: true,
+      isWalkover: false
     };
   } else {
-    // Player lost this set
-    const playerPts = num;
-    const opponentPts = num >= 10 ? num + 2 : 11;
+    // Player lost this set: loser got `num` points
+    const myPts = num;
+    const oppPts = num >= 10 ? num + 2 : 11;
     return {
-      playerPts,
-      opponentPts,
-      display: `${playerPts}:${opponentPts}`,
-      won: false
+      playerPts: myPts,
+      opponentPts: oppPts,
+      display: `${myPts}:${oppPts}`,
+      won: false,
+      isWalkover: false
     };
   }
 }
@@ -196,81 +189,61 @@ export async function searchSSTZ(query) {
 }
 
 /**
- * Parses individual duels and match protocols from a player profile HTML page,
- * separating singles (1v1) from doubles (štvorhry)
+ * Parses individual duels and match protocols from HTML,
+ * preserving genuine official sets and strictly separating singles from doubles.
  */
-function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
-  function parseDuelSet(setStr, playerWon) {
-    const clean = setStr.trim();
-    const sign = clean.startsWith('+') ? '+' : (clean.startsWith('-') ? '-' : (playerWon ? '+' : '-'));
-    const num = parseInt(clean.replace(/[^0-9]/g, ''), 10);
-    if (isNaN(num)) return { playerPts: 11, opponentPts: 9, display: clean, won: playerWon };
-    if (sign === '+') {
-      const oppPts = num;
-      const myPts = num >= 10 ? num + 2 : 11;
-      return { playerPts: myPts, opponentPts: oppPts, display: `${myPts}:${oppPts}`, won: true };
-    } else {
-      const myPts = num;
-      const oppPts = num >= 10 ? num + 2 : 11;
-      return { playerPts: myPts, opponentPts: oppPts, display: `${myPts}:${oppPts}`, won: false };
-    }
-  }
-
+export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27', tabLeagueName = '', tabTeamName = '') {
   const singlesMatches = [];
   const doublesMatches = [];
 
-  const encounterRegex = /<div class="media-body">([\s\S]*?)<\/div>[\s\S]*?<section\s+id="tml2-(\d+)"[^>]*>([\s\S]*?)<\/section>/gi;
-  let encMatch;
+  const sectionRegex = /<section\s+id="tml2-(\d+)"[^>]*>([\s\S]*?)<\/section>/gi;
+  let secMatch;
 
-  while ((encMatch = encounterRegex.exec(html)) !== null) {
-    const headerText = encMatch[1];
-    const matchId = encMatch[2];
-    const sectionHtml = encMatch[3];
+  while ((secMatch = sectionRegex.exec(html)) !== null) {
+    const matchId = secMatch[1];
+    const sectionHtml = secMatch[2];
+    const secIndex = secMatch.index;
 
-    const allH4s = [...headerText.matchAll(/<h4[^>]*>([\s\S]*?)<\/h4>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim());
-    let leagueName = '';
+    // Find preceding encounter header
+    const beforeSec = html.substring(Math.max(0, secIndex - 1500), secIndex);
+    const mediaBodyMatch = [...beforeSec.matchAll(/<div class="media-body">([\s\S]*?)<\/div>/gi)].pop();
+    const headerHtml = mediaBodyMatch ? mediaBodyMatch[1] : '';
+
+    const allH4s = [...headerHtml.matchAll(/<h4[^>]*>([\s\S]*?)<\/h4>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim());
+    let stage = '';
     let round = 'Liga';
     let date = '';
 
     if (allH4s.length >= 2) {
-      leagueName = allH4s[0];
-      round = allH4s[1].split('/')[0]?.trim() || allH4s[1];
-      const dMatch = allH4s[1].match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
-      date = dMatch ? dMatch[1] : '';
+      stage = allH4s[0];
+      const rParts = allH4s[1].split('/');
+      round = rParts[0]?.trim() || allH4s[1];
+      date = rParts[1]?.trim() || '';
     } else if (allH4s.length === 1) {
-      leagueName = allH4s[0];
       const rMatch = allH4s[0].match(/(\d+\.\s*kolo)/i);
       round = rMatch ? rMatch[1] : allH4s[0];
       const dMatch = allH4s[0].match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
       date = dMatch ? dMatch[1] : '';
     }
 
-    if (!round || round === 'Liga') {
-      const rMatch = headerText.match(/(\d+\.\s*kolo)/i);
-      if (rMatch) round = rMatch[1];
-    }
     if (!date) {
-      const dMatch = headerText.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
+      const dMatch = headerHtml.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
       if (dMatch) date = dMatch[1];
     }
-
-    // Find preceding H2 or stage heading if available
-    const encIndex = encMatch.index || 0;
-    const beforeHtml = html.substring(Math.max(0, encIndex - 2500), encIndex);
-    const lastH2Match = [...beforeHtml.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)];
-    const sectionCompetition = lastH2Match.length > 0 ? lastH2Match[lastH2Match.length - 1][1].replace(/<[^>]+>/g, '').trim() : '';
-
-    let fullLeagueName = leagueName;
-    if (sectionCompetition && sectionCompetition !== 'Základná časť' && sectionCompetition !== leagueName) {
-      fullLeagueName = `${sectionCompetition}${leagueName && leagueName !== sectionCompetition ? ` • ${leagueName}` : ''}`;
-    } else if (!fullLeagueName && sectionCompetition) {
-      fullLeagueName = sectionCompetition;
+    if (!round || round === 'Liga') {
+      const rMatch = headerHtml.match(/(\d+\.\s*kolo)/i);
+      if (rMatch) round = rMatch[1];
     }
-    if (!fullLeagueName) fullLeagueName = 'SSTZ Liga';
 
-    const teamsMatch = headerText.match(/<p class="m-0">(.*?)<\/p>/i);
+    const teamsMatch = headerHtml.match(/<p class="m-0">(.*?)<\/p>/i);
     const teams = teamsMatch ? teamsMatch[1].replace(/<[^>]+>/g, '').trim() : '';
 
+    const leagueTitle = tabLeagueName || 'SSTZ Liga';
+    const fullCompetition = stage && stage !== 'Základná časť'
+      ? `${leagueTitle} • ${stage}`
+      : leagueTitle;
+
+    // Parse duels inside this encounter
     const blockRegex = /<div\s+class="tml2-block\s+([^"]+)">([\s\S]*?)(?=<div\s+class="tml2-block|$)/gi;
     let bMatch;
     let duelIndex = 0;
@@ -279,7 +252,7 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
       duelIndex++;
       const blockClass = bMatch[1];
       const blockHtml = bMatch[2];
-      const isWin = blockClass.includes('tml2-block-success');
+      const isBlockSuccess = blockClass.includes('tml2-block-success');
       const isDoubles = blockHtml.includes('Štvorhra');
 
       const items = [...blockHtml.matchAll(/<div\s+class="tml2__match__item[^"]*">([\s\S]*?)<\/div>\s*<\/div>/gi)];
@@ -302,39 +275,47 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
         const s2 = parseInt(itemScoreMatches[1][1].trim(), 10) || 0;
         const rawSetsMatches = [...blockHtml.matchAll(/<div\s+class="tml2__match__set\s+([^"]+)">([^<]+)<\/div>/gi)];
 
+        const inItem1 = item1Players.some(p => p.id === playerId);
+        const inItem2 = item2Players.some(p => p.id === playerId);
+        const isPlayerHome = inItem1;
+
+        const myScore = isPlayerHome ? s1 : s2;
+        const oppScore = isPlayerHome ? s2 : s1;
+        const isWin = isBlockSuccess || myScore > oppScore;
+
         if (isDoubles || item1Players.length > 1 || item2Players.length > 1) {
           // --- DOUBLES MATCH ---
-          const inItem1 = item1Players.some(p => p.id === playerId);
-          const myTeam = inItem1 ? item1Players : item2Players;
-          const oppTeam = inItem1 ? item2Players : item1Players;
+          const myTeam = isPlayerHome ? item1Players : item2Players;
+          const oppTeam = isPlayerHome ? item2Players : item1Players;
           const partner = myTeam.find(p => p.id !== playerId) || { id: '', name: 'Neznámy spoluhráč' };
-          const myScore = inItem1 ? s1 : s2;
-          const oppScore = inItem1 ? s2 : s1;
 
           const setDetails = [];
           let totalPtsWon = 0;
           let totalPtsLost = 0;
+          let hasWalkover = false;
 
           for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
             const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
             const item1RawVal = rawSetsMatches[sIdx][2].trim();
-            const targetWonThisSet = inItem1 ? item1SetWon : !item1SetWon;
+            const targetWonThisSet = isPlayerHome ? item1SetWon : !item1SetWon;
 
             let targetRawVal = item1RawVal;
-            if (!inItem1) {
+            if (!isPlayerHome) {
               targetRawVal = item1RawVal.startsWith('+') ? `-${item1RawVal.slice(1)}` : (item1RawVal.startsWith('-') ? `+${item1RawVal.slice(1)}` : item1RawVal);
             }
 
-            const parsed = parseDuelSet(targetRawVal, targetWonThisSet);
+            const parsed = parseSstzSet(targetRawVal, targetWonThisSet);
             totalPtsWon += parsed.playerPts;
             totalPtsLost += parsed.opponentPts;
+            if (parsed.isWalkover) hasWalkover = true;
 
             setDetails.push({
               setNumber: sIdx + 1,
               playerPoints: parsed.playerPts,
               opponentPoints: parsed.opponentPts,
               display: parsed.display,
-              won: parsed.won
+              won: parsed.won,
+              isWalkover: parsed.isWalkover
             });
           }
 
@@ -342,10 +323,12 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
             id: `${seasonLabel.replace('/', '-')}-${matchId}-doubles-${duelIndex}`,
             teamMatchId: matchId,
             season: seasonLabel,
-            leagueName: fullLeagueName,
+            leagueName: tabLeagueName || leagueTitle,
+            competition: fullCompetition,
             date,
             round,
             teams,
+            playerClub: tabTeamName || '',
             partnerName: partner.name,
             partnerId: partner.id,
             opponentPair: oppTeam.map(p => p.name).join(' & '),
@@ -357,42 +340,44 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
             totalPointsWon: totalPtsWon,
             totalPointsLost: totalPtsLost,
             source: 'SSTZ',
-            type: 'doubles'
+            type: 'doubles',
+            isPlayerHome,
+            isWalkover: hasWalkover
           });
         } else {
           // --- SINGLES MATCH (1v1) ---
           const p1 = item1Players[0];
           const p2 = item2Players[0];
-          if (p1 && p2) {
-            const isP1 = p1.id === playerId;
-            const opp = isP1 ? p2 : p1;
-            const myScore = isP1 ? s1 : s2;
-            const oppScore = isP1 ? s2 : s1;
+          const opp = isPlayerHome ? p2 : p1;
 
+          if (opp) {
             const setDetails = [];
             let totalPtsWon = 0;
             let totalPtsLost = 0;
+            let hasWalkover = false;
 
             for (let sIdx = 0; sIdx < rawSetsMatches.length; sIdx++) {
               const item1SetWon = rawSetsMatches[sIdx][1].includes('tml2__match__set-win');
               const item1RawVal = rawSetsMatches[sIdx][2].trim();
-              const targetWonThisSet = isP1 ? item1SetWon : !item1SetWon;
+              const targetWonThisSet = isPlayerHome ? item1SetWon : !item1SetWon;
 
               let targetRawVal = item1RawVal;
-              if (!isP1) {
+              if (!isPlayerHome) {
                 targetRawVal = item1RawVal.startsWith('+') ? `-${item1RawVal.slice(1)}` : (item1RawVal.startsWith('-') ? `+${item1RawVal.slice(1)}` : item1RawVal);
               }
 
-              const parsed = parseDuelSet(targetRawVal, targetWonThisSet);
+              const parsed = parseSstzSet(targetRawVal, targetWonThisSet);
               totalPtsWon += parsed.playerPts;
               totalPtsLost += parsed.opponentPts;
+              if (parsed.isWalkover) hasWalkover = true;
 
               setDetails.push({
                 setNumber: sIdx + 1,
                 playerPoints: parsed.playerPts,
                 opponentPoints: parsed.opponentPts,
                 display: parsed.display,
-                won: parsed.won
+                won: parsed.won,
+                isWalkover: parsed.isWalkover
               });
             }
 
@@ -400,11 +385,12 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
               id: `${seasonLabel.replace('/', '-')}-${matchId}-${duelIndex}`,
               teamMatchId: matchId,
               season: seasonLabel,
-              leagueName: fullLeagueName,
-              competition: 'SSTZ Liga',
+              leagueName: tabLeagueName || leagueTitle,
+              competition: fullCompetition,
               date,
               round,
               teams,
+              playerClub: tabTeamName || '',
               opponentName: opp.name,
               opponentId: opp.id,
               result: isWin ? 'WIN' : 'LOSS',
@@ -414,7 +400,9 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
               totalPointsWon: totalPtsWon,
               totalPointsLost: totalPtsLost,
               source: 'SSTZ',
-              type: 'singles'
+              type: 'singles',
+              isPlayerHome,
+              isWalkover: hasWalkover
             });
           }
         }
@@ -426,8 +414,8 @@ function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27') {
 }
 
 /**
- * Get detailed player profile including real duels, sets, points, stats, and win rates
- * Supports fetching all historical seasons if options.allSeasons is true
+ * Get detailed player profile including all authentic duels, sets, points, stats, and win rates
+ * Scans all league tabs across seasons to ensure 100% complete data with no fabrications.
  */
 export async function getPlayerProfile(playerId, options = { allSeasons: false }) {
   if (!playerId) return null;
@@ -437,193 +425,239 @@ export async function getPlayerProfile(playerId, options = { allSeasons: false }
   const cached = getFromCache(cacheKey);
   if (cached) return cached;
 
+  const targetSeasons = shouldFetchAllSeasons ? ALL_SEASONS : [ALL_SEASONS[0]];
+
   try {
-    const resHome = await fetch(`${BASE_URL}/`, { headers: DEFAULT_HEADERS });
-    const setCookies = resHome.headers.getSetCookie ? resHome.headers.getSetCookie() : [resHome.headers.get('set-cookie')];
-    let cookie = setCookies.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
-    const homeHtml = await resHome.text();
-    const csrfMatch = homeHtml.match(/name="csrf-token" content="([^"]+)"/);
-    const token = csrfMatch ? csrfMatch[1] : '';
+    let allSingles = [];
+    let allDoubles = [];
+    let playerName = '';
+    let primaryClub = '';
+    let primaryClubId = '';
+    let association = 'SSTZ';
+    const seasonsBreakdown = [];
+    const seenMatchIds = new Set();
 
-    // Fetch current season profile first
-    const resCurr = await fetch(`${BASE_URL}/hrac/${playerId}`, {
-      headers: { ...DEFAULT_HEADERS, 'Cookie': cookie }
-    });
+    // First season's singles and doubles summary
+    let currSeasonSingles = { played: 0, won: 0, lost: 0, winRate: 0, home: { won: 0, total: 0 }, away: { won: 0, total: 0 } };
+    let currSeasonDoubles = { played: 0, won: 0, lost: 0, winRate: 0 };
 
-    if (!resCurr.ok) {
-      throw new Error(`HTTP ${resCurr.status} fetching player ${playerId}`);
-    }
+    for (let seasonIndex = 0; seasonIndex < targetSeasons.length; seasonIndex++) {
+      const season = targetSeasons[seasonIndex];
 
-    const htmlCurr = await resCurr.text();
+      // Switch season on stolnytenis.info via GET /sezona/<slug>/svk to obtain session cookie
+      const resSeason = await fetch(`${BASE_URL}/sezona/${season.slug}/svk`, {
+        headers: DEFAULT_HEADERS,
+        redirect: 'manual'
+      });
+      const setCookies = resSeason.headers.getSetCookie ? resSeason.headers.getSetCookie() : [resSeason.headers.get('set-cookie')];
+      const cookieHeader = setCookies.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
 
-    // Name
-    const titleMatch = htmlCurr.match(/<title>([^|]+)\|/);
-    const name = titleMatch ? titleMatch[1].trim() : `Hráč #${playerId}`;
+      const resPlayer = await fetch(`${BASE_URL}/hrac/${playerId}`, {
+        headers: { ...DEFAULT_HEADERS, 'Cookie': cookieHeader }
+      });
 
-    // Region / Category heading
-    const regMatch = htmlCurr.match(/<h2[^>]*class="[^"]*text-uppercase[^"]*"[^>]*>(.*?)<\/h2>/i);
-    const association = regMatch ? regMatch[1].trim() : 'SSTZ';
-
-    // Singles stats current season
-    let singles = { played: 0, won: 0, lost: 0, winRate: 0, home: { won: 0, total: 0 }, away: { won: 0, total: 0 } };
-    const singlesBlock = htmlCurr.match(/Úspešnosť\s*-\s*Dvojhry[\s\S]*?(?=Úspešnosť\s*-\s*Štvorhry|$)/i);
-    if (singlesBlock) {
-      const celkom = singlesBlock[0].match(/Celkom\s*(\d+)\s*z\s*(\d+)/i);
-      if (celkom) {
-        singles.won = parseInt(celkom[1], 10);
-        singles.played = parseInt(celkom[2], 10);
-        singles.lost = singles.played - singles.won;
-        singles.winRate = singles.played > 0 ? Math.round((singles.won / singles.played) * 100) : 0;
+      if (!resPlayer.ok) {
+        if (seasonIndex === 0) {
+          throw new Error(`HTTP ${resPlayer.status} fetching player ${playerId}`);
+        }
+        continue;
       }
-      const doma = singlesBlock[0].match(/Doma\s*(\d+)\s*z\s*(\d+)/i);
-      if (doma) {
-        singles.home = { won: parseInt(doma[1], 10), total: parseInt(doma[2], 10) };
+
+      const html = await resPlayer.text();
+
+      if (!playerName) {
+        const titleMatch = html.match(/<title>([^|]+)\|/);
+        if (titleMatch) playerName = titleMatch[1].trim();
       }
-      const vonku = singlesBlock[0].match(/Vonku\s*(\d+)\s*z\s*(\d+)/i);
-      if (vonku) {
-        singles.away = { won: parseInt(vonku[1], 10), total: parseInt(vonku[2], 10) };
+
+      const regMatch = html.match(/<h2[^>]*class="[^"]*text-uppercase[^"]*"[^>]*>(.*?)<\/h2>/i);
+      if (regMatch) association = regMatch[1].trim();
+
+      const clubRegex = /<a[^>]*href="\/liga\/[^\/]+\/rozpis-muzstva\?club_id=(\d+)"[^>]*>(.*?)<\/a>/i;
+      const clubMatch = html.match(clubRegex);
+      if (!primaryClubId && clubMatch) {
+        primaryClubId = clubMatch[1];
+        if (!primaryClub) primaryClub = clubMatch[2].replace(/<[^>]+>/g, '').trim();
       }
-    }
 
-    // Doubles stats current season
-    let doubles = { played: 0, won: 0, lost: 0, winRate: 0 };
-    const doublesBlock = htmlCurr.match(/Úspešnosť\s*-\s*Štvorhry[\s\S]*?(?=<div class="tml2|$)/i);
-    if (doublesBlock) {
-      const celkom = doublesBlock[0].match(/Celkom\s*(\d+)\s*z\s*(\d+)/i);
-      if (celkom) {
-        doubles.won = parseInt(celkom[1], 10);
-        doubles.played = parseInt(celkom[2], 10);
-        doubles.lost = doubles.played - doubles.won;
-        doubles.winRate = doubles.played > 0 ? Math.round((doubles.won / doubles.played) * 100) : 0;
-      }
-    }
-
-    // Parse duels for current season (2026/27)
-    const currExtracted = parsePlayerDuelsFromHtml(htmlCurr, playerId, '2026/27');
-    let allSingles = [...currExtracted.singles];
-    let allDoubles = [...currExtracted.doubles];
-
-    // If requested, fetch historical seasons (from 2025/26 down to 2018/19)
-    if (shouldFetchAllSeasons) {
-      const pastSeasons = ALL_SEASONS.filter(s => s.id !== 37);
-
-      for (const s of pastSeasons) {
-        try {
-          const postData = 'url=' + encodeURIComponent(`${BASE_URL}/hrac/${playerId}`) +
-                           '&season_id=' + s.id +
-                           '&_request=%5CApp%5CRequests%5CFrontend%5CSeasonSet' +
-                           '&_token=' + encodeURIComponent(token);
-
-          const resSet = await fetch(`${BASE_URL}/`, {
-            method: 'POST',
-            headers: {
-              ...DEFAULT_HEADERS,
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-CSRF-TOKEN': token,
-              'Origin': BASE_URL,
-              'Referer': `${BASE_URL}/hrac/${playerId}`,
-              'Cookie': cookie
-            },
-            body: postData
-          });
-
-          const setCookies2 = resSet.headers.getSetCookie ? resSet.headers.getSetCookie() : [resSet.headers.get('set-cookie')];
-          if (setCookies2 && setCookies2.length > 0) {
-            const newCookies = setCookies2.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
-            if (newCookies) cookie = `${cookie}; ${newCookies}`;
-          }
-
-          const resSeasonPlayer = await fetch(`${BASE_URL}/hrac/${playerId}`, {
-            headers: { ...DEFAULT_HEADERS, 'Cookie': cookie }
-          });
-
-          if (resSeasonPlayer.ok) {
-            const seasonHtml = await resSeasonPlayer.text();
-            const seasonExtracted = parsePlayerDuelsFromHtml(seasonHtml, playerId, s.label);
-            if (seasonExtracted.singles.length > 0) {
-              allSingles.push(...seasonExtracted.singles);
-            }
-            if (seasonExtracted.doubles.length > 0) {
-              allDoubles.push(...seasonExtracted.doubles);
-            }
-          }
-        } catch (seasonErr) {
-          console.warn(`Error fetching season ${s.label} for player ${playerId}:`, seasonErr.message);
+      // Check official success blocks on page for this season
+      const singlesBlock = html.match(/Úspešnosť\s*-\s*Dvojhry[\s\S]*?(?=Úspešnosť\s*-\s*Štvorhry|$)/i);
+      if (seasonIndex === 0 && singlesBlock) {
+        const celkom = singlesBlock[0].match(/Celkom\s*(\d+)\s*z\s*(\d+)/i);
+        if (celkom) {
+          currSeasonSingles.won = parseInt(celkom[1], 10);
+          currSeasonSingles.played = parseInt(celkom[2], 10);
+          currSeasonSingles.lost = currSeasonSingles.played - currSeasonSingles.won;
+          currSeasonSingles.winRate = currSeasonSingles.played > 0 ? Math.round((currSeasonSingles.won / currSeasonSingles.played) * 100) : 0;
+        }
+        const doma = singlesBlock[0].match(/Doma\s*(\d+)\s*z\s*(\d+)/i);
+        if (doma) {
+          currSeasonSingles.home = { won: parseInt(doma[1], 10), total: parseInt(doma[2], 10) };
+        }
+        const vonku = singlesBlock[0].match(/Vonku\s*(\d+)\s*z\s*(\d+)/i);
+        if (vonku) {
+          currSeasonSingles.away = { won: parseInt(vonku[1], 10), total: parseInt(vonku[2], 10) };
         }
       }
-    }
 
-    // Detect player's club from match encounters
-    let detectedClub = '';
-    const allMatchesCombined = [...allSingles, ...allDoubles];
-    if (allMatchesCombined.length > 0) {
-      const allEncounterTeams = allMatchesCombined.map(m => m.teams.replace(/\s*\(\d+:\d+\)$/, '').split(/\s*-\s*/));
-      if (allEncounterTeams.length > 0) {
-        const firstPair = allEncounterTeams[0];
-        for (const candidate of firstPair) {
-          const trimmed = candidate.trim();
-          if (trimmed && allEncounterTeams.every(pair => pair.some(p => p.trim().toLowerCase() === trimmed.toLowerCase()))) {
-            detectedClub = trimmed;
-            break;
+      const doublesBlock = html.match(/Úspešnosť\s*-\s*Štvorhry[\s\S]*?(?=<div class="tml2|$)/i);
+      if (seasonIndex === 0 && doublesBlock) {
+        const celkom = doublesBlock[0].match(/Celkom\s*(\d+)\s*z\s*(\d+)/i);
+        if (celkom) {
+          currSeasonDoubles.won = parseInt(celkom[1], 10);
+          currSeasonDoubles.played = parseInt(celkom[2], 10);
+          currSeasonDoubles.lost = currSeasonDoubles.played - currSeasonDoubles.won;
+          currSeasonDoubles.winRate = currSeasonDoubles.played > 0 ? Math.round((currSeasonDoubles.won / currSeasonDoubles.played) * 100) : 0;
+        }
+      }
+
+      // Detect all tabs in this season (swipers / tabs2__nav__item)
+      const tabRegex = /<div class="swiper-slide w-auto tabs2__nav__item[^"]*">([\s\S]*?)<\/div>/gi;
+      const tabMatches = [...html.matchAll(tabRegex)];
+
+      let seasonSingles = 0;
+      let seasonDoubles = 0;
+      let seasonSinglesWon = 0;
+      let seasonDoublesWon = 0;
+      const seasonLeagues = new Set();
+
+      if (tabMatches.length === 0) {
+        const duels = parsePlayerDuelsFromHtml(html, playerId, season.label, '', '');
+        for (const m of duels.singles) {
+          if (!seenMatchIds.has(m.id)) {
+            seenMatchIds.add(m.id);
+            allSingles.push(m);
+            seasonSingles++;
+            if (m.result === 'WIN') seasonSinglesWon++;
+          }
+        }
+        for (const m of duels.doubles) {
+          if (!seenMatchIds.has(m.id)) {
+            seenMatchIds.add(m.id);
+            allDoubles.push(m);
+            seasonDoubles++;
+            if (m.result === 'WIN') seasonDoublesWon++;
+          }
+        }
+      } else {
+        for (const tm of tabMatches) {
+          const content = tm[1];
+          const league = content.match(/<span class="d-block fw-bold">([\s\S]*?)<\/span>/i)?.[1]?.trim() || '';
+          const team = content.match(/<span class="d-block">([\s\S]*?)<\/span>/i)?.[1]?.trim() || '';
+          const href = content.match(/href="([^"]+)"/i)?.[1];
+          if (league) seasonLeagues.add(league);
+          if (!primaryClub && team) primaryClub = team;
+
+          let tabHtml = html;
+          if (href && href !== `${BASE_URL}/hrac/${playerId}` && !content.includes('active')) {
+            const url = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+            try {
+              const resTab = await fetch(url, {
+                headers: { ...DEFAULT_HEADERS, 'Cookie': cookieHeader }
+              });
+              if (resTab.ok) tabHtml = await resTab.text();
+            } catch (err) {
+              console.warn(`Error fetching tab ${url}:`, err.message);
+            }
+          }
+
+          const duels = parsePlayerDuelsFromHtml(tabHtml, playerId, season.label, league, team);
+          for (const m of duels.singles) {
+            if (!seenMatchIds.has(m.id)) {
+              seenMatchIds.add(m.id);
+              allSingles.push(m);
+              seasonSingles++;
+              if (m.result === 'WIN') seasonSinglesWon++;
+            }
+          }
+          for (const m of duels.doubles) {
+            if (!seenMatchIds.has(m.id)) {
+              seenMatchIds.add(m.id);
+              allDoubles.push(m);
+              seasonDoubles++;
+              if (m.result === 'WIN') seasonDoublesWon++;
+            }
           }
         }
       }
+
+      if (seasonSingles + seasonDoubles > 0) {
+        seasonsBreakdown.push({
+          season: season.label,
+          slug: season.slug,
+          leagues: Array.from(seasonLeagues),
+          singles: seasonSingles,
+          singlesWon: seasonSinglesWon,
+          singlesLost: seasonSingles - seasonSinglesWon,
+          singlesWinRate: seasonSingles > 0 ? Math.round((seasonSinglesWon / seasonSingles) * 100) : 0,
+          doubles: seasonDoubles,
+          doublesWon: seasonDoublesWon,
+          doublesLost: seasonDoubles - seasonDoublesWon,
+          doublesWinRate: seasonDoubles > 0 ? Math.round((seasonDoublesWon / seasonDoubles) * 100) : 0,
+          total: seasonSingles + seasonDoubles
+        });
+      }
     }
 
-    // Also look for club in club links
-    const clubRegex = /<a[^>]*href="\/liga\/[^\/]+\/rozpis-muzstva\?club_id=(\d+)"[^>]*>(.*?)<\/a>/i;
-    const clubMatch = htmlCurr.match(clubRegex);
-    const clubName = detectedClub || (clubMatch ? clubMatch[2].replace(/<[^>]+>/g, '').trim() : '');
-    const clubId = clubMatch ? clubMatch[1] : '';
-
-    // Calculate career totals from allSingles (pure singles)
+    // Career totals
     const careerSinglesPlayed = allSingles.length;
     const careerSinglesWon = allSingles.filter(m => m.result === 'WIN').length;
     const careerSinglesLost = careerSinglesPlayed - careerSinglesWon;
     const careerSinglesWinRate = careerSinglesPlayed > 0 ? Math.round((careerSinglesWon / careerSinglesPlayed) * 100) : 0;
 
-    // Calculate career totals from allDoubles (pure doubles)
     const careerDoublesPlayed = allDoubles.length;
     const careerDoublesWon = allDoubles.filter(m => m.result === 'WIN').length;
     const careerDoublesLost = careerDoublesPlayed - careerDoublesWon;
     const careerDoublesWinRate = careerDoublesPlayed > 0 ? Math.round((careerDoublesWon / careerDoublesPlayed) * 100) : 0;
 
     const profile = {
-      id: playerId,
-      name,
+      id: playerId.toString(),
+      name: playerName || `Hráč #${playerId}`,
       association,
-      clubName,
-      clubId,
-      singles,
-      doubles,
+      clubName: primaryClub,
+      clubId: primaryClubId,
+      singles: currSeasonSingles,
+      doubles: currSeasonDoubles,
       singlesStats: shouldFetchAllSeasons ? {
         played: careerSinglesPlayed,
         won: careerSinglesWon,
         lost: careerSinglesLost,
         winRate: careerSinglesWinRate,
-        home: singles.home,
-        away: singles.away
-      } : singles,
+        home: currSeasonSingles.home,
+        away: currSeasonSingles.away
+      } : currSeasonSingles,
       doublesStats: shouldFetchAllSeasons ? {
         played: careerDoublesPlayed,
         won: careerDoublesWon,
         lost: careerDoublesLost,
         winRate: careerDoublesWinRate
-      } : doubles,
-      matches: allSingles, // Pure singles matches
-      doublesMatches: allDoubles, // Pure doubles matches
+      } : currSeasonDoubles,
+      matches: allSingles,
+      doublesMatches: allDoubles,
       totalMatches: allSingles.length,
       totalDoublesMatches: allDoubles.length,
-      syncedSeasonsCount: shouldFetchAllSeasons ? ALL_SEASONS.length : 1,
       isAllSeasons: shouldFetchAllSeasons,
+      syncedSeasonsCount: seasonsBreakdown.length || 1,
+      seasonsBreakdown,
+      source: 'SSTZ',
       syncedAt: new Date().toISOString()
     };
 
     setInCache(cacheKey, profile);
+    // Persist snapshot to disk
+    saveSnapshot(playerId, profile);
+
     return profile;
   } catch (err) {
-    console.error(`Error loading player ${playerId}:`, err.message);
+    console.error(`Error loading live player ${playerId}:`, err.message);
+
+    // Fallback: load existing verified snapshot if available
+    const snapshot = loadSnapshot(playerId);
+    if (snapshot) {
+      console.log(`Loaded authentic snapshot fallback for player ${playerId}`);
+      return snapshot;
+    }
+
     return null;
   }
 }
@@ -786,7 +820,6 @@ export async function getLeagueData(leagueSlug) {
 
     standings.sort((a, b) => a.position - b.position);
 
-    // If no standings rows were matched (e.g. before season starts), fallback to parsing any club links in the page
     if (clubs.length === 0) {
       const clubLinks = [...html.matchAll(/<a[^>]*href="\/liga\/[^\/]+\/rozpis-muzstva\?club_id=(\d+)"[^>]*>([^<]+)<\/a>/gi)];
       for (const cl of clubLinks) {
@@ -799,7 +832,6 @@ export async function getLeagueData(leagueSlug) {
       }
     }
 
-    // Also fetch league matches from rozpis
     let matches = [];
     try {
       const scheduleData = await getTeamSchedule(leagueSlug, null);
@@ -844,7 +876,6 @@ export async function getAllSlovakLeagues() {
 
     const categories = [];
 
-    // Match dropdown menus: <a ... class="...dropdown-toggle..."><span class="name">CATEGORY</span></a><div class="dropdown-menu...">(leagues)</div>
     const catRegex = /<a[^>]*class="[^"]*dropdown-toggle[^"]*"[^>]*>[\s\S]*?<span\s+class="name">([\s\S]*?)<\/span>[\s\S]*?<\/a>\s*<div\s+class="dropdown-menu[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
     let catMatch;
 

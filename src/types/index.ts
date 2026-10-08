@@ -96,17 +96,19 @@ export interface SetDetail {
   opponentPoints: number;
   display: string; // e.g. "11:8"
   won: boolean;
+  isWalkover?: boolean;
 }
 
 export interface MatchRecord {
   id: string;
   date: string;
   season?: string; // e.g. '2026/27' or '2025/26'
-  competition: 'SSTZ Liga' | 'Turnaj' | 'Priateľský zápas' | 'Klubový tréning';
+  competition: string; // e.g. 'SSTZ Liga', '3. liga', 'Turnaj', 'Priateľský zápas'
   leagueName?: string;
   round?: string;
   teamHome?: string;
   teamAway?: string;
+  playerClub?: string;
   opponentName: string;
   opponentId?: string;
   result: 'WIN' | 'LOSS';
@@ -120,6 +122,8 @@ export interface MatchRecord {
   tacticsNote?: string; // čo na neho fungovalo / čo si vedel hrať
   sstzMatchId?: string;
   source?: 'SSTZ' | 'manual';
+  isPlayerHome?: boolean;
+  isWalkover?: boolean;
 }
 
 export type Handedness = 'right' | 'left' | 'unknown';
@@ -149,9 +153,11 @@ export interface DoublesMatchRecord {
   teamMatchId?: string;
   season?: string;
   leagueName?: string;
+  competition?: string;
   date: string;
   round?: string;
   teams?: string;
+  playerClub?: string;
   partnerName: string;
   partnerId?: string;
   opponentPair: string;
@@ -165,6 +171,8 @@ export interface DoublesMatchRecord {
   notes?: string;
   source?: 'SSTZ' | 'manual';
   type: 'doubles';
+  isPlayerHome?: boolean;
+  isWalkover?: boolean;
 }
 
 export interface DoublesPartnerStat {
@@ -177,6 +185,21 @@ export interface DoublesPartnerStat {
   matches: DoublesMatchRecord[];
 }
 
+export interface SeasonBreakdown {
+  season: string;
+  slug: string;
+  leagues: string[];
+  singles: number;
+  singlesWon: number;
+  singlesLost: number;
+  singlesWinRate: number;
+  doubles: number;
+  doublesWon: number;
+  doublesLost: number;
+  doublesWinRate: number;
+  total: number;
+}
+
 export interface SSTZProfile {
   id: string;
   name: string;
@@ -186,6 +209,7 @@ export interface SSTZProfile {
   leagueSlug?: string;
   isAllSeasons?: boolean;
   syncedSeasonsCount?: number;
+  seasonsBreakdown?: SeasonBreakdown[];
   singlesStats: {
     won: number;
     played: number;

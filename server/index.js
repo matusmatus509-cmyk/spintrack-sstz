@@ -12,6 +12,7 @@ import {
   getPopularLeagues,
   getAllSlovakLeagues
 } from './sstzScraper.js';
+import { loadSnapshot, listSnapshots } from './sstzStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,6 +96,30 @@ app.get('/api/sstz/all-leagues', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Default player profile (Matúš Očovan #5353024)
+app.get('/api/sstz/default-player', (req, res) => {
+  const snapshot = loadSnapshot('5353024');
+  if (snapshot) {
+    return res.json(snapshot);
+  }
+  res.status(404).json({ error: 'Default player snapshot not found' });
+});
+
+// Direct snapshot by player ID
+app.get('/api/sstz/snapshot/:id', (req, res) => {
+  const { id } = req.params;
+  const snapshot = loadSnapshot(id);
+  if (snapshot) {
+    return res.json(snapshot);
+  }
+  res.status(404).json({ error: `Snapshot for player ${id} not found` });
+});
+
+// List all available snapshots
+app.get('/api/sstz/snapshots', (req, res) => {
+  res.json(listSnapshots());
 });
 
 // System info & local mobile IP detection

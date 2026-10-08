@@ -23,6 +23,17 @@ export const SetBreakdown: React.FC<SetBreakdownProps> = ({
     ? setDetails
     : sets.map((s, idx) => {
         const clean = s.trim();
+        const lower = clean.toLowerCase();
+        if (lower.includes('w') || lower.includes('scr') || lower.includes('skre') || lower.includes('kontum')) {
+          return {
+            setNumber: idx + 1,
+            playerPoints: 0,
+            opponentPoints: 0,
+            display: clean,
+            won: result === 'WIN',
+            isWalkover: true
+          };
+        }
         if (clean.includes(':')) {
           const [p1, p2] = clean.split(':').map(n => parseInt(n.trim(), 10));
           return {
@@ -30,22 +41,23 @@ export const SetBreakdown: React.FC<SetBreakdownProps> = ({
             playerPoints: isNaN(p1) ? 11 : p1,
             opponentPoints: isNaN(p2) ? 9 : p2,
             display: clean,
-            won: p1 > p2
+            won: p1 > p2,
+            isWalkover: false
           };
         }
         const sign = clean.startsWith('+') ? '+' : (clean.startsWith('-') ? '-' : (result === 'WIN' ? '+' : '-'));
         const num = parseInt(clean.replace(/[^0-9]/g, ''), 10);
         if (isNaN(num)) {
-          return { setNumber: idx + 1, playerPoints: 11, opponentPoints: 9, display: clean, won: result === 'WIN' };
+          return { setNumber: idx + 1, playerPoints: 0, opponentPoints: 0, display: clean, won: result === 'WIN', isWalkover: false };
         }
         if (sign === '+') {
           const opp = num;
           const ply = num >= 10 ? num + 2 : 11;
-          return { setNumber: idx + 1, playerPoints: ply, opponentPoints: opp, display: `${ply}:${opp}`, won: true };
+          return { setNumber: idx + 1, playerPoints: ply, opponentPoints: opp, display: `${ply}:${opp}`, won: true, isWalkover: false };
         } else {
           const ply = num;
           const opp = num >= 10 ? num + 2 : 11;
-          return { setNumber: idx + 1, playerPoints: ply, opponentPoints: opp, display: `${ply}:${opp}`, won: false };
+          return { setNumber: idx + 1, playerPoints: ply, opponentPoints: opp, display: `${ply}:${opp}`, won: false, isWalkover: false };
         }
       });
 
