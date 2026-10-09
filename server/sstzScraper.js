@@ -265,17 +265,20 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
 
     const allH4s = [...headerHtml.matchAll(/<h4[^>]*>([\s\S]*?)<\/h4>/gi)].map(m => m[1].replace(/<[^>]+>/g, '').trim());
     let stage = '';
-    let round = 'Liga';
+    let round = '';
     let date = '';
+    // A round is valid only when the official SSTZ encounter heading names one.
+    // Never substitute the phase title, a date, or a generic word such as "Liga".
+    const officialRound = allH4s
+      .map(title => title.match(/\b(\d{1,2}\.\s*kolo)\b/i)?.[1]?.replace(/\s+/g, ' '))
+      .find(Boolean);
+    if (officialRound) round = officialRound;
 
     if (allH4s.length >= 2) {
       stage = allH4s[0];
       const rParts = allH4s[1].split('/');
-      round = rParts[0]?.trim() || allH4s[1];
-      date = rParts[1]?.trim() || '';
+      date = rParts.length > 1 ? rParts.slice(1).join('/').trim() : '';
     } else if (allH4s.length === 1) {
-      const rMatch = allH4s[0].match(/(\d+\.\s*kolo)/i);
-      round = rMatch ? rMatch[1] : allH4s[0];
       const dMatch = allH4s[0].match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
       date = dMatch ? dMatch[1] : '';
     }
@@ -284,11 +287,6 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
       const dMatch = headerHtml.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
       if (dMatch) date = dMatch[1];
     }
-    if (!round || round === 'Liga') {
-      const rMatch = headerHtml.match(/(\d+\.\s*kolo)/i);
-      if (rMatch) round = rMatch[1];
-    }
-
     const teamsMatch = headerHtml.match(/<p class="m-0">(.*?)<\/p>/i);
     const teams = teamsMatch ? teamsMatch[1].replace(/<[^>]+>/g, '').trim() : '';
 
