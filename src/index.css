@@ -1439,3 +1439,20 @@ table td {
   .activity-footer .btn-primary { flex: 1; justify-content: center; }
 }
 @media (max-width: 380px) { .activity-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.sync-status { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); right: 20px; z-index: 1200; display: flex; flex-direction: column; gap: 8px; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 170px); overflow-y: auto; pointer-events: none; }
+.sync-status-card { pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; box-shadow: 0 8px 32px #0006; }
+.sync-status-card > svg { flex-shrink: 0; margin-top: 2px; color: #6ee7b7; }
+.sync-status-copy { flex: 1; min-width: 0; }
+.sync-status-copy strong { font-size: .88rem; }
+.sync-status-copy p { font-size: .82rem; margin: 4px 0; line-height: 1.5; overflow-wrap: anywhere; }
+.sync-status-hint { display: block; color: var(--text-muted); font-size: .73rem; line-height: 1.5; }
+.sync-status-card > button { border: 0; background: transparent; color: var(--text-muted); min-width: 36px; min-height: 36px; display: grid; place-items: center; cursor: pointer; }
+.sync-error > svg { color: #fda4af; }
+.sync-spinner { animation: sync-rotate 1s linear infinite; }
+.sync-progress { margin-top: 12px; height: 4px; border-radius: 8px; overflow: hidden; background: #10b98120; }
+.sync-progress span { display: block; width: 35%; height: 100%; background: var(--accent-tt-green); border-radius: 8px; animation: sync-slide 1.8s ease-in-out infinite alternate; }
+@keyframes sync-rotate { to { transform: rotate(360deg); } }
+@keyframes sync-slide { from { transform: translateX(-100%); } to { transform: translateX(285%); } }
+@media (max-width: 600px) { .sync-status { top: auto; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: 16px; } .sync-status-card { padding: 12px; } }
+@media (prefers-reduced-motion: reduce) { .sync-spinner, .sync-progress span { animation: none; } }

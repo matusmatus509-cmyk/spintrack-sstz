@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   Rubber,
   Blade,
@@ -17,6 +17,14 @@ import {
 } from '../types';
 import { parseTournamentImport, replaceTournamentMatches } from '../utils/tournamentImport';
 import { INITIAL_BADGES } from '../data/gearCatalog';
+
+export type SyncKind = 'player' | 'schedule' | 'tournaments';
+export interface SyncJob {
+  state: 'loading' | 'success' | 'error';
+  message: string;
+  startedAt: number;
+  finishedAt?: number;
+}
 
 interface AppContextType {
   // Equipment
@@ -61,6 +69,8 @@ interface AppContextType {
   opponents: OpponentProfile[];
   updateOpponent: (opponent: OpponentProfile) => void;
   getOpponent: (idOrName: string) => OpponentProfile | undefined;
+
+  syncJobs: Partial<Record<SyncKind, SyncJob>>;
 
   // SSTZ Integration
   sstzProfile: SSTZProfile | null;
@@ -351,15 +361,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   const [sstzProfile, setSstzProfile] = useState<SSTZProfile | null>(saved?.sstzProfile || null);
   const [tournamentProfile, setTournamentProfile] = useState<SSTZTournamentProfile | null>(saved?.tournamentProfile || null);
-  const [isTournamentLoading, setIsTournamentLoading] = useState(false);
+  const [syncJobs, setSyncJobs] = useState<Partial<Record<SyncKind, SyncJob>>>({});
+  const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController }>());
+  const isTournamentLoading = syncJobs.tournaments?.state === 'loading';
   const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [teamSchedule, setTeamSchedule] = useState<TeamScheduleMatch[]>(saved?.teamSchedule || []);
   const [selectedLeagueSlug, setSelectedLeagueSlug] = useState<string>(saved?.selectedLeagueSlug || 'sezona-2026-27-joola-extraliga-muzi-sstz');
   const [selectedClubId, setSelectedClubId] = useState<string>(saved?.selectedClubId || '');
   const [badges, setBadges] = useState<Badge[]>(saved?.badges || INITIAL_BADGES);
 
+  const [scheduleConnected, setScheduleConnected] = useState(Boolean(saved?.scheduleConnected ?? saved?.teamSchedule?.length));
+
   // Loading & error states
-  const [isSstzLoading, setIsSstzLoading] = useState(false);
+  const isSstzLoading = syncJobs.player?.state === 'loading' || syncJobs.schedule?.state === 'loading';
   const [sstzError, setSstzError] = useState<string | null>(null);
 
   // Persist to localStorage
@@ -379,6 +393,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
+      scheduleConnected,
       badges
     };
     try {
@@ -401,6 +416,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     teamSchedule,
     selectedLeagueSlug,
     selectedClubId,
+    scheduleConnected,
     badges
   ]);
 
@@ -768,7 +784,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setSstzProfile(profile);
 
-    if (data.clubId) {
+    if (data.clubId && !scheduleConnected) {
       setSelectedClubId(data.clubId);
     }
 
@@ -803,7 +819,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setMatches(prev => {
         const nonSstz = prev.filter(p => p.source !== 'SSTZ');
-        const combined = [...importedMatches, ...nonSstz];
+        const previous = new Map(prev.filter(p => p.source === 'SSTZ').map(p => [p.id, p]));
+        const combined = [...importedMatches.map(match => {
+          const old = previous.get(match.id);
+          return old ? { ...match, notes: old.notes, tacticsNote: old.tacticsNote, racketId: old.racketId } : match;
+        }), ...nonSstz];
         setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
         return combined;
       });
@@ -818,91 +838,137 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
       setDoublesMatches(prev => {
         const nonSstz = prev.filter(p => p.source !== 'SSTZ');
-        return [...importedDoubles, ...nonSstz];
+        const previous = new Map(prev.filter(p => p.source === 'SSTZ').map(p => [p.id, p]));
+        return [...importedDoubles.map(match => {
+          const old = previous.get(match.id);
+          return old ? { ...match, notes: old.notes } : match;
+        }), ...nonSstz];
       });
     }
 
     updateBadgeProgress('badge-sstz-connected', 1);
   };
 
-  const syncSstzTournaments = async (playerId: string): Promise<boolean> => {
-    if (isTournamentLoading) return false;
-    setIsTournamentLoading(true);
-    setTournamentError(null);
-    try {
+  // Share in-flight work so automatic refresh and manual imports cannot overlap.
+  const runSync = (
+    kind: SyncKind, message: string, successMessage: string,
+    task: (signal: AbortSignal) => Promise<void>,
+  ): Promise<boolean> => {
+    const existing = runningSyncs.current.get(kind);
+    if (existing) return existing.promise;
+    const controller = new AbortController();
+    const startedAt = Date.now();
+    setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt } }));
+    if (kind === 'tournaments') setTournamentError(null);
+    else setSstzError(null);
+    const promise = (async () => {
+      try {
+        await task(AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]));
+        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'success', message: successMessage, startedAt, finishedAt: Date.now() } }));
+        return true;
+      } catch (error) {
+        if (controller.signal.aborted) {
+          setSyncJobs(previous => { const next = { ...previous }; delete next[kind]; return next; });
+          return false;
+        }
+        const detail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
+        if (kind === 'tournaments') setTournamentError(detail);
+        else setSstzError(detail);
+        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
+        return false;
+      } finally {
+        runningSyncs.current.delete(kind);
+      }
+    })();
+    runningSyncs.current.set(kind, { promise, controller });
+    return promise;
+  };
+
+  const syncSstzTournaments = (playerId: string): Promise<boolean> => runSync(
+    'tournaments', 'Načítavam turnaje a zápasy zo všetkých sezón…', 'Turnaje a zápasy sú aktualizované.',
+    async signal => {
       if (!/^\d+$/.test(playerId)) throw new Error('Zadaj platné SSTZ ID hráča.');
-      const response = await fetch(`/api/sstz/tournaments/player/${encodeURIComponent(playerId)}`);
+      const response = await fetch(`/api/sstz/tournaments/player/${encodeURIComponent(playerId)}`, { signal, cache: 'no-store' });
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) throw new Error('Turnajový import zatiaľ nie je dostupný na serveri.');
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Nepodarilo sa načítať turnaje zo SSTZ.');
       const imported = parseTournamentImport(data, playerId);
+      signal.throwIfAborted();
       setMatches(previous => replaceTournamentMatches(previous, imported.matches));
       setDoublesMatches(previous => replaceTournamentMatches(previous, imported.doublesMatches));
       setTournamentProfile(imported.profile);
-      return true;
-    } catch (error) {
-      setTournamentError(error instanceof Error ? error.message : 'Turnajový import zlyhal.');
-      return false;
-    } finally {
-      setIsTournamentLoading(false);
-    }
-  };
+    },
+  );
 
   useEffect(() => {
     setOpponents(previous => extractOpponentsFromMatches(matches, previous));
   }, [matches]);
 
-  // SSTZ Integration calls (defaults to allSeasons: true to fetch 100% of real league duels)
-  const syncSstzPlayer = async (playerId: string, allSeasons: boolean = true): Promise<boolean> => {
-    setIsSstzLoading(true);
-    setSstzError(null);
-    try {
-      const url = allSeasons
-        ? `/api/sstz/player/${playerId}?allSeasons=true`
-        : `/api/sstz/player/${playerId}?allSeasons=false`;
-      const res = await fetch(url);
+  const syncSstzPlayer = (playerId: string, allSeasons = true): Promise<boolean> => runSync(
+    'player', 'Načítavam ligové zápasy a históriu hráča…', 'Ligové zápasy sú aktualizované.',
+    async signal => {
+      const res = await fetch(`/api/sstz/player/${encodeURIComponent(playerId)}?allSeasons=${allSeasons}`, { signal, cache: 'no-store' });
       if (!res.ok) {
         const failure = await res.json().catch(() => null);
         throw new Error(failure?.error || `Chyba pri sťahovaní SSTZ profilu (HTTP ${res.status})`);
       }
       const data = await res.json();
+      if (String(data.id) !== playerId || !Array.isArray(data.matches) || !Array.isArray(data.doublesMatches)) {
+        throw new Error('SSTZ neposkytlo úplné údaje hráča. Uložená história zostala zachovaná.');
+      }
+      signal.throwIfAborted();
       applySstzPayload(data);
-      setIsSstzLoading(false);
-      return true;
-    } catch (err: any) {
-      setSstzError(err.message || 'Nepodarilo sa načítať profil z SSTZ.');
-      setIsSstzLoading(false);
-      return false;
-    }
-  };
+    },
+  );
 
-  const syncTeamSchedule = async (leagueSlug: string, clubId?: string): Promise<boolean> => {
-    setIsSstzLoading(true);
-    setSstzError(null);
-    try {
+  const syncTeamSchedule = (leagueSlug: string, clubId?: string): Promise<boolean> => runSync(
+    'schedule', 'Načítavam ligu, výsledky a rozpis zápasov…', 'Ligový rozpis je aktualizovaný.',
+    async signal => {
       const url = clubId
         ? `/api/sstz/team-schedule?leagueSlug=${encodeURIComponent(leagueSlug)}&clubId=${encodeURIComponent(clubId)}`
         : `/api/sstz/team-schedule?leagueSlug=${encodeURIComponent(leagueSlug)}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`Chyba pri sťahovaní rozpisu (HTTP ${res.status})`);
-      }
+      const res = await fetch(url, { signal, cache: 'no-store' });
+      if (!res.ok) throw new Error(`Chyba pri sťahovaní rozpisu (HTTP ${res.status})`);
       const data = await res.json();
-      setTeamSchedule(data.matches || []);
+      if (!Array.isArray(data.matches)) throw new Error('SSTZ neposkytlo úplný rozpis. Uložené zápasy zostali zachované.');
+      signal.throwIfAborted();
+      setTeamSchedule(data.matches);
       setSelectedLeagueSlug(leagueSlug);
-      if (clubId) {
-        setSelectedClubId(clubId);
-      }
-      setIsSstzLoading(false);
-      return true;
-    } catch (err: any) {
-      console.error('Error syncing team schedule:', err);
-      setSstzError(err.message || 'Nepodarilo sa načítať rozpis.');
-      setIsSstzLoading(false);
-      return false;
-    }
+      setSelectedClubId(clubId || '');
+      setScheduleConnected(true);
+    },
+  );
+
+  // Initial refresh runs once, including under StrictMode. Resume refreshes are throttled.
+  const didRefreshOnOpen = useRef(false);
+  const lastAutoRefresh = useRef(0);
+  const refreshConnected = useRef(() => {});
+  refreshConnected.current = () => {
+    if (!navigator.onLine || Date.now() - lastAutoRefresh.current < 60000) return;
+    lastAutoRefresh.current = Date.now();
+    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true);
+    if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id);
+    if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined);
   };
+  useEffect(() => {
+    if (!didRefreshOnOpen.current) {
+      didRefreshOnOpen.current = true;
+      refreshConnected.current();
+    }
+    let hiddenAt = document.hidden ? Date.now() : 0;
+    const resume = () => {
+      if (document.hidden) hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt >= 60000) refreshConnected.current();
+    };
+    const online = () => refreshConnected.current();
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('online', online);
+    return () => {
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('online', online);
+    };
+  }, []);
 
   const importAllSstzMatchesToDiary = (): number => {
     if (!sstzProfile) return 0;
@@ -927,6 +993,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const disconnectSstz = () => {
+    runningSyncs.current.get('player')?.controller.abort();
+    runningSyncs.current.get('schedule')?.controller.abort();
+    setScheduleConnected(false);
+    setSelectedClubId('');
     setSstzProfile(null);
     setTeamSchedule([]);
   };
@@ -971,6 +1041,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
+      scheduleConnected,
       badges,
       exportedAt: new Date().toISOString()
     };
@@ -992,6 +1063,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.tournamentProfile !== undefined) setTournamentProfile(data.tournamentProfile);
       if (data.sstzProfile) setSstzProfile(data.sstzProfile);
       if (data.teamSchedule) setTeamSchedule(data.teamSchedule);
+      setScheduleConnected(Boolean(data.scheduleConnected ?? data.teamSchedule?.length));
       if (data.selectedLeagueSlug) setSelectedLeagueSlug(data.selectedLeagueSlug);
       if (data.selectedClubId) setSelectedClubId(data.selectedClubId);
       if (data.badges) setBadges(data.badges);
@@ -1003,6 +1075,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetToDefaults = () => {
+    runningSyncs.current.forEach(job => job.controller.abort());
+    setScheduleConnected(false);
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     setBlades(defaultBlades);
     setRubbers(defaultRubbers);
@@ -1057,6 +1131,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateOpponent,
         getOpponent,
         sstzProfile,
+        syncJobs,
         tournamentProfile,
         isTournamentLoading,
         tournamentError,
