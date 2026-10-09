@@ -211,7 +211,7 @@ export const DiaryView: React.FC = () => {
                   </span>
 
                   <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>
-                    {act.durationMinutes} min
+                    {act.category === 'tréning' ? `${act.durationMinutes} min` : act.matchScore || act.eventResult || act.placing || ''}
                   </span>
 
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
@@ -248,6 +248,10 @@ export const DiaryView: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {(act.title || act.leagueName) && <strong>{act.title || act.leagueName}</strong>}
+              {(act.teamHome || act.teamAway) && <div style={{ color: 'var(--text-muted)', fontSize: '.85rem' }}>{[act.teamHome, act.teamAway].filter(Boolean).join(' – ')}</div>}
+              {(act.eventCategory || act.round || act.placing) && <div style={{ color: 'var(--text-muted)', fontSize: '.8rem' }}>{[act.eventCategory, act.round, act.placing].filter(Boolean).join(' · ')}</div>}
 
               {/* Súper (ak bol zadaný) */}
               {act.opponentName && (
@@ -366,7 +370,7 @@ export const DiaryView: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <MapPin size={12} /> {act.location || 'Klubová herňa'}
                 </div>
-                {act.addEquipmentWear && (
+                {act.category === 'tréning' && act.addEquipmentWear && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#34d399' }}>
                     <Layers size={12} /> +{act.durationMinutes} min k rakete
                   </div>

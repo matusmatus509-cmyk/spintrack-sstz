@@ -503,37 +503,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Add play hours to rubbers and blade of active racket
-  const addHoursToActiveRacket = (hours: number) => {
-    if (!activeRacket) return;
+  const addHoursToActiveRacket = (hours: number, racket = activeRacket) => {
+    if (!racket) return;
 
-    updateRacket(activeRacket.id, {
-      totalHours: Math.round((activeRacket.totalHours + hours) * 10) / 10
+    updateRacket(racket.id, {
+      totalHours: Math.round((racket.totalHours + hours) * 10) / 10
     });
 
-    if (activeRacket.bladeId) {
+    if (racket.bladeId) {
       setBlades(prev =>
         prev.map(b =>
-          b.id === activeRacket.bladeId
+          b.id === racket.bladeId
             ? { ...b, hoursPlayed: Math.round((b.hoursPlayed + hours) * 10) / 10 }
             : b
         )
       );
     }
 
-    if (activeRacket.forehandRubberId) {
+    if (racket.forehandRubberId) {
       setRubbers(prev =>
         prev.map(r =>
-          r.id === activeRacket.forehandRubberId
+          r.id === racket.forehandRubberId
             ? { ...r, hoursPlayed: Math.round((r.hoursPlayed + hours) * 10) / 10 }
             : r
         )
       );
     }
 
-    if (activeRacket.backhandRubberId) {
+    if (racket.backhandRubberId) {
       setRubbers(prev =>
         prev.map(r =>
-          r.id === activeRacket.backhandRubberId
+          r.id === racket.backhandRubberId
             ? { ...r, hoursPlayed: Math.round((r.hoursPlayed + hours) * 10) / 10 }
             : r
         )
@@ -648,24 +648,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActivities(prev => [newActivity, ...prev]);
 
-    // Keep trainingSessions in sync for backwards compatibility
+    // Only training activities contribute to the training history.
     const newSession: TrainingSession = {
       id,
       date: newActivity.date,
       durationMinutes: newActivity.durationMinutes,
       type: newActivity.category === 'liga' ? 'liga' : 'tréning',
       focusDrills: newActivity.focusDrills,
-      racketId: newActivity.racketId || activeRacket?.id,
+      racketId: newActivity.racketId,
       intensity: newActivity.intensity || 4,
       location: newActivity.location,
       notes: [newActivity.publicNote, newActivity.privateNote].filter(Boolean).join(' | ')
     };
-    setTrainingSessions(prev => [newSession, ...prev]);
+    if (newActivity.category === 'tréning') {
+      setTrainingSessions(prev => [newSession, ...prev]);
+    }
 
-    // Add hours to active racket if enabled
-    if (newActivity.addEquipmentWear) {
+    // Add training wear to the racket chosen in the form.
+    if (newActivity.category === 'tréning' && newActivity.addEquipmentWear) {
       const hours = newActivity.durationMinutes / 60;
-      addHoursToActiveRacket(hours);
+      const usedRacket = rackets.find(r => r.id === newActivity.racketId);
+      if (usedRacket) addHoursToActiveRacket(hours, usedRacket);
     }
 
     // Auto-register opponent if entered
@@ -695,16 +698,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateOpponent(updatedOpp);
 
       // If match score was entered, also save to match records
-      if (newActivity.matchScore || newActivity.matchResult) {
+      if (newActivity.category !== 'tréning' && newActivity.category !== 'podujatie' && newActivity.matchScore && newActivity.matchResult) {
         addMatch({
           date: newActivity.date,
-          competition: newActivity.category === 'liga' ? 'SSTZ Liga' : (newActivity.category === 'turnaj' ? 'Turnaj' : 'Priateľský zápas'),
+          competition: newActivity.category === 'liga' ? newActivity.leagueName || 'Liga' : (newActivity.category === 'turnaj' ? newActivity.title || 'Turnaj' : 'Priateľský zápas'),
+          leagueName: newActivity.category === 'liga' ? newActivity.leagueName : undefined,
+          teamHome: newActivity.teamHome,
+          teamAway: newActivity.teamAway,
+          round: newActivity.round,
+          tournamentName: newActivity.category === 'turnaj' ? newActivity.title : undefined,
+          category: newActivity.eventCategory,
           opponentName: oppName,
           opponentId: updatedOpp.id,
           result: newActivity.matchResult || 'WIN',
           score: newActivity.matchScore || '3:0',
           sets: [],
-          racketId: newActivity.racketId || activeRacket?.id,
+          racketId: newActivity.racketId,
           notes: newActivity.publicNote || '',
           tacticsNote: newActivity.privateNote || '',
           source: 'manual'
@@ -712,9 +721,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const hours = newActivity.durationMinutes / 60;
-    updateBadgeProgress('badge-hours-10', hours);
-    updateBadgeProgress('badge-hours-50', hours);
+    if (newActivity.category === 'tréning') {
+      const hours = newActivity.durationMinutes / 60;
+      updateBadgeProgress('badge-hours-10', hours);
+      updateBadgeProgress('badge-hours-50', hours);
+    }
 
     return id;
   };
