@@ -16,8 +16,21 @@ import {
   TrendingUp,
   Info,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Search
 } from 'lucide-react';
+
+const gearInputStyle: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  marginTop: '5px',
+  padding: '9px',
+  borderRadius: 'var(--radius-sm)',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border-subtle)',
+  color: 'var(--text-main)',
+  boxSizing: 'border-box'
+};
 
 export const EquipmentView: React.FC = () => {
   const {
@@ -37,6 +50,9 @@ export const EquipmentView: React.FC = () => {
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'rackets' | 'rubbers' | 'blades' | 'catalog' | 'compare'>('rackets');
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogKind, setCatalogKind] = useState<'all' | 'rubber' | 'blade'>('all');
+  const [catalogBrand, setCatalogBrand] = useState('all');
 
   // New Racket Modal
   const [showNewRacketModal, setShowNewRacketModal] = useState(false);
@@ -47,6 +63,8 @@ export const EquipmentView: React.FC = () => {
 
   // New Rubber Modal
   const [showNewRubberModal, setShowNewRubberModal] = useState(false);
+  const [showNewBladeModal, setShowNewBladeModal] = useState(false);
+  const [bladeForm, setBladeForm] = useState({ brand: '', model: '', plies: '', weightGrams: 85, grip: 'FL' as Blade['grip'], speed: 85, control: 85 });
   const [rubberForm, setRubberForm] = useState({
     brand: 'Butterfly',
     model: '',
@@ -64,6 +82,24 @@ export const EquipmentView: React.FC = () => {
   // Comparison tool state
   const [compareItemA, setCompareItemA] = useState<string>(CATALOG_RUBBERS[0].model);
   const [compareItemB, setCompareItemB] = useState<string>(CATALOG_RUBBERS[1].model);
+
+  const catalogItems = [
+    ...CATALOG_RUBBERS.map(item => ({ kind: 'rubber' as const, item })),
+    ...rubbers
+      .filter(item => !CATALOG_RUBBERS.some(catalog => catalog.brand.toLowerCase() === item.brand.toLowerCase() && catalog.model.toLowerCase() === item.model.toLowerCase()))
+      .map(item => ({ kind: 'rubber' as const, item })),
+    ...CATALOG_BLADES.map(item => ({ kind: 'blade' as const, item })),
+    ...blades
+      .filter(item => !CATALOG_BLADES.some(catalog => catalog.brand.toLowerCase() === item.brand.toLowerCase() && catalog.model.toLowerCase() === item.model.toLowerCase()))
+      .map(item => ({ kind: 'blade' as const, item }))
+  ];
+  const catalogBrands = Array.from(new Set(catalogItems.map(({ item }) => item.brand))).sort((a, b) => a.localeCompare(b));
+  const visibleCatalogItems = catalogItems.filter(({ kind, item }) => {
+    const query = catalogSearch.trim().toLocaleLowerCase('sk');
+    return (catalogKind === 'all' || catalogKind === kind)
+      && (catalogBrand === 'all' || item.brand === catalogBrand)
+      && (!query || `${item.brand} ${item.model}`.toLocaleLowerCase('sk').includes(query));
+  });
 
   // Handle Add Racket Setup
   const handleCreateRacket = (e: React.FormEvent) => {
@@ -106,6 +142,24 @@ export const EquipmentView: React.FC = () => {
     setShowNewRubberModal(false);
   };
 
+  const handleCreateBlade = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bladeForm.brand.trim() || !bladeForm.model.trim()) return;
+    addBlade({
+      ...bladeForm,
+      brand: bladeForm.brand.trim(),
+      model: bladeForm.model.trim(),
+      plies: bladeForm.plies.trim(),
+      weightGrams: Number(bladeForm.weightGrams),
+      speed: Number(bladeForm.speed),
+      control: Number(bladeForm.control),
+      hoursPlayed: 0,
+      dateAcquired: new Date().toISOString().split('T')[0]
+    });
+    setShowNewBladeModal(false);
+    setBladeForm({ brand: '', model: '', plies: '', weightGrams: 85, grip: 'FL', speed: 85, control: 85 });
+  };
+
   // Add from catalog helper
   const handleAddFromCatalog = (catRubber: typeof CATALOG_RUBBERS[0]) => {
     addRubber({
@@ -125,7 +179,7 @@ export const EquipmentView: React.FC = () => {
     alert(`Drevo ${catBlade.brand} ${catBlade.model} bolo pridané do tvojej výbavy!`);
   };
 
-  const dialogRef = useDialog(showNewRacketModal || showNewRubberModal, () => { setShowNewRacketModal(false); setShowNewRubberModal(false); });
+  const dialogRef = useDialog(showNewRacketModal || showNewRubberModal || showNewBladeModal, () => { setShowNewRacketModal(false); setShowNewRubberModal(false); setShowNewBladeModal(false); });
 
   return (
     <div className="page-view equipment-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -500,17 +554,7 @@ export const EquipmentView: React.FC = () => {
                 Zoznam tvojich herných a záložných driev.
               </p>
             </div>
-            <button
-              onClick={() => {
-                const b = CATALOG_BLADES[0];
-                addBlade({
-                  ...b,
-                  hoursPlayed: 0,
-                  dateAcquired: new Date().toISOString().split('T')[0]
-                });
-              }}
-              className="btn-primary"
-            >
+            <button onClick={() => setShowNewBladeModal(true)} className="btn-primary">
               <Plus size={16} /> Pridať drevo
             </button>
           </div>
@@ -570,54 +614,52 @@ export const EquipmentView: React.FC = () => {
       {activeSubTab === 'catalog' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Katalóg Poťahov & Driev</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Katalóg poťahov a driev</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Populárne profesionálne a klubové vybavenie. Pridaj si ich priamo do svojho inventára jedným klikom.
+              Hľadaj podľa názvu alebo značky. Výbava, ktorú už máš uloženú, sa zobrazí tiež.
             </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+              <button onClick={() => setShowNewRubberModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={15} /> Pridať vlastný poťah</button>
+              <button onClick={() => setShowNewBladeModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={15} /> Pridať vlastné drevo</button>
+            </div>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
-            gap: '16px'
-          }}>
-            {CATALOG_RUBBERS.map((cr, idx) => (
-              <div
-                key={idx}
-                className="glass-panel"
-                style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}
-              >
-                <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>POŤAH</span>
-                  <div style={{ display: 'flex', gap: '6px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    <span>SPD: <strong>{cr.speed}</strong></span>
-                    <span>SPN: <strong>{cr.spin}</strong></span>
-                    <span>CTRL: <strong>{cr.control}</strong></span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{cr.brand} {cr.model}</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                    {cr.notes}
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                    Životnosť: ~{cr.maxRecommendedHours}h
-                  </span>
-                  <button
-                    onClick={() => handleAddFromCatalog(cr)}
-                    className="btn-primary"
-                    style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-                  >
-                    + Pridať do výbavy
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="glass-panel" style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))', gap: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 10px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)' }}>
+              <Search size={17} color="var(--text-muted)" />
+              <input aria-label="Hľadať výbavu" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} placeholder="Hľadať poťah alebo drevo…" style={{ width: '100%', minWidth: 0, padding: '10px 0', border: 0, outline: 0, color: 'var(--text-main)', background: 'transparent' }} />
+            </label>
+            <select aria-label="Typ výbavy" value={catalogKind} onChange={e => setCatalogKind(e.target.value as typeof catalogKind)} style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-subtle)' }}>
+              <option value="all">Všetko ({catalogItems.length})</option><option value="rubber">Poťahy</option><option value="blade">Drevá</option>
+            </select>
+            <select aria-label="Značka" value={catalogBrand} onChange={e => setCatalogBrand(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-subtle)' }}>
+              <option value="all">Všetky značky</option>{catalogBrands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
+            </select>
           </div>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>Zobrazených {visibleCatalogItems.length} z {catalogItems.length} položiek</p>
+
+          {visibleCatalogItems.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '14px' }}>
+            {visibleCatalogItems.map(({ kind, item }) => {
+              const isRubber = kind === 'rubber';
+              const rubber = isRubber ? item as typeof CATALOG_RUBBERS[number] : null;
+              const blade = !isRubber ? item as typeof CATALOG_BLADES[number] : null;
+              return <article key={`${kind}-${item.brand}-${item.model}`} className="glass-panel" style={{ padding: '17px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>{isRubber ? 'POŤAH' : 'DREVO'}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{item.brand}</span>
+                </div>
+                <div><h3 style={{ fontSize: '1.02rem', fontWeight: 750 }}>{item.model}</h3>
+                  {rubber && <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '5px' }}>{rubber.type.replace('_', ' ')} · {rubber.spongeThickness}{rubber.spongeHardness ? ` · ${rubber.spongeHardness}°` : ''}</p>}
+                  {blade && <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '5px' }}>{blade.plies} · {blade.weightGrams} g · {blade.grip}</p>}
+                </div>
+                {rubber && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Rýchlosť {rubber.speed} · Rotácia {rubber.spin} · Kontrola {rubber.control}</p>}
+                {blade && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Rýchlosť {blade.speed} · Kontrola {blade.control}</p>}
+                <button onClick={() => isRubber ? handleAddFromCatalog(rubber!) : handleAddBladeFromCatalog(blade!)} className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.8rem', marginTop: 'auto' }}>
+                  <Plus size={14} /> Pridať do výbavy
+                </button>
+              </article>;
+            })}
+          </div> : <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenašli sa žiadne položky. Skús iný názov alebo značku.</div>}
         </div>
       )}
 
@@ -896,6 +938,26 @@ export const EquipmentView: React.FC = () => {
           </div>
         </div>,
         document.body
+      )}
+
+      {showNewBladeModal && createPortal(
+        <div className="mobile-sheet-container" onClick={() => setShowNewBladeModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px', boxSizing: 'border-box' }}>
+          <div className="glass-panel mobile-sheet-content" ref={dialogRef} role="dialog" aria-modal="true" aria-label="Pridať drevo" tabIndex={-1} onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Pridať drevo do výbavy</h3>
+            <form onSubmit={handleCreateBlade} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Značka<input required value={bladeForm.brand} onChange={e => setBladeForm({ ...bladeForm, brand: e.target.value })} placeholder="napr. Butterfly" style={gearInputStyle} /></label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model<input required value={bladeForm.model} onChange={e => setBladeForm({ ...bladeForm, model: e.target.value })} placeholder="napr. Viscaria" style={gearInputStyle} /></label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Konštrukcia<input value={bladeForm.plies} onChange={e => setBladeForm({ ...bladeForm, plies: e.target.value })} placeholder="5 drevo + 2 ALC" style={gearInputStyle} /></label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hmotnosť (g)<input type="number" min="1" value={bladeForm.weightGrams} onChange={e => setBladeForm({ ...bladeForm, weightGrams: Number(e.target.value) })} style={gearInputStyle} /></label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rúčka<select value={bladeForm.grip} onChange={e => setBladeForm({ ...bladeForm, grip: e.target.value as Blade['grip'] })} style={gearInputStyle}><option value="FL">FL</option><option value="ST">ST</option><option value="AN">AN</option><option value="CPEN">CPEN</option></select></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rýchlosť<input type="number" min="0" max="100" value={bladeForm.speed} onChange={e => setBladeForm({ ...bladeForm, speed: Number(e.target.value) })} style={gearInputStyle} /></label><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kontrola<input type="number" min="0" max="100" value={bladeForm.control} onChange={e => setBladeForm({ ...bladeForm, control: Number(e.target.value) })} style={gearInputStyle} /></label></div>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-dim)' }}>Údaje si môžeš upraviť podľa svojho modelu; katalógové hodnotenia sa automaticky nevymýšľajú.</p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}><button type="button" onClick={() => setShowNewBladeModal(false)} className="btn-secondary">Zrušiť</button><button type="submit" className="btn-primary">Uložiť drevo</button></div>
+            </form>
+          </div>
+        </div>, document.body
       )}
 
       {/* Modal: Pridať poťah */}
