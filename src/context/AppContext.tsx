@@ -79,8 +79,8 @@ interface AppContextType {
   selectedClubId: string;
   isSstzLoading: boolean;
   sstzError: string | null;
-  syncSstzPlayer: (playerId: string, allSeasons?: boolean) => Promise<boolean>;
-  syncTeamSchedule: (leagueSlug: string, clubId?: string) => Promise<boolean>;
+  syncSstzPlayer: (playerId: string, allSeasons?: boolean, showProgress?: boolean) => Promise<boolean>;
+  syncTeamSchedule: (leagueSlug: string, clubId?: string, showProgress?: boolean) => Promise<boolean>;
   importAllSstzMatchesToDiary: () => number;
   addScheduleMatchToMatches: (scheduleMatch: TeamScheduleMatch, result: 'WIN' | 'LOSS', score: string) => void;
   disconnectSstz: () => void;
@@ -89,7 +89,7 @@ interface AppContextType {
   tournamentProfile: SSTZTournamentProfile | null;
   isTournamentLoading: boolean;
   tournamentError: string | null;
-  syncSstzTournaments: (playerId: string) => Promise<boolean>;
+  syncSstzTournaments: (playerId: string, showProgress?: boolean) => Promise<boolean>;
 
   // Gamification & Badges
   badges: Badge[];
@@ -362,7 +362,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sstzProfile, setSstzProfile] = useState<SSTZProfile | null>(saved?.sstzProfile || null);
   const [tournamentProfile, setTournamentProfile] = useState<SSTZTournamentProfile | null>(saved?.tournamentProfile || null);
   const [syncJobs, setSyncJobs] = useState<Partial<Record<SyncKind, SyncJob>>>({});
-  const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController }>());
+  const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController; showProgress: boolean }>());
   const isTournamentLoading = syncJobs.tournaments?.state === 'loading';
   const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [teamSchedule, setTeamSchedule] = useState<TeamScheduleMatch[]>(saved?.teamSchedule || []);
@@ -853,38 +853,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const runSync = (
     kind: SyncKind, message: string, successMessage: string,
     task: (signal: AbortSignal) => Promise<void>,
+    showProgress = true,
   ): Promise<boolean> => {
     const existing = runningSyncs.current.get(kind);
-    if (existing) return existing.promise;
+    if (existing) {
+      if (showProgress && !existing.showProgress) {
+        existing.showProgress = true;
+        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt: Date.now() } }));
+        if (kind === 'tournaments') setTournamentError(null);
+        else setSstzError(null);
+      }
+      return existing.promise;
+    }
     const controller = new AbortController();
     const startedAt = Date.now();
-    setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt } }));
-    if (kind === 'tournaments') setTournamentError(null);
-    else setSstzError(null);
+    if (showProgress) {
+      setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt } }));
+      if (kind === 'tournaments') setTournamentError(null);
+      else setSstzError(null);
+    }
     const promise = (async () => {
       try {
         await task(AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]));
-        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'success', message: successMessage, startedAt, finishedAt: Date.now() } }));
+        if (runningSyncs.current.get(kind)?.showProgress) {
+          setSyncJobs(previous => ({ ...previous, [kind]: { state: 'success', message: successMessage, startedAt, finishedAt: Date.now() } }));
+        }
         return true;
       } catch (error) {
         if (controller.signal.aborted) {
-          setSyncJobs(previous => { const next = { ...previous }; delete next[kind]; return next; });
+          if (runningSyncs.current.get(kind)?.showProgress) {
+            setSyncJobs(previous => { const next = { ...previous }; delete next[kind]; return next; });
+          }
           return false;
         }
         const detail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
-        if (kind === 'tournaments') setTournamentError(detail);
-        else setSstzError(detail);
-        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
+        if (runningSyncs.current.get(kind)?.showProgress) {
+          if (kind === 'tournaments') setTournamentError(detail);
+          else setSstzError(detail);
+          setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
+        }
         return false;
       } finally {
         runningSyncs.current.delete(kind);
       }
     })();
-    runningSyncs.current.set(kind, { promise, controller });
+    runningSyncs.current.set(kind, { promise, controller, showProgress });
     return promise;
   };
 
-  const syncSstzTournaments = (playerId: string): Promise<boolean> => runSync(
+  const syncSstzTournaments = (playerId: string, showProgress = true): Promise<boolean> => runSync(
     'tournaments', 'Načítavam turnaje a zápasy zo všetkých sezón…', 'Turnaje a zápasy sú aktualizované.',
     async signal => {
       if (!/^\d+$/.test(playerId)) throw new Error('Zadaj platné SSTZ ID hráča.');
@@ -898,14 +915,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setMatches(previous => replaceTournamentMatches(previous, imported.matches));
       setDoublesMatches(previous => replaceTournamentMatches(previous, imported.doublesMatches));
       setTournamentProfile(imported.profile);
-    },
+    }, showProgress,
   );
 
   useEffect(() => {
     setOpponents(previous => extractOpponentsFromMatches(matches, previous));
   }, [matches]);
 
-  const syncSstzPlayer = (playerId: string, allSeasons = true): Promise<boolean> => runSync(
+  const syncSstzPlayer = (playerId: string, allSeasons = true, showProgress = true): Promise<boolean> => runSync(
     'player', 'Načítavam ligové zápasy a históriu hráča…', 'Ligové zápasy sú aktualizované.',
     async signal => {
       const res = await fetch(`/api/sstz/player/${encodeURIComponent(playerId)}?allSeasons=${allSeasons}`, { signal, cache: 'no-store' });
@@ -919,10 +936,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       signal.throwIfAborted();
       applySstzPayload(data);
-    },
+    }, showProgress,
   );
 
-  const syncTeamSchedule = (leagueSlug: string, clubId?: string): Promise<boolean> => runSync(
+  const syncTeamSchedule = (leagueSlug: string, clubId?: string, showProgress = true): Promise<boolean> => runSync(
     'schedule', 'Načítavam ligu, výsledky a rozpis zápasov…', 'Ligový rozpis je aktualizovaný.',
     async signal => {
       const url = clubId
@@ -937,7 +954,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedLeagueSlug(leagueSlug);
       setSelectedClubId(clubId || '');
       setScheduleConnected(true);
-    },
+    }, showProgress,
   );
 
   // Initial refresh runs once, including under StrictMode. Resume refreshes are throttled.
@@ -947,9 +964,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   refreshConnected.current = () => {
     if (!navigator.onLine || Date.now() - lastAutoRefresh.current < 60000) return;
     lastAutoRefresh.current = Date.now();
-    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true);
-    if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id);
-    if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined);
+    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
+    if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
+    if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined, false);
   };
   useEffect(() => {
     if (!didRefreshOnOpen.current) {
