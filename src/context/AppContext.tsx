@@ -9,11 +9,13 @@ import {
   MatchRecord,
   DoublesMatchRecord,
   SSTZProfile,
+  SSTZTournamentProfile,
   TeamScheduleMatch,
   Badge,
   OpponentProfile,
   OpponentRubberType
 } from '../types';
+import { parseTournamentImport, replaceTournamentMatches } from '../utils/tournamentImport';
 import { INITIAL_BADGES } from '../data/gearCatalog';
 
 interface AppContextType {
@@ -72,6 +74,12 @@ interface AppContextType {
   importAllSstzMatchesToDiary: () => number;
   addScheduleMatchToMatches: (scheduleMatch: TeamScheduleMatch, result: 'WIN' | 'LOSS', score: string) => void;
   disconnectSstz: () => void;
+
+  // SSTZ tournaments use a separate player ID and never replace league matches.
+  tournamentProfile: SSTZTournamentProfile | null;
+  isTournamentLoading: boolean;
+  tournamentError: string | null;
+  syncSstzTournaments: (playerId: string) => Promise<boolean>;
 
   // Gamification & Badges
   badges: Badge[];
@@ -342,6 +350,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     extractOpponentsFromMatches(saved?.matches || defaultMatches, saved?.opponents || [])
   );
   const [sstzProfile, setSstzProfile] = useState<SSTZProfile | null>(saved?.sstzProfile || null);
+  const [tournamentProfile, setTournamentProfile] = useState<SSTZTournamentProfile | null>(saved?.tournamentProfile || null);
+  const [isTournamentLoading, setIsTournamentLoading] = useState(false);
+  const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [teamSchedule, setTeamSchedule] = useState<TeamScheduleMatch[]>(saved?.teamSchedule || []);
   const [selectedLeagueSlug, setSelectedLeagueSlug] = useState<string>(saved?.selectedLeagueSlug || 'sezona-2026-27-joola-extraliga-muzi-sstz');
   const [selectedClubId, setSelectedClubId] = useState<string>(saved?.selectedClubId || '');
@@ -364,6 +375,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       doublesMatches,
       opponents,
       sstzProfile,
+      tournamentProfile,
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
@@ -385,6 +397,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     doublesMatches,
     opponents,
     sstzProfile,
+    tournamentProfile,
     teamSchedule,
     selectedLeagueSlug,
     selectedClubId,
@@ -801,6 +814,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateBadgeProgress('badge-sstz-connected', 1);
   };
 
+  const syncSstzTournaments = async (playerId: string): Promise<boolean> => {
+    if (isTournamentLoading) return false;
+    setIsTournamentLoading(true);
+    setTournamentError(null);
+    try {
+      if (!/^\d+$/.test(playerId)) throw new Error('Zadaj platné SSTZ ID hráča.');
+      const response = await fetch(`/api/sstz/tournaments/player/${encodeURIComponent(playerId)}`);
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) throw new Error('Turnajový import zatiaľ nie je dostupný na serveri.');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Nepodarilo sa načítať turnaje zo SSTZ.');
+      const imported = parseTournamentImport(data, playerId);
+      setMatches(previous => replaceTournamentMatches(previous, imported.matches));
+      setDoublesMatches(previous => replaceTournamentMatches(previous, imported.doublesMatches));
+      setTournamentProfile(imported.profile);
+      return true;
+    } catch (error) {
+      setTournamentError(error instanceof Error ? error.message : 'Turnajový import zlyhal.');
+      return false;
+    } finally {
+      setIsTournamentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setOpponents(previous => extractOpponentsFromMatches(matches, previous));
+  }, [matches]);
+
   // SSTZ Integration calls (defaults to allSeasons: true to fetch 100% of real league duels)
   const syncSstzPlayer = async (playerId: string, allSeasons: boolean = true): Promise<boolean> => {
     setIsSstzLoading(true);
@@ -915,6 +956,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       doublesMatches,
       opponents,
       sstzProfile,
+      tournamentProfile,
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
@@ -936,6 +978,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.matches) setMatches(data.matches);
       if (data.doublesMatches) setDoublesMatches(data.doublesMatches);
       if (data.opponents) setOpponents(data.opponents);
+      if (data.tournamentProfile !== undefined) setTournamentProfile(data.tournamentProfile);
       if (data.sstzProfile) setSstzProfile(data.sstzProfile);
       if (data.teamSchedule) setTeamSchedule(data.teamSchedule);
       if (data.selectedLeagueSlug) setSelectedLeagueSlug(data.selectedLeagueSlug);
@@ -960,6 +1003,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDoublesMatches([]);
     setOpponents([]);
     setSstzProfile(null);
+    setTournamentProfile(null);
+    setTournamentError(null);
     setTeamSchedule([]);
     setBadges(INITIAL_BADGES);
   };
@@ -1001,6 +1046,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateOpponent,
         getOpponent,
         sstzProfile,
+        tournamentProfile,
+        isTournamentLoading,
+        tournamentError,
+        syncSstzTournaments,
         teamSchedule,
         selectedLeagueSlug,
         selectedClubId,

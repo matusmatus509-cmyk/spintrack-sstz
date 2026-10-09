@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext';
 import { AppTopBar } from './components/AppTopBar';
 import { Navigation, NavTab } from './components/Navigation';
 import { DashboardView } from './views/DashboardView';
+import { TournamentsView } from './views/TournamentsView';
 import { SstzHubView } from './views/SstzHubView';
 import { OpponentsView } from './views/OpponentsView';
 import { EquipmentView } from './views/EquipmentView';
@@ -46,6 +47,8 @@ const AppContent: React.FC = () => {
               onOpenMatchModal={() => setShowAddActivity(true)}
             />
           )}
+
+          {currentTab === 'tournaments' && <TournamentsView />}
 
           {currentTab === 'sstz' && <SstzHubView />}
 
