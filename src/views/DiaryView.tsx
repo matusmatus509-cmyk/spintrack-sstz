@@ -57,6 +57,19 @@ export const DiaryView: React.FC = () => {
     return [...singles, ...doubles];
   }, [matches, doublesMatches, categoryFilter]);
 
+  const timelineItems = useMemo(() => [
+    ...filteredActivities.map((record, order) => ({ kind: 'activity' as const, record, order })),
+    ...relevantImportedMatches.map((record, order) => ({ kind: 'match' as const, record, order: filteredActivities.length + order })),
+  ].sort((a, b) => {
+    const dateValue = (value: string) => {
+      const localDate = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      if (localDate) return Date.UTC(Number(localDate[3]), Number(localDate[2]) - 1, Number(localDate[1]));
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
+    return dateValue(b.record.date) - dateValue(a.record.date) || a.order - b.order;
+  }), [filteredActivities, relevantImportedMatches]);
+
   const getCategoryBadge = (cat: ActivityCategory) => {
     switch (cat) {
       case 'tréning':
@@ -177,13 +190,14 @@ export const DiaryView: React.FC = () => {
       {/* Zoznam aktivít */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
-        {/* Manuálne zadané aktivity */}
-        {filteredActivities.map(act => {
-          const badge = getCategoryBadge(act.category);
+        {timelineItems.map(item => {
+          if (item.kind === 'activity') {
+            const act = item.record;
+            const badge = getCategoryBadge(act.category);
 
-          return (
+            return (
             <div
-              key={act.id}
+              key={`activity-${act.id}`}
               className="glass-panel"
               style={{
                 padding: '16px',
@@ -377,13 +391,13 @@ export const DiaryView: React.FC = () => {
                 )}
               </div>
             </div>
-          );
-        })}
+            );
+          }
 
-        {/* Imported league and tournament duels */}
-        {relevantImportedMatches.map(m => (
+          const m = item.record;
+          return (
           <div
-            key={m.id}
+            key={`match-${m.id}`}
             className="glass-panel"
             style={{
               padding: '16px',
@@ -445,7 +459,8 @@ export const DiaryView: React.FC = () => {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {/* Prázdny stav */}
         {filteredActivities.length === 0 && relevantImportedMatches.length === 0 && (
