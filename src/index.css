@@ -1376,3 +1376,66 @@ table td {
   .tournament-player .btn-primary { width: 100%; }
   .tournament-field input, .tournament-field select { font-size: 16px; }
 }
+
+/* Activity entry: category-specific form with a fixed action bar. */
+.activity-overlay { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(3, 9, 10, .78); backdrop-filter: blur(10px); }
+.activity-dialog { width: 100%; max-width: 680px; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-main); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: 0 24px 80px #0008; }
+.activity-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; }
+.activity-header h2 { margin: 4px 0 0; font-size: 1.5rem; }
+.activity-eyebrow { color: var(--accent-tt-green); font-size: .68rem; letter-spacing: .14em; font-weight: 700; }
+.activity-icon-button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-card); color: var(--text-main); cursor: pointer; flex-shrink: 0; }
+.activity-form { display: flex; flex-direction: column; min-height: 0; }
+.activity-body { overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
+.activity-types { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.activity-types button { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 4px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; color: var(--text-muted); font-size: .8rem; cursor: pointer; }
+.activity-types button.selected, .activity-chips button.selected { background: rgba(16,185,129,.13); border-color: var(--accent-tt-green); color: #6ee7b7; }
+.activity-context { display: flex; align-items: center; gap: 12px; color: #6ee7b7; padding: 14px; background: linear-gradient(120deg, rgba(16,185,129,.1), transparent); border-radius: 12px; }
+.activity-context svg { flex-shrink: 0; }
+.activity-context p { color: var(--text-muted); font-size: .82rem; line-height: 1.5; margin: 3px 0 0; }
+.activity-section { display: flex; flex-direction: column; gap: 14px; padding: 18px; border: 1px solid var(--border-subtle); border-radius: 16px; background: var(--bg-card); }
+.activity-section h3 { font-size: .95rem; margin: 0 0 2px; }
+.activity-form label { display: flex; flex-direction: column; gap: 7px; min-width: 0; color: var(--text-muted); font-size: .82rem; font-weight: 600; }
+.activity-form label > span { display: flex; align-items: center; gap: 6px; }
+.activity-form input:not([type=checkbox]):not([type=file]), .activity-form select, .activity-form textarea { width: 100%; min-width: 0; border: 1px solid var(--border-subtle); background: var(--bg-main); border-radius: 10px; padding: 12px; color: var(--text-main); font: inherit; font-size: .92rem; box-sizing: border-box; }
+.activity-form textarea { resize: vertical; }
+.activity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.activity-duration { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.activity-duration label { width: 120px; text-align: center; align-items: center; }
+.activity-duration input[type=number] { font-size: 2rem; text-align: center; font-weight: 800; padding: 8px; }
+.activity-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.activity-chips button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 20px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.activity-add-tag { display: flex; gap: 8px; }
+.activity-score { display: grid; grid-template-columns: minmax(0,1fr) 20px minmax(0,1fr); align-items: center; gap: 12px; max-width: 350px; width: 100%; margin: 2px auto; text-align: center; }
+.activity-score select { font-size: 2.2rem; font-weight: 800; text-align: center; padding: 14px; }
+.activity-score > span { font-size: 2rem; margin-top: 22px; color: var(--text-dim); }
+.activity-help { color: var(--text-muted); font-size: .78rem; line-height: 1.5; margin: 0; }
+.activity-details summary { font-size: .83rem; color: var(--text-muted); cursor: pointer; padding: 10px 0; }
+.activity-details[open] .activity-grid { margin-top: 10px; }
+.activity-form .activity-check { flex-direction: row; align-items: center; gap: 10px; line-height: 1.5; }
+.activity-check input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent-tt-green); }
+.activity-photos { display: flex; flex-wrap: wrap; gap: 10px; }
+.activity-photos > div { position: relative; width: 80px; height: 80px; }
+.activity-photos img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.activity-photos button { position: absolute; right: 3px; top: 3px; display: flex; padding: 6px; border: 0; background: #000b; color: #fff; border-radius: 50%; cursor: pointer; }
+.activity-form .activity-upload { position: relative; align-items: center; justify-content: center; border: 1px dashed var(--border-subtle); padding: 14px; border-radius: 10px; cursor: pointer; min-height: 80px; }
+.activity-upload input { position: absolute; opacity: 0; inset: 0; width: 100%; cursor: pointer; }
+.activity-upload:focus-within { outline: 2px solid var(--accent-tt-green); }
+.activity-error { color: #fda4af; font-size: .88rem; margin: 0; }
+.activity-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg-main); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+.activity-footer button { min-height: 46px; }
+@media (max-width: 600px) {
+  .activity-overlay { padding: 0; align-items: flex-end; }
+  .activity-dialog { max-height: 100dvh; border-radius: 20px 20px 0 0; border-bottom: 0; }
+  .activity-header { padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 14px; }
+  .activity-header h2 { font-size: 1.3rem; }
+  .activity-body { padding: 16px; gap: 14px; }
+  .activity-types { gap: 5px; }
+  .activity-types button { font-size: .69rem; padding: 12px 2px; }
+  .activity-section { padding: 14px; }
+  .activity-form input:not([type=checkbox]):not([type=file]), .activity-form select, .activity-form textarea { font-size: 16px; }
+  .activity-score select { font-size: 2rem; }
+  .activity-duration input[type=number] { font-size: 2rem; }
+  .activity-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .activity-footer .btn-primary { flex: 1; justify-content: center; }
+}
+@media (max-width: 380px) { .activity-grid { grid-template-columns: minmax(0, 1fr); } }

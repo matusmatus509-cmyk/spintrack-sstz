@@ -58,6 +58,14 @@ export interface ActivityRecord {
   durationMinutes: number;
   focusDrills: string[];
   customTags?: string[];
+  title?: string;
+  leagueName?: string;
+  teamHome?: string;
+  teamAway?: string;
+  round?: string;
+  eventCategory?: string;
+  placing?: string;
+  eventResult?: string;
   // Opponent / Players (optional)
   opponentName?: string;
   opponentId?: string;
