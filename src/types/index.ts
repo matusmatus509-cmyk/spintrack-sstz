@@ -127,6 +127,10 @@ export interface MatchRecord {
   tournamentId?: string;
   category?: string;
   eventUrl?: string;
+  opponentClub?: string;
+  teamName?: string;
+  partnerName?: string;
+  matchType?: 'singles' | 'doubles';
   isPlayerHome?: boolean;
   isWalkover?: boolean;
 }
@@ -159,8 +163,10 @@ export interface DoublesMatchRecord {
   season?: string;
   leagueName?: string;
   competition?: string;
-  date: string;
+  tournamentName?: string;
+  category?: string;
   round?: string;
+  date: string;
   teams?: string;
   playerClub?: string;
   partnerName: string;
@@ -175,9 +181,7 @@ export interface DoublesMatchRecord {
   totalPointsLost?: number;
   notes?: string;
   source?: 'SSTZ' | 'SSTZ_TOURNAMENT' | 'manual';
-  tournamentName?: string;
   tournamentId?: string;
-  category?: string;
   eventUrl?: string;
   type: 'doubles';
   isPlayerHome?: boolean;

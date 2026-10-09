@@ -30,6 +30,7 @@ export const DiaryView: React.FC = () => {
     activities,
     deleteActivity,
     matches,
+    doublesMatches,
     deleteMatch,
     activeRacket
   } = useApp();
@@ -46,11 +47,15 @@ export const DiaryView: React.FC = () => {
   }, [activities, categoryFilter]);
 
   const leagueMatches = matches.filter(m => m.source === 'SSTZ');
-  const tournamentMatches = matches.filter(m => m.source === 'SSTZ_TOURNAMENT');
+  const tournamentMatches = matches.filter(m => m.source === 'SSTZ_TOURNAMENT').length + doublesMatches.filter(m => m.source === 'SSTZ_TOURNAMENT').length;
   const relevantImportedMatches = useMemo(() => {
-    return matches.filter(m => (m.source === 'SSTZ' && (categoryFilter === 'all' || categoryFilter === 'liga'))
+    const singles = matches.filter(m => (m.source === 'SSTZ' && (categoryFilter === 'all' || categoryFilter === 'liga'))
       || (m.source === 'SSTZ_TOURNAMENT' && (categoryFilter === 'all' || categoryFilter === 'turnaj')));
-  }, [matches, categoryFilter]);
+    const doubles = doublesMatches
+      .filter(m => m.source === 'SSTZ_TOURNAMENT' && (categoryFilter === 'all' || categoryFilter === 'turnaj'))
+      .map(m => ({ ...m, opponentName: m.opponentPair, tournamentName: m.tournamentName || m.competition, matchType: 'doubles' as const }));
+    return [...singles, ...doubles];
+  }, [matches, doublesMatches, categoryFilter]);
 
   const getCategoryBadge = (cat: ActivityCategory) => {
     switch (cat) {
@@ -125,10 +130,10 @@ export const DiaryView: React.FC = () => {
           WebkitOverflowScrolling: 'touch'
         }}>
           {[
-            { id: 'all', label: 'Všetky', count: activities.length + leagueMatches.length + tournamentMatches.length },
+            { id: 'all', label: 'Všetky', count: activities.length + leagueMatches.length + tournamentMatches },
             { id: 'tréning' as ActivityCategory, label: 'Tréning', count: activities.filter(a => a.category === 'tréning').length },
             { id: 'priatelsky' as ActivityCategory, label: 'Priateľský', count: activities.filter(a => a.category === 'priatelsky').length },
-            { id: 'turnaj' as ActivityCategory, label: 'Turnaj', count: activities.filter(a => a.category === 'turnaj').length + tournamentMatches.length },
+            { id: 'turnaj' as ActivityCategory, label: 'Turnaj', count: activities.filter(a => a.category === 'turnaj').length + tournamentMatches },
             { id: 'liga' as ActivityCategory, label: 'Liga', count: activities.filter(a => a.category === 'liga').length + leagueMatches.length },
             { id: 'podujatie' as ActivityCategory, label: 'Podujatie', count: activities.filter(a => a.category === 'podujatie').length },
           ].map(tab => {
@@ -388,7 +393,7 @@ export const DiaryView: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span className="badge-pill badge-purple" style={{ fontSize: '0.72rem', fontWeight: 800 }}>
-                  {m.source === 'SSTZ_TOURNAMENT' ? '🏆 SSTZ Turnaj' : '🛡️ SSTZ Liga'}
+                  {m.source === 'SSTZ_TOURNAMENT' ? ('matchType' in m && m.matchType === 'doubles' ? '🏆 SSTZ Turnaj · Štvorhra' : '🏆 SSTZ Turnaj') : '🛡️ SSTZ Liga'}
                 </span>
                 <span className={`badge-pill ${m.result === 'WIN' ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.72rem', fontWeight: 800 }}>
                   {m.result === 'WIN' ? 'VÝHRA' : 'PREHRA'} {m.score}

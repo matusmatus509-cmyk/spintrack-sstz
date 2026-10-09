@@ -13,6 +13,7 @@ import {
   getAllSlovakLeagues
 } from './sstzScraper.js';
 import { loadSnapshot, listSnapshots } from './sstzStore.js';
+import { searchSstzTournamentPlayers, getSstzTournamentProfile } from './sstzTournaments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,28 @@ app.get('/api/sstz/search', async (req, res) => {
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Tournament player search uses the separate registration IDs on sstz.sk.
+app.get('/api/sstz/tournaments/search', async (req, res) => {
+  const query = String(req.query.q || '').trim();
+  if (query.length < 2) return res.status(400).json({ error: 'Zadaj aspoň 2 znaky mena hráča.' });
+  try {
+    res.json(await searchSstzTournamentPlayers(query));
+  } catch (err) {
+    res.status(err.status === 404 ? 404 : 502).json({ error: err.message || 'Vyhľadávanie hráčov SSTZ zlyhalo.' });
+  }
+});
+
+// Import every official tournament match only after all published pages agree on the total.
+app.get('/api/sstz/tournaments/player/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'Neplatné SSTZ ID hráča.' });
+  try {
+    res.json(await getSstzTournamentProfile(id));
+  } catch (err) {
+    res.status(err.status === 404 ? 404 : 502).json({ error: err.message || 'Import turnajov SSTZ zlyhal.' });
   }
 });
 

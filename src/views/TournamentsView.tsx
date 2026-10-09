@@ -104,7 +104,7 @@ export const TournamentsView: React.FC = () => {
       [
         ...matches
           .filter((m) => m.source === 'SSTZ_TOURNAMENT')
-          .map((m) => ({ ...m, duelType: 'singles' as const })),
+          .map((m) => ({ ...m, duelType: m.matchType || ('singles' as const) })),
         ...doublesMatches
           .filter((m) => m.source === 'SSTZ_TOURNAMENT')
           .map((m) => ({
@@ -289,6 +289,7 @@ export const TournamentsView: React.FC = () => {
           <h2 id="tournament-history-title">
             Turnajové zápasy ({filtered.length} z {allMatches.length})
           </h2>
+          <p className="tournament-muted">SSTZ zverejňuje pri týchto dueloch výsledok zápasu, napríklad 3:1. Body a sety jednotlivých hier v tomto zozname nie sú k dispozícii.</p>
           <div className="tournament-filters">
             <div className="tournament-field">
               <label htmlFor="tournament-season">Sezóna</label>
@@ -323,7 +324,7 @@ export const TournamentsView: React.FC = () => {
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
-                <option value="all">Dvojhry aj štvorhry</option>
+                <option value="all">Jednotlivci aj štvorhry</option>
                 <option value="singles">Dvojhry</option>
                 <option value="doubles">Štvorhry</option>
               </select>
@@ -364,6 +365,7 @@ export const TournamentsView: React.FC = () => {
                     {m.score} · {m.result === 'WIN' ? 'Výhra' : 'Prehra'}
                   </span>
                 </div>
+                {'opponentClub' in m && <p className="tournament-muted">{m.opponentClub}</p>}
                 {'partnerName' in m && (
                   <p className="tournament-muted">
                     <Users size={14} /> Spoluhráč: {m.partnerName}
