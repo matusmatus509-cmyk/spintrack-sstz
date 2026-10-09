@@ -11,6 +11,7 @@ import { CalendarView } from './views/CalendarView';
 import { DiaryView } from './views/DiaryView';
 import { StatsView } from './views/StatsView';
 import { SettingsModal } from './components/SettingsModal';
+import { SyncStatus } from './components/SyncStatus';
 import { AddActivityModal } from './components/AddActivityModal';
 
 const AppContent: React.FC = () => {
@@ -63,6 +64,8 @@ const AppContent: React.FC = () => {
           {currentTab === 'stats' && <StatsView />}
         </main>
       </div>
+
+      <SyncStatus />
 
       {/* Settings Modal */}
       <SettingsModal
