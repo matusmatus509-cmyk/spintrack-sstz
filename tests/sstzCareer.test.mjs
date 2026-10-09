@@ -70,6 +70,36 @@ test('keeps protocol walkovers even when official success totals exclude them', 
   assert.equal(duels.singles[0].isWalkover,true);
   assert.doesNotThrow(()=>assertCompleteDuels(html,duels));
 });
+test('imports historical played duels with an unpublished opponent instead of losing a match', () => {
+  const html = totals(1) + duel('123', 5, '42')
+    .replace('<a href="/hrac/123">Player</a>', '-')
+    .replace('<span>3</span>', '<span>1</span>')
+    .replace('<span>0</span>', '<span>3</span>')
+    .replace('<span>1</span></div>', `<span>1</span></div><div class="tml2__match__info"><span class="tml2__match__sets">
+      <div class="tml2__match__set tml2__match__set-lost">-10</div><div class="tml2__match__set tml2__match__set-win">+8</div>
+      <div class="tml2__match__set tml2__match__set-lost">-2</div><div class="tml2__match__set tml2__match__set-lost">-9</div>
+    </span></div>`);
+  const parsed = parsePlayerDuelsFromHtml(html, '42');
+  assert.equal(parsed.singles.length, 1);
+  assert.equal(parsed.singles[0].opponentName, 'SSTZ neuvádza súpera');
+  assert.equal(parsed.singles[0].opponentId, '');
+  assert.equal(parsed.singles[0].opponentUnknown, true);
+  assert.equal(parsed.singles[0].score, '3:1');
+  assert.equal(parsed.singles[0].result, 'WIN');
+  assert.equal(parsed.singles[0].isWalkover, false);
+  assert.deepEqual(parsed.singles[0].setDetails.map(set => set.display), ['12:10', '8:11', '11:2', '11:9']);
+  assert.equal(parsed.singles[0].totalPointsWon, 42);
+  assert.equal(parsed.singles[0].totalPointsLost, 32);
+  assert.doesNotThrow(() => assertCompleteDuels(html, parsed));
+  assert.deepEqual(parsePlayerDuelsFromHtml(html, '99'), { singles: [], doubles: [] });
+});
+test('keeps a published opponent name even when no player profile link exists', () => {
+  const html = totals(1) + duel('42', 6).replace('<a href="/hrac/123">Opponent</a>', '<span>Published opponent</span>');
+  const parsed = parsePlayerDuelsFromHtml(html, '42');
+  assert.equal(parsed.singles[0].opponentName, 'Published opponent');
+  assert.equal(parsed.singles[0].opponentUnknown, false);
+  assert.doesNotThrow(() => assertCompleteDuels(html, parsed));
+});
 test('empty career imports work for players with no league participation', async t => {
   const id='991003';
   t.mock.method(globalThis,'fetch',async (input,opts={}) => {

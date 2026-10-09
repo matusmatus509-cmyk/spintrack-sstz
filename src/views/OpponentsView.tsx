@@ -92,7 +92,7 @@ export const OpponentsView: React.FC = () => {
     const map = new Map<string, MatchRecord[]>();
     for (const m of matches) {
       const oppName = m.opponentName?.trim();
-      if (!oppName || oppName === 'Neznámy súper' || oppName.includes('(Tímový zápas)')) continue;
+      if (m.opponentUnknown || !oppName || oppName === 'Neznámy súper' || oppName.includes('(Tímový zápas)')) continue;
       const key = oppName.toLowerCase();
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
@@ -204,7 +204,7 @@ export const OpponentsView: React.FC = () => {
 
   const filteredDoublesMatches = useMemo(() => {
     if (selectedPartnerFilter === 'all') return doublesMatches;
-    return doublesMatches.filter(d => (d.partnerName || '').toLowerCase() === selectedPartnerFilter.toLowerCase());
+    return doublesMatches.filter(d => (d.partnerName?.trim() || 'Neznámy spoluhráč').toLowerCase() === selectedPartnerFilter.toLowerCase());
   }, [doublesMatches, selectedPartnerFilter]);
 
   // Open modal for opponent detail
@@ -823,7 +823,7 @@ export const OpponentsView: React.FC = () => {
 
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          Spoluhráč: <strong style={{ color: '#38bdf8' }}>{dm.partnerName}</strong>
+                          Spoluhráč: <strong style={{ color: '#38bdf8' }}>{dm.partnerName || 'SSTZ neuvádza'}</strong>
                         </span>
                       </div>
                     </div>

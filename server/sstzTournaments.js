@@ -139,9 +139,17 @@ function parseScore(html) {
   const match = html.match(/<span\b(?=[^>]*\bclass=["'][^"']*\b(text-success|text-danger)\b)[^>]*>([\s\S]*?)<\/span>/i);
   if (!match) throw new Error('SSTZ turnajový duel nemá overený výsledok.');
   const score = htmlText(match[2]).replace(/\s*:\s*/g, ':');
-  const values = score.match(/^(\d+)\s*:\s*(\d+)$/);
-  if (!values) throw new Error(`SSTZ vrátilo neznámy výsledok turnaja: ${score || 'prázdny'}.`);
-  return { score, result: match[1].toLowerCase() === 'text-success' ? 'WIN' : 'LOSS' };
+  // SSTZ appends adjudication labels to official scores (e.g. "3:0 wo.").
+  // Keep that notation; a walkover does not establish any played set points.
+  const status = /\b(?:w\s*[./]?\s*o|walk[ -]?over|scr|ret|kontum(?:ácia|acia)?)\.?(?=\s|[()]|$)/gi;
+  const symbolicWalkover = /^(?:w(?:\.?o)?\.?:0|0:w(?:\.?o)?\.?)$/i.test(score);
+  const isWalkover = status.test(score) || symbolicWalkover;
+  status.lastIndex = 0;
+  const numericScore = score.replace(status, '').replace(/[()]/g, '').trim();
+  if (!/^\d+:\d+$/.test(numericScore) && !(isWalkover && !numericScore) && !symbolicWalkover) {
+    throw new Error(`SSTZ vrátilo neznámy výsledok turnaja: ${score || 'prázdny'}.`);
+  }
+  return { score, result: match[1].toLowerCase() === 'text-success' ? 'WIN' : 'LOSS', isWalkover };
 }
 
 export function parseTournamentPage(html, playerId) {
@@ -169,7 +177,7 @@ export function parseTournamentPage(html, playerId) {
       if (!eventName || !eventDate || !category || !opponentName || !round) {
         throw new Error('SSTZ turnajový duel nemá kompletné údaje o turnaji, dátume, kategórii alebo súperovi.');
       }
-      const { score, result } = parseScore(scoreHtml);
+      const { score, result, isWalkover } = parseScore(scoreHtml);
       const clubName = htmlText(opponentHtml.match(/<span\b(?=[^>]*\bclass=["'][^"']*\bfs\s+small\s+text-muted\b)[^>]*>([\s\S]*?)<\/span>/i)?.[1] || '');
       const additionalTeam = htmlText(categoryHtml.match(/<span\b(?=[^>]*\bclass=["'][^"']*\bfs\s+small\s+text-muted\b)[^>]*>([\s\S]*?)<\/span>/i)?.[1] || '');
       const rowKey = [eventDate, eventName, category, additionalTeam, round, opponentName, clubName, score].join('|');
@@ -177,7 +185,7 @@ export function parseTournamentPage(html, playerId) {
       seenIds.set(rowKey, occurrence + 1);
       const id = createHash('sha256').update(`${playerId}|${rowKey}|${occurrence}`).digest('hex').slice(0, 24);
       const matchType = /(?:štvorhr|dvojice|doubles?|double)/i.test(category) ? 'doubles' : 'singles';
-      const duel = { id, date: eventDate, season: seasonFromDate(eventDate), tournamentName: eventName, category, round, opponentName, result, score, matchType, sets: [] };
+      const duel = { id, date: eventDate, season: seasonFromDate(eventDate), tournamentName: eventName, category, round, opponentName, result, score, isWalkover, matchType, sets: [] };
       if (clubName) duel.opponentClub = clubName;
       if (additionalTeam) {
         if (matchType === 'doubles') duel.partnerName = additionalTeam;
@@ -270,7 +278,7 @@ export async function getSstzTournamentProfile(playerId) {
     doublesStats: { played: duels.filter(m => m.matchType === 'doubles').length },
     matches: duels.filter(m => m.matchType === 'singles'),
     doublesMatches: duels.filter(m => m.matchType === 'doubles').map(({ opponentName, ...m }) => ({
-      ...m, opponentPair: opponentName, partnerId: '', type: 'doubles'
+      ...m, opponentPair: opponentName, partnerName: m.partnerName || '', partnerId: '', type: 'doubles'
     }))
   };
 }

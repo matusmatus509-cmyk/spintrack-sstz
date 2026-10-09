@@ -259,7 +259,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     for (const m of matchesList) {
       const oppName = m.opponentName?.trim();
-      if (!oppName || oppName === 'Neznámy súper' || oppName.includes('(Tímový zápas)')) continue;
+      if (m.opponentUnknown || !oppName || oppName === 'Neznámy súper' || oppName.includes('(Tímový zápas)')) continue;
       const key = oppName.toLowerCase();
 
       if (!oppMap.has(key)) {
@@ -802,6 +802,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         playerClub: m.playerClub || '',
         opponentName: m.opponentName || 'Neznámy súper',
         opponentId: m.opponentId,
+        opponentUnknown: m.opponentUnknown,
         result: m.result === 'WIN' ? 'WIN' : 'LOSS',
         score: m.score || '3:0',
         sets: m.sets || [],
