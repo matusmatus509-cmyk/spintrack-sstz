@@ -74,8 +74,7 @@ describe('SSTZ Snapshot Store', () => {
 });
 
 describe('SSTZ Duels Protocol Parser', () => {
-  test('correctly parses home/away player, scores, and sets', () => {
-    const sampleHtml = `
+  const sampleHtml = `
       <div class="media-body">
         <h4 class="text-white m-0">Základná časť</h4>
         <h4 class="text-white m-0">1. kolo / 18.09.2026</h4>
@@ -101,6 +100,7 @@ describe('SSTZ Duels Protocol Parser', () => {
       </section>
     `;
 
+  test('correctly parses home/away player, scores, and sets', () => {
     const parsed = parsePlayerDuelsFromHtml(sampleHtml, '5353024', '2026/27', '3. liga', 'MŠK Žiar nad Hronom A');
     assert.equal(parsed.singles.length, 1);
     assert.equal(parsed.doubles.length, 0);
@@ -118,5 +118,14 @@ describe('SSTZ Duels Protocol Parser', () => {
     assert.equal(m.setDetails[0].display, '5:11');
     assert.equal(m.setDetails[1].display, '9:11');
     assert.equal(m.setDetails[2].display, '7:11');
+  });
+
+  test('does not invent a league round when SSTZ only provides the phase and date', () => {
+    const withoutRound = sampleHtml.replace('1. kolo / 18.09.2026', '18.09.2026');
+    const parsed = parsePlayerDuelsFromHtml(withoutRound, '5353024', '2026/27', '3. liga', 'MŠK Žiar nad Hronom A');
+    assert.equal(parsed.singles.length, 1);
+    assert.equal(parsed.singles[0].round, '');
+    assert.equal(parsed.singles[0].date, '18.09.2026');
+    assert.equal(parsed.singles[0].competition, '3. liga');
   });
 });

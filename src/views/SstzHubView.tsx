@@ -748,7 +748,7 @@ export const SstzHubView: React.FC = () => {
                   >
                     <div style={{ minWidth: '140px' }}>
                       <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700 }}>
-                        {m.round || 'Kolo'}
+                        {m.round}
                       </span>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
                         {m.dateTime}
