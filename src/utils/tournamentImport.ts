@@ -45,7 +45,9 @@ export function parseTournamentImport(
       !m.score.trim() ||
       !Array.isArray(m.sets) ||
       m.sets.some((set: unknown) => typeof set !== 'string') ||
-      (doubles && (typeof m.partnerName !== 'string' || !m.partnerName.trim()))
+      // Some official mixed doubles records do not publish a partner name.
+      // Its absence must not invalidate an otherwise complete match history.
+      (doubles && m.partnerName != null && typeof m.partnerName !== 'string')
     ) {
       throw new Error(
         'Turnajový zápas obsahuje neúplné údaje. Import sa neuložil.',
@@ -62,7 +64,7 @@ export function parseTournamentImport(
       id,
       source: 'SSTZ_TOURNAMENT',
       competition: m.tournamentName,
-      ...(doubles ? { type: 'doubles' } : { sstzMatchId: m.id }),
+      ...(doubles ? { type: 'doubles', partnerName: m.partnerName || '' } : { sstzMatchId: m.id }),
     };
   };
   return {

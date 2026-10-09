@@ -365,10 +365,11 @@ export const TournamentsView: React.FC = () => {
                     {m.score} · {m.result === 'WIN' ? 'Výhra' : 'Prehra'}
                   </span>
                 </div>
+                {m.isWalkover && <span className="badge-pill badge-red">Kontumácia / odstúpenie (WO)</span>}
                 {'opponentClub' in m && <p className="tournament-muted">{m.opponentClub}</p>}
                 {'partnerName' in m && (
                   <p className="tournament-muted">
-                    <Users size={14} /> Spoluhráč: {m.partnerName}
+                    <Users size={14} /> Spoluhráč: {m.partnerName || 'SSTZ neuvádza'}
                   </p>
                 )}
                 <SetBreakdown

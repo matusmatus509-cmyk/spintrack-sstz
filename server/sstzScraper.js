@@ -314,14 +314,20 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
         const item1Html = items[0][1];
         const item2Html = items[1][1];
 
-        const item1Players = [...item1Html.matchAll(/<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)].map(p => ({
-          id: p[1],
-          name: p[2].replace(/<[^>]+>/g, '').trim()
-        }));
-        const item2Players = [...item2Html.matchAll(/<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)].map(p => ({
-          id: p[1],
-          name: p[2].replace(/<[^>]+>/g, '').trim()
-        }));
+        const readPlayers = itemHtml => {
+          const players = [...itemHtml.matchAll(/<a[^>]*href="\/hrac\/(\d+)"[^>]*>([\s\S]*?)<\/a>/gi)].map(p => ({
+            id: p[1], name: p[2].replace(/<[^>]+>/g, '').trim()
+          }));
+          if (players.length) return players;
+          // Historical protocols sometimes show '-' instead of an opponent's
+          // profile, even for a played match with official score and set points.
+          const name = (itemHtml.match(/<div\s+class="tml2__match__player[^\"]*">([\s\S]*?)<\/div>/i)?.[1] || '')
+            .replace(/<[^>]+>/g, '').replace(/&nbsp;|&#160;/g, ' ').trim();
+          const unknown = !name || /^[-–—]+$/.test(name) || /^w\.?o\.?$/i.test(name);
+          return [{ id: '', name: unknown ? 'SSTZ neuvádza súpera' : name, unknown }];
+        };
+        const item1Players = readPlayers(item1Html);
+        const item2Players = readPlayers(item2Html);
 
         const s1 = parseInt(itemScoreMatches[0][1].trim(), 10) || 0;
         const s2 = parseInt(itemScoreMatches[1][1].trim(), 10) || 0;
@@ -446,6 +452,7 @@ export function parsePlayerDuelsFromHtml(html, playerId, seasonLabel = '2026/27'
               playerClub: tabTeamName || '',
               opponentName: opp.name,
               opponentId: opp.id,
+              opponentUnknown: !!opp.unknown,
               result: isWin ? 'WIN' : 'LOSS',
               score: `${myScore}:${oppScore}`,
               sets: setDetails.map(s => s.won ? `+${s.opponentPoints}` : `-${s.playerPoints}`),

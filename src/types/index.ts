@@ -120,6 +120,7 @@ export interface MatchRecord {
   playerClub?: string;
   opponentName: string;
   opponentId?: string;
+  opponentUnknown?: boolean;
   result: 'WIN' | 'LOSS';
   score: string; // e.g. '3:1' or '3:2'
   sets: string[]; // e.g. ['+11', '-8', '+9', '+7']
