@@ -9,6 +9,7 @@ import {
   TrendingUp,
   ChevronRight,
   ArrowUpRight,
+  Plus,
 } from "lucide-react";
 import { allInsightMatches, summarizeMatches } from "../utils/matchInsights";
 import "./Overview.css";
@@ -17,7 +18,7 @@ interface DashboardViewProps {
   onOpenQuickLog?: () => void;
   onOpenMatchModal?: () => void;
 }
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpenQuickLog }) => {
   const { matches, doublesMatches, activities, sstzProfile, teamSchedule } =
     useApp();
   const results = useMemo(
@@ -39,6 +40,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         className="dashboard-at-glance"
         aria-label="Najbližší zápas a tvoje výsledky"
       >
+        <header className="dashboard-heading">
+          <div className="dashboard-welcome">
+            <h1 title={sstzProfile ? `Vitaj, ${sstzProfile.name}` : undefined}>
+              {sstzProfile ? `Vitaj, ${sstzProfile.name}` : "Vitaj v SpinTracku"}
+            </h1>
+            <p title={sstzProfile?.clubName}>
+              {sstzProfile?.clubName || "Tvoj stolnotenisový prehľad"}
+            </p>
+          </div>
+          <button className="btn-primary" onClick={onOpenQuickLog}>
+            <Plus size={18} aria-hidden="true" />
+            <span>Pridať aktivitu</span>
+          </button>
+        </header>
         <section className="next-match-card" aria-labelledby="next-match-title">
           <div className="next-match-top">
             <span className="eyebrow" id="next-match-title">
