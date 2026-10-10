@@ -12,6 +12,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useCommunity } from "../context/CommunityContext";
+import { formatDuration } from "../utils/formatDuration";
 import { useApp } from "../context/AppContext";
 import type { NavTab } from "../components/Navigation";
 import type { ActivityRecord, ActivityVisibility } from "../types";
@@ -66,7 +67,7 @@ export function ActivityPreview({ data }: { data: SharedActivityData }) {
       <p>
         {new Date(`${data.date}T12:00:00`).toLocaleDateString("sk-SK")}
         {data.startTime && ` · ${data.startTime}`}
-        {data.durationMinutes > 0 && ` · ${data.durationMinutes} min`}
+        {data.durationMinutes > 0 && ` · ${formatDuration(data.durationMinutes)}`}
         {data.matchScore && ` · ${data.matchScore}`}
       </p>
       {data.location && <p>{data.location}</p>}

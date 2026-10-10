@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { communityError } from '../views/CommunityView';
 import { useApp } from '../context/AppContext';
+import { formatDuration } from '../utils/formatDuration';
 import { useDialog } from '../hooks/useDialog';
 import { AddActivityModal } from '../components/AddActivityModal';
 import { SetBreakdown } from '../components/SetBreakdown';
@@ -302,8 +303,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                   <div className="diary-card-result">
                     {activity?.category === 'tréning' ? (
                       <strong>
-                        {activity.durationMinutes}
-                        <small> min</small>
+                        {formatDuration(activity.durationMinutes)}
                       </strong>
                     ) : entry.score ? (
                       <>
@@ -434,7 +434,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                         <span className="diary-muted">
                           {activity.category === 'tréning' &&
                           activity.addEquipmentWear
-                            ? `+${activity.durationMinutes} min k opotrebovaniu rakety`
+                            ? `+${formatDuration(activity.durationMinutes)} k opotrebovaniu rakety`
                             : ''}
                         </span>
                         <button
