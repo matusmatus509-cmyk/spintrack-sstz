@@ -20,6 +20,7 @@
 .gear-model-card { padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .gear-model-meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: var(--text-muted); font-size: .75rem; }
 .gear-model-card h3 { font-size: 1rem; overflow-wrap: anywhere; }
+.gear-current-status { align-self: flex-start; margin-top: -9px; border-radius: 999px; padding: 4px 8px; background: rgba(16,185,129,.12); color: #34d399; font-size: .7rem; font-weight: 700; }
 .gear-model-card button { margin-top: auto; width: 100%; }
 .gear-empty { padding: 28px; text-align: center; display: grid; gap: 12px; justify-items: center; }
 .gear-pagination { display: flex; justify-content: center; align-items: center; gap: 15px; color: var(--text-muted); font-size: .85rem; }
