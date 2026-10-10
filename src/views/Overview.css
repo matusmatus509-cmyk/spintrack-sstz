@@ -528,12 +528,18 @@
   display: none;
 }
 
-/* Personal welcome and quick logging remain visible alongside the four cards. */
+/* Fill the available home viewport while keeping every destination visible. */
+.main-content:has(.practical-dashboard) {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.dashboard-at-glance {
+  height: calc(100dvh - 114px - env(safe-area-inset-top, 0px));
+  grid-template-rows: auto minmax(0, 1.35fr) minmax(0, 1fr);
+}
 .dashboard-at-glance .dashboard-heading {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: 12px;
   padding: 0;
 }
@@ -541,15 +547,15 @@
   min-width: 0;
 }
 .dashboard-at-glance .dashboard-heading h1 {
-  font-size: 1.6rem !important;
-  line-height: 1.25;
+  font-size: clamp(1.3rem, 4.8vw, 2rem) !important;
+  line-height: 1.2;
   margin: 0 0 4px !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .dashboard-welcome p {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   margin: 0;
   overflow: hidden;
@@ -557,35 +563,115 @@
   white-space: nowrap;
 }
 .dashboard-heading .btn-primary {
-  flex-shrink: 0;
-  min-height: 44px;
-  gap: 6px;
+  width: 100%;
+  min-height: clamp(44px, 7dvh, 64px);
+  margin: 0;
+  font-size: 1rem;
+  gap: 8px;
+  justify-content: center;
 }
-@media (max-width: 640px), (max-height: 500px) {
+.dashboard-at-glance .next-match-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+}
+.dashboard-at-glance .match-teams {
+  flex: 1;
+  align-items: center;
+}
+.dashboard-at-glance .match-teams h2 {
+  font-size: clamp(1rem, 2.8dvh, 1.6rem);
+}
+.dashboard-at-glance .next-match-empty {
+  flex: 1;
+  align-content: center;
+}
+.dashboard-at-glance .metric-card,
+.dashboard-at-glance .metric-card:last-child {
+  align-content: center;
+  gap: clamp(6px, 1.4dvh, 16px);
+}
+.dashboard-at-glance .metric-value,
+.dashboard-at-glance .metric-card:last-child .metric-value {
+  font-size: clamp(1.85rem, 5dvh, 3.5rem);
+}
+@media (max-width: 640px) {
+  .main-content:has(.practical-dashboard) {
+    padding-top: 12px;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+  .dashboard-at-glance {
+    height: calc(100dvh - 160px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+  .dashboard-at-glance .metric-icon {
+    width: clamp(28px, 5dvh, 42px);
+    height: clamp(28px, 5dvh, 42px);
+  }
+}
+@media (max-height: 600px) {
   .dashboard-at-glance .dashboard-heading {
-    gap: 8px;
+    gap: 6px;
   }
   .dashboard-at-glance .dashboard-heading h1 {
-    font-size: 1.1rem !important;
+    font-size: 1.3rem !important;
   }
   .dashboard-welcome p {
     font-size: 0.7rem;
   }
   .dashboard-heading .btn-primary {
-    padding: 8px 10px;
-    font-size: 0.75rem;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
-}
-@media (max-width: 640px) {
-  .main-content:has(.practical-dashboard) {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  }
-}
-@media (max-height: 500px) and (max-width: 640px) {
-  .dashboard-at-glance .next-match-card {
-    padding: 12px;
+  .dashboard-at-glance .match-teams {
+    padding: 6px 0;
   }
   .dashboard-at-glance .match-teams h2 {
     font-size: 0.9rem;
+  }
+  .dashboard-at-glance .next-match-card {
+    padding: 10px 12px;
+  }
+  .dashboard-at-glance .metric-card,
+  .dashboard-at-glance .metric-card:last-child {
+    padding: 10px;
+    gap: 5px;
+  }
+  .dashboard-at-glance .metric-value,
+  .dashboard-at-glance .metric-card:last-child .metric-value {
+    font-size: 1.85rem;
+  }
+}
+@media (max-height: 500px) and (min-width: 641px) {
+  .dashboard-at-glance {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .dashboard-at-glance .dashboard-heading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-height: 500px) and (max-width: 640px) {
+  .dashboard-at-glance {
+    grid-template-rows: auto minmax(0, 1fr) 70px;
+  }
+  .dashboard-at-glance .dashboard-heading {
+    gap: 4px;
+  }
+  .dashboard-at-glance .dashboard-heading h1 {
+    font-size: 1.1rem !important;
+  }
+  .dashboard-welcome p {
+    line-height: 1.2;
+  }
+  .dashboard-at-glance .match-teams {
+    padding: 4px 0;
+  }
+  .dashboard-at-glance .match-teams h2 {
+    font-size: 0.85rem;
+  }
+  .dashboard-at-glance .match-footer {
+    padding-top: 6px;
+    font-size: 0.7rem;
   }
 }
