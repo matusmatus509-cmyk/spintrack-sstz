@@ -1,6 +1,6 @@
-import { Rubber, Blade } from '../types';
+import type { Rubber, Blade } from '../types';
 
-export const CATALOG_RUBBERS: Omit<Rubber, 'id' | 'hoursPlayed' | 'dateInstalled'>[] = [
+export const CATALOG_RUBBERS: (Omit<Rubber, 'id' | 'hoursPlayed' | 'dateInstalled'> & Required<Pick<Rubber, 'speed' | 'spin' | 'control'>>)[] = [
   {
     brand: 'Butterfly',
     model: 'Dignics 09C',
