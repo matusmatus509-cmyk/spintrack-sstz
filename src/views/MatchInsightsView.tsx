@@ -71,6 +71,13 @@ export function MatchInsightsView({
   const leagueGroups = groupMatchResults(seasonMatches, matchCompetition).sort(
     (a, b) => b.played - a.played,
   );
+  const extraFilterCount = Number(source !== "all") + Number(type !== "all");
+  const hasFilters =
+    season !== "all" ||
+    competition !== "all" ||
+    extraFilterCount > 0 ||
+    result !== "all" ||
+    query.trim() !== "";
   const reset = () => {
     setSeason("all");
     setCompetition("all");
@@ -95,13 +102,13 @@ export function MatchInsightsView({
       </button>
       <div className="page-header">
         <div>
-          <span className="eyebrow">TVOJE VÝSLEDKY NA JEDNOM MIESTE</span>
           <h1>
             {mode === "performance" ? "Tvoja úspešnosť" : "Všetky zápasy"}
           </h1>
           <p>
-            Dvojhry aj štvorhry. Vyber sezónu a súťaž a pozri si presnú
-            bilanciu.
+            {mode === "performance"
+              ? "Bilancia podľa sezón a súťaží."
+              : "História dvojhier a štvorhier od najnovších."}
           </p>
         </div>
       </div>
@@ -133,39 +140,55 @@ export function MatchInsightsView({
             ))}
           </select>
         </label>
-        <label>
-          Zdroj
-          <select
-            value={source}
-            onChange={(e) => {
-              setSource(e.target.value);
-              setCompetition("all");
-              setLimit(20);
-            }}
-          >
-            <option value="all">Všetky zápasy</option>
-            <option value="league">Ligy SSTZ</option>
-            <option value="tournament">Turnaje SSTZ</option>
-            <option value="manual">Vlastné zápisy</option>
-          </select>
-        </label>
-        <label>
-          Disciplína
-          <select
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value);
-              setLimit(20);
-            }}
-          >
-            <option value="all">Dvojhry aj štvorhry</option>
-            <option value="singles">Dvojhry</option>
-            <option value="doubles">Štvorhry</option>
-          </select>
-        </label>
-        <button className="btn-secondary" onClick={reset}>
-          <RotateCcw size={15} /> Zrušiť filtre
-        </button>
+        <div className="insights-filter-actions">
+          <details className="insights-extra-filters">
+            <summary>
+              Ďalšie filtre
+              {extraFilterCount > 0 && (
+                <span className="filter-count">{extraFilterCount}</span>
+              )}
+              <ChevronRight size={15} />
+            </summary>
+            <div className="insights-extra-grid">
+              <label>
+                Zdroj
+                <select
+                  value={source}
+                  onChange={(e) => {
+                    setSource(e.target.value);
+                    setCompetition("all");
+                    setLimit(20);
+                  }}
+                >
+                  <option value="all">Všetky zápasy</option>
+                  <option value="league">Ligy SSTZ</option>
+                  <option value="tournament">Turnaje SSTZ</option>
+                  <option value="manual">Vlastné zápisy</option>
+                </select>
+              </label>
+              <label>
+                Disciplína
+                <select
+                  value={type}
+                  onChange={(e) => {
+                    setType(e.target.value);
+                    setCompetition("all");
+                    setLimit(20);
+                  }}
+                >
+                  <option value="all">Dvojhry aj štvorhry</option>
+                  <option value="singles">Dvojhry</option>
+                  <option value="doubles">Štvorhry</option>
+                </select>
+              </label>
+            </div>
+          </details>
+          {hasFilters && (
+            <button className="text-button insights-reset" onClick={reset}>
+              <RotateCcw size={15} /> Zrušiť filtre
+            </button>
+          )}
+        </div>
       </section>
       <section className="insights-summary" aria-live="polite">
         {[
@@ -201,10 +224,7 @@ export function MatchInsightsView({
           ].map((chart) => (
             <section className="glass-panel insights-chart" key={chart.title}>
               <h2>{chart.title}</h2>
-              <p>
-                Kliknutím na riadok zobrazíš zápasy. Zelená = výhry, červená =
-                prehry.
-              </p>
+              <p>Zelená = výhry · červená = prehry.</p>
               {chart.groups.length ? (
                 chart.groups.map((group) => (
                   <button
@@ -246,116 +266,120 @@ export function MatchInsightsView({
           ))}
         </div>
       )}
-      <section className="glass-panel insights-match-list">
-        <div className="overview-section-title">
-          <div>
-            <h2>Zápasy vo výbere</h2>
-            <p>
-              Od najnovšieho po najstarší. Rozklikni zápas pre sety a ďalšie
-              údaje.
-            </p>
+      {mode === "matches" && (
+        <section className="glass-panel insights-match-list">
+          <div className="overview-section-title">
+            <div>
+              <h2>Zápasy vo výbere</h2>
+              <p>
+                Od najnovšieho po najstarší. Rozklikni zápas pre sety a ďalšie
+                údaje.
+              </p>
+            </div>
+            <span>{filtered.length}</span>
           </div>
-          <span>{filtered.length}</span>
-        </div>
-        <div className="insights-search">
-          <label>
-            <Search size={17} />
-            <input
-              aria-label="Vyhľadať súpera alebo súťaž"
-              placeholder="Súper, liga alebo turnaj…"
-              value={query}
+          <div className="insights-search">
+            <label>
+              <Search size={17} />
+              <input
+                aria-label="Vyhľadať súpera alebo súťaž"
+                placeholder="Súper, liga alebo turnaj…"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setLimit(20);
+                }}
+              />
+            </label>
+            <select
+              aria-label="Výsledok zápasu"
+              value={result}
               onChange={(e) => {
-                setQuery(e.target.value);
+                setResult(e.target.value);
                 setLimit(20);
               }}
-            />
-          </label>
-          <select
-            aria-label="Výsledok zápasu"
-            value={result}
-            onChange={(e) => {
-              setResult(e.target.value);
-              setLimit(20);
-            }}
-          >
-            <option value="all">Všetky výsledky</option>
-            <option value="WIN">Výhry</option>
-            <option value="LOSS">Prehry</option>
-          </select>
-        </div>
-        {filtered.slice(0, limit).map((match) => (
-          <details className="insights-match" key={matchKey(match)}>
-            <summary>
-              <span
-                className={`result-dot ${match.result === "WIN" ? "win" : "loss"}`}
-              >
-                {match.result === "WIN" ? "V" : "P"}
-              </span>
-              <span className="insights-match-info">
-                <strong>{matchOpponent(match)}</strong>
-                <small>
-                  {match.date || "Bez dátumu"} · {matchCompetition(match)} ·{" "}
-                  {matchSeason(match)} ·{" "}
-                  {"opponentPair" in match ? "Štvorhra" : "Dvojhra"}
-                </small>
-              </span>
-              <b>{match.score}</b>
-              <ChevronRight size={16} />
-            </summary>
-            <div className="insights-match-detail">
-              {"partnerName" in match && <p>Spoluhráč: {match.partnerName}</p>}
-              <p>{[match.round, match.teams].filter(Boolean).join(" · ")}</p>
-              <div className="insights-set-list">
-                {match.setDetails?.length ? (
-                  match.setDetails.map((set) => (
-                    <span key={set.setNumber}>
-                      S{set.setNumber}: {set.display}
-                    </span>
-                  ))
-                ) : match.sets?.length ? (
-                  match.sets.map((set, i) => (
-                    <span key={i}>
-                      S{i + 1}: {set}
-                    </span>
-                  ))
-                ) : (
-                  <span>Body jednotlivých setov nie sú uvedené.</span>
-                )}
-              </div>
-              {match.isWalkover && <p>Kontumačný výsledok</p>}
-              {match.notes && <p>{match.notes}</p>}
-            </div>
-          </details>
-        ))}
-        {!filtered.length && (
-          <div className="insights-empty">
-            <h3>
-              {all.length
-                ? "Žiadne zápasy pre tento výber"
-                : "Tvoje výsledky začínajú prvým zápasom"}
-            </h3>
-            <p>
-              {all.length
-                ? "Skús inú sezónu alebo zruš filtre."
-                : "Importuj si históriu zo SSTZ alebo pridaj vlastný zápas."}
-            </p>
-            <button
-              className="btn-secondary"
-              onClick={all.length ? reset : () => onNavigate("sstz")}
             >
-              {all.length ? "Zrušiť filtre" : "Pripojiť SSTZ"}
-            </button>
+              <option value="all">Všetky výsledky</option>
+              <option value="WIN">Výhry</option>
+              <option value="LOSS">Prehry</option>
+            </select>
           </div>
-        )}
-        {filtered.length > limit && (
-          <button
-            className="btn-secondary insights-load"
-            onClick={() => setLimit((value) => value + 20)}
-          >
-            Ďalších 20 zápasov ({filtered.length - limit} zostáva)
-          </button>
-        )}
-      </section>
+          {filtered.slice(0, limit).map((match) => (
+            <details className="insights-match" key={matchKey(match)}>
+              <summary>
+                <span
+                  className={`result-dot ${match.result === "WIN" ? "win" : "loss"}`}
+                >
+                  {match.result === "WIN" ? "V" : "P"}
+                </span>
+                <span className="insights-match-info">
+                  <strong>{matchOpponent(match)}</strong>
+                  <small>
+                    {match.date || "Bez dátumu"} · {matchCompetition(match)} ·{" "}
+                    {matchSeason(match)} ·{" "}
+                    {"opponentPair" in match ? "Štvorhra" : "Dvojhra"}
+                  </small>
+                </span>
+                <b>{match.score}</b>
+                <ChevronRight size={16} />
+              </summary>
+              <div className="insights-match-detail">
+                {"partnerName" in match && (
+                  <p>Spoluhráč: {match.partnerName}</p>
+                )}
+                <p>{[match.round, match.teams].filter(Boolean).join(" · ")}</p>
+                <div className="insights-set-list">
+                  {match.setDetails?.length ? (
+                    match.setDetails.map((set) => (
+                      <span key={set.setNumber}>
+                        S{set.setNumber}: {set.display}
+                      </span>
+                    ))
+                  ) : match.sets?.length ? (
+                    match.sets.map((set, i) => (
+                      <span key={i}>
+                        S{i + 1}: {set}
+                      </span>
+                    ))
+                  ) : (
+                    <span>Body jednotlivých setov nie sú uvedené.</span>
+                  )}
+                </div>
+                {match.isWalkover && <p>Kontumačný výsledok</p>}
+                {match.notes && <p>{match.notes}</p>}
+              </div>
+            </details>
+          ))}
+          {!filtered.length && (
+            <div className="insights-empty">
+              <h3>
+                {all.length
+                  ? "Žiadne zápasy pre tento výber"
+                  : "Tvoje výsledky začínajú prvým zápasom"}
+              </h3>
+              <p>
+                {all.length
+                  ? "Skús inú sezónu alebo zruš filtre."
+                  : "Importuj si históriu zo SSTZ alebo pridaj vlastný zápas."}
+              </p>
+              <button
+                className="btn-secondary"
+                onClick={all.length ? reset : () => onNavigate("sstz")}
+              >
+                {all.length ? "Zrušiť filtre" : "Pripojiť SSTZ"}
+              </button>
+            </div>
+          )}
+          {filtered.length > limit && (
+            <button
+              className="btn-secondary insights-load"
+              onClick={() => setLimit((value) => value + 20)}
+            >
+              Ďalších 20 zápasov ({filtered.length - limit} zostáva)
+            </button>
+          )}
+        </section>
+      )}
     </div>
   );
 }
