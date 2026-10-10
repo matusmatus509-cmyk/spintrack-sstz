@@ -22,6 +22,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { exportData, importData, resetToDefaults } = useApp();
+  const [resetting, setResetting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -73,10 +74,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
 
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Naozaj chceš vymazať všetky údaje a vrátiť aplikáciu do predvoleného stavu?')) {
-      resetToDefaults();
-      onClose();
+      setResetting(true);
+      try { await resetToDefaults(); onClose(); }
+      catch { setImportStatus('Chyba: Údaje sa nepodarilo vymazať. Skontroluj pripojenie a skús znova.'); }
+      finally { setResetting(false); }
     }
   };
 
@@ -296,6 +299,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </div>
 
           <button
+            disabled={resetting}
             onClick={handleReset}
             className="btn-danger"
             style={{ fontSize: '0.8rem', padding: '6px 12px' }}

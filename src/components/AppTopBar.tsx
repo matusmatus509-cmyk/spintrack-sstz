@@ -1,11 +1,14 @@
 import React from 'react';
+import { useCommunity } from '../context/CommunityContext';
 import { useApp } from '../context/AppContext';
-import { Settings, ShieldCheck, CircleDot } from 'lucide-react';
+import { Settings, ShieldCheck, CircleDot, UserRound } from 'lucide-react';
 interface AppTopBarProps {
   onOpenSettings: () => void;
+  onOpenCommunity: () => void;
 }
-export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings }) => {
+export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings, onOpenCommunity }) => {
   const { sstzProfile } = useApp();
+  const account = useCommunity();
   return (
     <header className="app-topbar">
       <div className="brand">
@@ -19,6 +22,11 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings }) => {
         <span className="brand-sstz">SSTZ</span>
       </div>
       <div className="topbar-actions">
+        <button className="icon-button" onClick={onOpenCommunity}
+          aria-label={account.user ? "Môj účet a komunita" : "Prihlásiť sa"}
+          title={account.profile?.display_name || "Prihlásiť sa"}>
+          <UserRound size={21} />
+        </button>
         {sstzProfile && (
           <span className="topbar-profile">
             <ShieldCheck size={16} />

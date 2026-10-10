@@ -56,6 +56,7 @@ export interface ActivityRecord {
   category: ActivityCategory;
   date: string; // YYYY-MM-DD
   durationMinutes: number;
+  startTime?: string; // HH:mm, optional start time for calendar invitations
   focusDrills: string[];
   customTags?: string[];
   title?: string;

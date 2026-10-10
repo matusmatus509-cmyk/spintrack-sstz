@@ -1,5 +1,5 @@
 // SpinTrack SSTZ PWA Service Worker
-const CACHE_NAME = 'spintrack-sstz-v3';
+const CACHE_NAME = 'spintrack-sstz-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -31,6 +31,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Account requests and mutations must never enter the shared static cache.
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin ||
+      event.request.headers.has('authorization')) return;
 
   // For API endpoints, prefer network first, no offline cache corruption
   if (url.pathname.startsWith('/api/')) {

@@ -16,6 +16,7 @@ import {
   OpponentRubberType
 } from '../types';
 import { parseTournamentImport, replaceTournamentMatches } from '../utils/tournamentImport';
+import { emptyAccountData } from '../utils/community';
 import { INITIAL_BADGES } from '../data/gearCatalog';
 
 export type SyncKind = 'player' | 'schedule' | 'tournaments';
@@ -47,9 +48,9 @@ interface AppContextType {
 
   // Activities & Diary
   activities: ActivityRecord[];
-  addActivity: (activity: Omit<ActivityRecord, 'id' | 'createdAt'>) => string;
+  addActivity: (activity: Omit<ActivityRecord, 'id' | 'createdAt'>, localId?: string) => string;
   updateActivity: (id: string, updates: Partial<ActivityRecord>) => void;
-  deleteActivity: (id: string) => void;
+  deleteActivity: (id: string) => Promise<void>;
   trainingSessions: TrainingSession[];
   addTrainingSession: (session: Omit<TrainingSession, 'id'>) => void;
   deleteTrainingSession: (id: string) => void;
@@ -99,14 +100,14 @@ interface AppContextType {
   // System
   exportData: () => string;
   importData: (jsonStr: string) => boolean;
-  resetToDefaults: () => void;
+  resetToDefaults: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'spintrack_sstz_data_v1';
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: string; initialData?: Record<string, any> | null; onPersist?: (data: Record<string, any>) => void; beforeDeleteActivity?: (id: string) => Promise<void>; beforeReset?: () => Promise<void> }> = ({ children, storageKey = LOCAL_STORAGE_KEY, initialData, onPersist, beforeDeleteActivity, beforeReset }) => {
   // Initial default inventory
   const defaultBlades: Blade[] = [
     {
@@ -284,7 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load saved state or defaults
   const loadSavedState = () => {
     try {
-      const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const data = localStorage.getItem(storageKey);
       if (data) {
         const parsed = JSON.parse(data);
         if (parsed.matches && Array.isArray(parsed.matches)) {
@@ -300,7 +301,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   };
 
-  const saved = loadSavedState();
+  const [saved] = useState(() => initialData ?? loadSavedState());
 
   const [blades, setBlades] = useState<Blade[]>(saved?.blades || defaultBlades);
   const [rubbers, setRubbers] = useState<Rubber[]>(saved?.rubbers || defaultRubbers);
@@ -394,14 +395,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       selectedLeagueSlug,
       selectedClubId,
       scheduleConnected,
-      badges
+      badges,
+      _updatedAt: new Date().toISOString()
     };
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     } catch (e) {
       console.warn('Failed to save state to localStorage:', e);
     }
+    onPersist?.(dataToSave);
   }, [
+    onPersist,
+    storageKey,
     blades,
     rubbers,
     rackets,
@@ -654,8 +659,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Activities CRUD
-  const addActivity = (activityData: Omit<ActivityRecord, 'id' | 'createdAt'>): string => {
-    const id = `act-${Date.now()}`;
+  const addActivity = (activityData: Omit<ActivityRecord, 'id' | 'createdAt'>, localId?: string): string => {
+    const id = localId || crypto.randomUUID();
     const newActivity: ActivityRecord = {
       ...activityData,
       id,
@@ -750,7 +755,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivities(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
 
-  const deleteActivity = (id: string) => {
+  const deleteActivity = async (id: string) => {
+    await beforeDeleteActivity?.(id);
     setActivities(prev => prev.filter(a => a.id !== id));
     setTrainingSessions(prev => prev.filter(s => s.id !== id));
   };
@@ -1072,14 +1078,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.blades) setBlades(data.blades);
       if (data.rubbers) setRubbers(data.rubbers);
       if (data.rackets) setRackets(data.rackets);
-      if (data.activeRacketId) setActiveRacketId(data.activeRacketId);
+      if (data.activeRacketId !== undefined) setActiveRacketId(data.activeRacketId);
       if (data.activities) setActivities(data.activities);
       if (data.trainingSessions) setTrainingSessions(data.trainingSessions);
       if (data.matches) setMatches(data.matches);
       if (data.doublesMatches) setDoublesMatches(data.doublesMatches);
       if (data.opponents) setOpponents(data.opponents);
       if (data.tournamentProfile !== undefined) setTournamentProfile(data.tournamentProfile);
-      if (data.sstzProfile) setSstzProfile(data.sstzProfile);
+      if (data.sstzProfile !== undefined) setSstzProfile(data.sstzProfile);
       if (data.teamSchedule) setTeamSchedule(data.teamSchedule);
       setScheduleConnected(Boolean(data.scheduleConnected ?? data.teamSchedule?.length));
       if (data.selectedLeagueSlug) setSelectedLeagueSlug(data.selectedLeagueSlug);
@@ -1092,10 +1098,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
+    await beforeReset?.();
+    runningSyncs.current.forEach(job => job.controller.abort());
+    if (storageKey !== LOCAL_STORAGE_KEY) {
+      importData(JSON.stringify({ ...emptyAccountData(), badges: INITIAL_BADGES }));
+      setSstzProfile(null); setTournamentProfile(null); setActiveRacketId(''); setSelectedClubId('');
+      return;
+    }
     runningSyncs.current.forEach(job => job.controller.abort());
     setScheduleConnected(false);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setBlades(defaultBlades);
     setRubbers(defaultRubbers);
     setRackets(defaultRackets);

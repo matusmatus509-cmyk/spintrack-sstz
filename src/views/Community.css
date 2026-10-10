@@ -1,0 +1,297 @@
+.community-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.community-view p,
+.community-view small {
+  color: var(--text-muted);
+}
+.community-view h2 {
+  font-size: 1.1rem;
+}
+.community-auth {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 26px;
+  display: grid;
+  gap: 16px;
+}
+.community-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  font-weight: 800;
+}
+.community-form {
+  display: grid;
+  gap: 14px;
+}
+.community-form label,
+.community-visibility-select {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.community-form input,
+.community-search input,
+.community-visibility-select select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+}
+.community-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.community-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.community-tabs button[aria-pressed="true"] {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+.community-tabs.small button {
+  flex: 0 1 auto;
+}
+.community-account,
+.community-card,
+.community-friend,
+.community-empty {
+  padding: 20px;
+}
+.community-account {
+  display: grid;
+  gap: 14px;
+}
+.community-account details summary {
+  min-height: 36px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.community-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.community-person > div {
+  min-width: 0;
+  flex: 1;
+}
+.community-person strong,
+.community-person small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.community-person small,
+.community-friend small {
+  font-size: 0.75rem;
+}
+.community-visibility {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+.community-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.community-activity-info {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.community-activity-info h3 {
+  font-size: 1.05rem;
+}
+.community-activity-info p {
+  font-size: 0.82rem;
+}
+.community-kicker {
+  color: #6ee7b7;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.community-note {
+  white-space: pre-wrap;
+  margin-top: 5px;
+}
+.community-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.community-actions button {
+  font-size: 0.78rem;
+}
+.community-friend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.community-friend > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.community-friend small {
+  display: block;
+  margin-top: 3px;
+}
+.community-search {
+  display: flex;
+  gap: 8px;
+}
+.community-search input {
+  flex: 1;
+}
+.community-empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.community-error {
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+.community-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6ee7b7 !important;
+  font-size: 0.82rem;
+}
+.community-view button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.account-loading {
+  min-height: 100dvh;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+.activity-friends {
+  display: grid;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.activity-friends .activity-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-calendar {
+  display: grid;
+  gap: 12px;
+}
+.account-calendar .community-card {
+  display: grid;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .community-auth {
+    padding: 18px;
+  }
+  .community-tabs:not(.small) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .community-tabs button {
+    padding: 8px;
+  }
+  .community-search {
+    flex-wrap: wrap;
+  }
+  .community-search input {
+    flex-basis: 100%;
+  }
+  .community-search button {
+    width: 100%;
+  }
+}
+.community-search .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.community-account {
+  display: block;
+  padding: 14px;
+}
+.community-account > summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+.community-account > summary::-webkit-details-marker {
+  display: none;
+}
+.community-account[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.community-account-options {
+  display: grid;
+  gap: 14px;
+  padding-top: 16px;
+}
+@media (max-width: 640px) {
+  .community-view .page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px !important;
+  }
+  .community-view .page-header p {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  .community-view .page-header > button {
+    font-size: 0.75rem;
+    padding: 8px 10px;
+  }
+}
