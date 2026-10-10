@@ -50,6 +50,27 @@ for (const item of ittfRows) {
   if (!currentCoverings.has(key)) currentCoverings.set(key, [brand, model, item.EquipmentRacketCoveringId]);
 }
 if (currentCoverings.size < 1000) throw new Error('Unexpected current ITTF covering count. Existing catalog was not replaced.');
+const decodeHtml = value => value.replace(/&#x([\da-f]+);/giu, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&#(\d+);/gu, (_, code) => String.fromCodePoint(Number(code)))
+  .replace(/&amp;/gu, '&').replace(/&quot;/gu, '"').replace(/&#39;/gu, "'").replace(/&nbsp;/gu, ' ');
+const butterflyProducts = new Map();
+for (let page = 1; page <= 20; page += 1) {
+  const pageUrl = new URL('https://en.butterfly.tt/blades');
+  if (page > 1) pageUrl.searchParams.set('p', String(page));
+  const response = await fetch(pageUrl, { signal: AbortSignal.timeout(30000) });
+  if (!response.ok) throw new Error(`Butterfly blade source HTTP ${response.status}`);
+  const html = await response.text();
+  const products = [...html.matchAll(/<a class="product-item-link[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gs)]
+    .map(([, url, label]) => ({ url: decodeHtml(url), model: decodeHtml(label.replace(/<[^>]*>/gu, ' ')).replace(/\s+/gu, ' ').trim() }))
+    .filter(item => item.model && /^https:\/\/en\.butterfly\.tt\/[a-z0-9-]+\.html$/iu.test(item.url));
+  for (const product of products) {
+    const key = `${normalize('Butterfly')}:${normalize(product.model)}`;
+    if (!butterflyProducts.has(key)) butterflyProducts.set(key, ['Butterfly', product.model, product.url]);
+  }
+  if (products.length < 48) break;
+  if (page === 20) throw new Error('Butterfly blade listing exceeded the expected page limit.');
+}
+if (butterflyProducts.size < 20) throw new Error('Unexpected Butterfly blade listing. Existing catalog was not replaced.');
 const output = {
   source: 'TableTennisDB', sourceUrl: 'https://github.com/zerebos/TableTennisDB', revision,
   retrievedAt: new Date().toISOString().slice(0, 10), sourceCounts: counts, entries,
@@ -57,6 +78,11 @@ const output = {
     source: 'ITTF List of Authorised Racket Coverings', sourceUrl: ittfUrl.split('?')[0],
     retrievedAt: new Date().toISOString().slice(0, 10),
     entries: [...currentCoverings.values()].sort((a, b) => `${a[0]} ${a[1]}`.localeCompare(`${b[0]} ${b[1]}`, 'en'))
+  },
+  currentBladeCatalog: {
+    source: 'Butterfly official shop', sourceUrl: 'https://en.butterfly.tt/blades',
+    retrievedAt: new Date().toISOString().slice(0, 10),
+    entries: [...butterflyProducts.values()].sort((a, b) => a[1].localeCompare(b[1], 'en'))
   }
 };
 const license = await fetch(`${base}/LICENSE`);
@@ -65,4 +91,4 @@ const licenseText = await license.text();
 await fs.writeFile(new URL('../src/data/equipmentNames.json', import.meta.url), JSON.stringify(output, null, 0) + '\n');
 await fs.mkdir(new URL('../licenses/', import.meta.url), { recursive: true });
 await fs.writeFile(new URL('../licenses/TableTennisDB-MIT.txt', import.meta.url), licenseText);
-console.log(`Catalog: ${entries.filter(row => row[0] === 'rubber').length} historical rubbers, ${output.currentApproval.entries.length} current ITTF-authorised rubbers, ${entries.filter(row => row[0] === 'blade').length} historical blades.`);
+console.log(`Catalog: ${entries.filter(row => row[0] === 'rubber').length} historical rubbers, ${output.currentApproval.entries.length} current ITTF-authorised rubbers, ${entries.filter(row => row[0] === 'blade').length} historical blades, ${output.currentBladeCatalog.entries.length} blades listed in the Butterfly shop.`);

@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildEquipmentCatalog, filterEquipmentCatalog, equipmentModelKey, isCurrentIttfApprovedCovering } from '../src/utils/equipmentCatalog.ts';
+import { buildEquipmentCatalog, filterEquipmentCatalog, equipmentModelKey, isCurrentIttfApprovedCovering, isCurrentButterflyBlade, equipmentCatalogSource } from '../src/utils/equipmentCatalog.ts';
 
 test('bundled catalog combines historical products with current ITTF-approved rubbers, without duplicates or made-up ratings', () => {
   const catalog = buildEquipmentCatalog();
   assert.equal(catalog.filter(item => item.kind === 'rubber').length, 2896);
-  assert.equal(catalog.filter(item => item.kind === 'blade').length, 2521);
+  assert.equal(catalog.filter(item => item.kind === 'blade').length, 2553);
   assert.equal(new Set(catalog.map(equipmentModelKey)).size, catalog.length);
   for (const item of catalog) {
     assert.ok(item.brand && item.model);
@@ -19,6 +19,10 @@ test('bundled catalog combines historical products with current ITTF-approved ru
   assert.equal(isCurrentIttfApprovedCovering(current), true);
   assert.equal(isCurrentIttfApprovedCovering({ kind: 'rubber', brand: 'Butterfly', model: 'Tenergy 05' }), true);
   assert.equal(isCurrentIttfApprovedCovering({ kind: 'blade', brand: 'Butterfly', model: 'Viscaria' }), false);
+  assert.equal(equipmentCatalogSource.currentBladeCatalog.count, 53);
+  assert.equal(isCurrentButterflyBlade({ kind: 'blade', brand: 'Butterfly', model: 'Fan Zhendong Super ALC' }), true);
+  assert.equal(isCurrentButterflyBlade({ kind: 'blade', brand: 'Butterfly', model: 'Viscaria' }), true);
+  assert.equal(isCurrentButterflyBlade({ kind: 'blade', brand: 'Stiga', model: 'Cybershape' }), false);
 });
 
 test('combines brand, type and accent-insensitive search and covers every result with pagination', () => {

@@ -26,9 +26,12 @@ ITTF-authorised rubbers, not a list of every rubber ever manufactured.
 
 ITTF does not publish a corresponding global approval register for blades. Blade names
 therefore remain a historical catalogue snapshot and can include discontinued models;
-the data cannot establish all blades currently sold worldwide. Products missing from
-either bundled list can still be entered manually.
+the data cannot establish all blades currently sold worldwide. In addition, the current
+Butterfly shop listing is bundled as a separate, dated source snapshot:
+https://en.butterfly.tt/blades
+Those entries are labeled as listed by Butterfly, not as a complete worldwide list.
+Products missing from either bundled list can still be entered manually.
 
 Refresh both source snapshots with `node scripts/update-equipment-catalog.mjs [revision]`.
-The script validates that it received a substantial archive and ITTF export before
-replacing the bundled JSON.
+The script validates that it received a substantial archive and ITTF export plus a
+non-empty Butterfly shop listing before replacing the bundled JSON.
