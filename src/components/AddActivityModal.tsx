@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useDialog } from "../hooks/useDialog";
 import { useCommunity } from "../context/CommunityContext";
+import { formatDuration } from "../utils/formatDuration";
 import { communityError } from "../views/CommunityView";
 import { useApp } from "../context/AppContext";
 import {
@@ -208,6 +209,10 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (saving) return;
+    if (training && (form.duration < 10 || form.duration > 600)) {
+      setError("Trvanie tréningu musí byť od 10 minút do 10 hodín.");
+      return;
+    }
     const own = Number(form.ownScore),
       other = Number(form.opponentScore);
     if (
@@ -468,21 +473,44 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                   >
                     <Minus size={20} />
                   </button>
-                  <label>
-                    <input
-                      type="number"
-                      min="10"
-                      max="600"
-                      step="1"
-                      required
-                      value={form.duration}
-                      onChange={(e) =>
-                        field("duration", Number(e.target.value))
-                      }
-                      aria-label="Trvanie v minútach"
-                    />
-                    <span>minút</span>
-                  </label>
+                  <div className="activity-duration-fields">
+                    <label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="1"
+                        required
+                        value={Math.floor(form.duration / 60)}
+                        onChange={(e) =>
+                          field(
+                            "duration",
+                            Math.min(600, Number(e.target.value) * 60 + (form.duration % 60)),
+                          )
+                        }
+                        aria-label="Trvanie v hodinách"
+                      />
+                      <span>h</span>
+                    </label>
+                    <label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={Math.min(59, 600 - Math.floor(form.duration / 60) * 60)}
+                        step="1"
+                        required
+                        value={form.duration % 60}
+                        onChange={(e) =>
+                          field(
+                            "duration",
+                            Math.min(600, Math.floor(form.duration / 60) * 60 + Number(e.target.value)),
+                          )
+                        }
+                        aria-label="Trvanie v minútach"
+                      />
+                      <span>min</span>
+                    </label>
+                  </div>
                   <button
                     type="button"
                     className="activity-icon-button"
@@ -503,7 +531,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                       aria-pressed={form.duration === min}
                       onClick={() => field("duration", min)}
                     >
-                      {min} min
+                      {formatDuration(min)}
                     </button>
                   ))}
                 </div>
@@ -817,7 +845,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                     checked={form.wear}
                     onChange={(e) => field("wear", e.target.checked)}
                   />
-                  Započítať {form.duration} minút do opotrebovania rakety
+                  Započítať {formatDuration(form.duration)} do opotrebovania rakety
                 </label>
               )}
             </section>

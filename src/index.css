@@ -1402,6 +1402,9 @@ table td {
 .activity-duration { display: flex; align-items: center; justify-content: center; gap: 20px; }
 .activity-duration label { width: 120px; text-align: center; align-items: center; }
 .activity-duration input[type=number] { font-size: 2rem; text-align: center; font-weight: 800; padding: 8px; }
+.activity-duration-fields { display: flex; align-items: center; gap: 8px; }
+.activity-duration-fields label { width: 86px; }
+.activity-duration-fields input[type=number] { width: 100%; }
 .activity-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .activity-chips button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 20px; background: transparent; color: var(--text-muted); cursor: pointer; }
 .activity-add-tag { display: flex; gap: 8px; }
