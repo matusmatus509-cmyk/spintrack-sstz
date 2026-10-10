@@ -12,14 +12,27 @@ export const equipmentCatalogSource = {
     retrievedAt: archive.currentApproval.retrievedAt,
     count: archive.currentApproval.entries.length,
   },
+  currentBladeCatalog: {
+    source: archive.currentBladeCatalog.source,
+    sourceUrl: archive.currentBladeCatalog.sourceUrl,
+    retrievedAt: archive.currentBladeCatalog.retrievedAt,
+    count: archive.currentBladeCatalog.entries.length,
+  },
 };
 
 const currentApprovals = archive.currentApproval.entries as [string, string, number][];
 const currentCoveringKeys = new Set(currentApprovals.map(([brand, model]) =>
   `${equipmentSearchKey(brand)}:${equipmentSearchKey(model)}`));
+const currentBlades = archive.currentBladeCatalog.entries as [string, string, string][];
+const currentBladeKeys = new Set(currentBlades.map(([brand, model]) =>
+  `${equipmentSearchKey(brand)}:${equipmentSearchKey(model)}`));
 
 export function isCurrentIttfApprovedCovering(entry: EquipmentModel) {
   return entry.kind === 'rubber' && currentCoveringKeys.has(`${equipmentSearchKey(entry.brand)}:${equipmentSearchKey(entry.model)}`);
+}
+
+export function isCurrentButterflyBlade(entry: EquipmentModel) {
+  return entry.kind === 'blade' && currentBladeKeys.has(`${equipmentSearchKey(entry.brand)}:${equipmentSearchKey(entry.model)}`);
 }
 
 export function buildEquipmentCatalog(extraModels: EquipmentModel[] = []): EquipmentModel[] {
@@ -30,6 +43,11 @@ export function buildEquipmentCatalog(extraModels: EquipmentModel[] = []): Equip
   }
   for (const [brand, model] of currentApprovals) {
     const entry: EquipmentModel = { kind: 'rubber', brand, model };
+    const key = equipmentModelKey(entry);
+    if (!items.has(key)) items.set(key, entry);
+  }
+  for (const [brand, model] of currentBlades) {
+    const entry: EquipmentModel = { kind: 'blade', brand, model };
     const key = equipmentModelKey(entry);
     if (!items.has(key)) items.set(key, entry);
   }
