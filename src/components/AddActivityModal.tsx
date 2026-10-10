@@ -1,3 +1,4 @@
+import { newActivityId } from '../utils/activityId';
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -125,7 +126,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   const community = useCommunity();
   const [invitees, setInvitees] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const localId = useRef(crypto.randomUUID());
+  const localId = useRef(newActivityId());
   const { addActivity, rackets, activeRacket, opponents } = useApp();
   const [form, setForm] = useState(() =>
     initialForm(defaultCategory, activeRacket?.id || ""),
@@ -141,7 +142,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       setCustomDrill("");
       setError("");
       setInvitees([]);
-      localId.current = crypto.randomUUID();
+      localId.current = newActivityId();
     }
   }, [isOpen, defaultCategory, activeRacket?.id]);
   const field = <K extends keyof typeof form>(

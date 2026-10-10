@@ -1,3 +1,4 @@
+import { newActivityId } from '../utils/activityId';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   Rubber,
@@ -660,7 +661,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   // Activities CRUD
   const addActivity = (activityData: Omit<ActivityRecord, 'id' | 'createdAt'>, localId?: string): string => {
-    const id = localId || crypto.randomUUID();
+    const id = localId || newActivityId();
     const newActivity: ActivityRecord = {
       ...activityData,
       id,
