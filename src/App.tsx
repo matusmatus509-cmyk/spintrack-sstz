@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ActivityCategory } from './types';
 import { AppProvider } from './context/AppContext';
 import { AppTopBar } from './components/AppTopBar';
 import { Navigation, NavTab } from './components/Navigation';
@@ -9,17 +10,20 @@ import { OpponentsView } from './views/OpponentsView';
 import { EquipmentView } from './views/EquipmentView';
 import { CalendarView } from './views/CalendarView';
 import { DiaryView } from './views/DiaryView';
+import { MatchInsightsView } from './views/MatchInsightsView';
 import { StatsView } from './views/StatsView';
 import { SettingsModal } from './components/SettingsModal';
 import { SyncStatus } from './components/SyncStatus';
 import { AddActivityModal } from './components/AddActivityModal';
 
 const AppContent: React.FC = () => {
+  const [diaryCategory, setDiaryCategory] = useState<'all' | ActivityCategory>('all');
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showAddActivity, setShowAddActivity] = useState(false);
 
-  const selectTab = (tab: NavTab) => {
+  const selectTab = (tab: NavTab, category: 'all' | ActivityCategory = 'all') => {
+    setDiaryCategory(category);
     setCurrentTab(tab);
     window.scrollTo({ top: 0, behavior: 'auto' });
     requestAnimationFrame(() => document.getElementById('main-content')?.focus({ preventScroll: true }));
@@ -59,7 +63,9 @@ const AppContent: React.FC = () => {
 
           {currentTab === 'calendar' && <CalendarView />}
 
-          {currentTab === 'diary' && <DiaryView />}
+          {currentTab === 'diary' && <DiaryView key={diaryCategory} initialCategory={diaryCategory} />}
+
+          {(currentTab === 'performance' || currentTab === 'matches') && <MatchInsightsView key={currentTab} mode={currentTab} onNavigate={selectTab} />}
 
           {currentTab === 'stats' && <StatsView />}
         </main>

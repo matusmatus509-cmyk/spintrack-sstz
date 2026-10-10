@@ -64,9 +64,9 @@ const rubberLabel = (value: string) =>
     anti: 'Antispin',
   })[value] || value;
 
-export const DiaryView: React.FC = () => {
+export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }> = ({ initialCategory = 'all' }) => {
   const { activities, matches, doublesMatches, deleteActivity } = useApp();
-  const [filters, setFilters] = useState<DiaryFilters>(emptyDiaryFilters);
+  const [filters, setFilters] = useState<DiaryFilters>({ ...emptyDiaryFilters, category: initialCategory });
   const [showFilters, setShowFilters] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [limit, setLimit] = useState(pageSize);
