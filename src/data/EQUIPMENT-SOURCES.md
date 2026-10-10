@@ -17,6 +17,18 @@ a newer upstream archive. Check the counts, source license and catalog tests bef
 publishing a replacement. The resulting catalog is bundled for offline use and does
 not depend on an external service while browsing or adding equipment.
 
-This includes historical products. It is not a certification of current ITTF approval
-and does not establish that every product ever manufactured is present. New or absent
-models can be entered manually and appear alongside the bundled list.
+The catalogue also bundles the currently approved rubber models from the public ITTF
+List of Authorised Racket Coverings export:
+https://ittf-admin-api.azurewebsites.net/api/Export/Equipment_RacketCoverings
+Only records with `ApprovalStatus: true` and `IsExpired: No` are included. The saved
+snapshot date is in `equipmentNames.json`. This is the official source for current
+ITTF-authorised rubbers, not a list of every rubber ever manufactured.
+
+ITTF does not publish a corresponding global approval register for blades. Blade names
+therefore remain a historical catalogue snapshot and can include discontinued models;
+the data cannot establish all blades currently sold worldwide. Products missing from
+either bundled list can still be entered manually.
+
+Refresh both source snapshots with `node scripts/update-equipment-catalog.mjs [revision]`.
+The script validates that it received a substantial archive and ITTF export before
+replacing the bundled JSON.

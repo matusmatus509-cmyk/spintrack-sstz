@@ -3,13 +3,35 @@ import archive from '../data/equipmentNames.json' with { type: 'json' };
 export interface EquipmentModel { kind: 'rubber' | 'blade'; brand: string; model: string; }
 export const equipmentSearchKey = (value: string) => value.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 export const equipmentModelKey = (entry: EquipmentModel) => `${entry.kind}:${equipmentSearchKey(entry.brand)}:${equipmentSearchKey(entry.model)}`;
-export const equipmentCatalogSource = { sourceUrl: archive.sourceUrl, retrievedAt: archive.retrievedAt };
+export const equipmentCatalogSource = {
+  sourceUrl: archive.sourceUrl,
+  retrievedAt: archive.retrievedAt,
+  currentApproval: {
+    source: archive.currentApproval.source,
+    sourceUrl: archive.currentApproval.sourceUrl,
+    retrievedAt: archive.currentApproval.retrievedAt,
+    count: archive.currentApproval.entries.length,
+  },
+};
+
+const currentApprovals = archive.currentApproval.entries as [string, string, number][];
+const currentCoveringKeys = new Set(currentApprovals.map(([brand, model]) =>
+  `${equipmentSearchKey(brand)}:${equipmentSearchKey(model)}`));
+
+export function isCurrentIttfApprovedCovering(entry: EquipmentModel) {
+  return entry.kind === 'rubber' && currentCoveringKeys.has(`${equipmentSearchKey(entry.brand)}:${equipmentSearchKey(entry.model)}`);
+}
 
 export function buildEquipmentCatalog(extraModels: EquipmentModel[] = []): EquipmentModel[] {
   const items = new Map<string, EquipmentModel>();
   for (const [kind, brand, model] of archive.entries) {
     const entry = { kind: kind as EquipmentModel['kind'], brand, model };
     items.set(equipmentModelKey(entry), entry);
+  }
+  for (const [brand, model] of currentApprovals) {
+    const entry: EquipmentModel = { kind: 'rubber', brand, model };
+    const key = equipmentModelKey(entry);
+    if (!items.has(key)) items.set(key, entry);
   }
   for (const entry of extraModels) {
     const key = equipmentModelKey(entry);

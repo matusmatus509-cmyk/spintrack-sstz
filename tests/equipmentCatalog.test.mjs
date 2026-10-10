@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildEquipmentCatalog, filterEquipmentCatalog, equipmentModelKey } from '../src/utils/equipmentCatalog.ts';
+import { buildEquipmentCatalog, filterEquipmentCatalog, equipmentModelKey, isCurrentIttfApprovedCovering } from '../src/utils/equipmentCatalog.ts';
 
-test('bundled catalog contains the complete cleaned source snapshot without duplicate models or made-up ratings', () => {
+test('bundled catalog combines historical products with current ITTF-approved rubbers, without duplicates or made-up ratings', () => {
   const catalog = buildEquipmentCatalog();
-  assert.equal(catalog.filter(item => item.kind === 'rubber').length, 1885);
+  assert.equal(catalog.filter(item => item.kind === 'rubber').length, 2896);
   assert.equal(catalog.filter(item => item.kind === 'blade').length, 2521);
   assert.equal(new Set(catalog.map(equipmentModelKey)).size, catalog.length);
   for (const item of catalog) {
@@ -14,6 +14,11 @@ test('bundled catalog contains the complete cleaned source snapshot without dupl
   }
   assert.ok(catalog.some(item => item.brand === 'Butterfly' && item.model === 'Viscaria' && item.kind === 'blade'));
   assert.ok(catalog.some(item => item.brand === 'Butterfly' && item.model === 'Tenergy 05' && item.kind === 'rubber'));
+  const current = catalog.find(item => item.brand === 'Butterfly' && item.model === 'Zyre 03');
+  assert.ok(current);
+  assert.equal(isCurrentIttfApprovedCovering(current), true);
+  assert.equal(isCurrentIttfApprovedCovering({ kind: 'rubber', brand: 'Butterfly', model: 'Tenergy 05' }), true);
+  assert.equal(isCurrentIttfApprovedCovering({ kind: 'blade', brand: 'Butterfly', model: 'Viscaria' }), false);
 });
 
 test('combines brand, type and accent-insensitive search and covers every result with pagination', () => {

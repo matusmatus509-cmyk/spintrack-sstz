@@ -32,11 +32,37 @@ for (const category of ['rubber', 'pips', 'blade']) {
   }
 }
 const entries = [...rows.values()].sort((a, b) => `${a[1]} ${a[2]}`.localeCompare(`${b[1]} ${b[2]}`, 'en'));
-const output = { source: 'TableTennisDB', sourceUrl: 'https://github.com/zerebos/TableTennisDB', revision, retrievedAt: new Date().toISOString().slice(0, 10), sourceCounts: counts, entries };
+// ITTF publishes its current List of Authorised Racket Coverings through the
+// same public export endpoint used by its equipment site. Keep this snapshot
+// separate from the historical name archive so the UI can label it accurately.
+const ittfUrl = 'https://ittf-admin-api.azurewebsites.net/api/Export/Equipment_RacketCoverings?limit=10000&skip=0';
+const ittfResponse = await fetch(ittfUrl, { signal: AbortSignal.timeout(30000) });
+if (!ittfResponse.ok) throw new Error(`ITTF equipment source HTTP ${ittfResponse.status}`);
+const ittfPayload = await ittfResponse.json();
+const ittfRows = Array.isArray(ittfPayload) ? ittfPayload.flatMap(page => page?.rows ?? []) : [];
+if (ittfRows.length < 1000) throw new Error('Unexpected ITTF export. Existing catalog was not replaced.');
+const currentCoverings = new Map();
+for (const item of ittfRows) {
+  const brand = item.BrandName?.replace(/\s+/g, ' ').trim();
+  const model = item.EquipmentName?.replace(/\s+/g, ' ').trim();
+  if (item.ApprovalStatus !== true || item.IsExpired !== 'No' || !brand || !model || /^\*+$/u.test(model)) continue;
+  const key = `${normalize(brand)}:${normalize(model)}`;
+  if (!currentCoverings.has(key)) currentCoverings.set(key, [brand, model, item.EquipmentRacketCoveringId]);
+}
+if (currentCoverings.size < 1000) throw new Error('Unexpected current ITTF covering count. Existing catalog was not replaced.');
+const output = {
+  source: 'TableTennisDB', sourceUrl: 'https://github.com/zerebos/TableTennisDB', revision,
+  retrievedAt: new Date().toISOString().slice(0, 10), sourceCounts: counts, entries,
+  currentApproval: {
+    source: 'ITTF List of Authorised Racket Coverings', sourceUrl: ittfUrl.split('?')[0],
+    retrievedAt: new Date().toISOString().slice(0, 10),
+    entries: [...currentCoverings.values()].sort((a, b) => `${a[0]} ${a[1]}`.localeCompare(`${b[0]} ${b[1]}`, 'en'))
+  }
+};
 const license = await fetch(`${base}/LICENSE`);
 if (!license.ok) throw new Error('Cannot load source license');
 const licenseText = await license.text();
 await fs.writeFile(new URL('../src/data/equipmentNames.json', import.meta.url), JSON.stringify(output, null, 0) + '\n');
 await fs.mkdir(new URL('../licenses/', import.meta.url), { recursive: true });
 await fs.writeFile(new URL('../licenses/TableTennisDB-MIT.txt', import.meta.url), licenseText);
-console.log(`Catalog: ${entries.filter(row => row[0] === 'rubber').length} rubbers, ${entries.filter(row => row[0] === 'blade').length} blades.`);
+console.log(`Catalog: ${entries.filter(row => row[0] === 'rubber').length} historical rubbers, ${output.currentApproval.entries.length} current ITTF-authorised rubbers, ${entries.filter(row => row[0] === 'blade').length} historical blades.`);
