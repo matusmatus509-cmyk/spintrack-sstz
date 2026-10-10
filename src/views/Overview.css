@@ -602,7 +602,10 @@
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
   .dashboard-at-glance {
-    height: calc(100dvh - 160px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(
+      100dvh - 160px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
   }
   .dashboard-at-glance .metric-icon {
     width: clamp(28px, 5dvh, 42px);
@@ -697,7 +700,10 @@
     padding-top: 8px;
   }
   .dashboard-at-glance {
-    height: calc(100dvh - 156px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(
+      100dvh - 156px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
     grid-template-rows: auto minmax(0, 1fr) 78px;
     gap: 4px;
   }
@@ -724,5 +730,162 @@
   }
   .dashboard-at-glance .training-wear strong {
     white-space: nowrap;
+  }
+}
+/* Keep the primary filters compact; secondary choices open on demand. */
+.insights-view {
+  gap: 14px;
+}
+.insights-view .page-header {
+  margin: 0;
+}
+.insights-view .page-header p {
+  font-size: 0.8rem;
+}
+.insights-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+.insights-filters label {
+  gap: 5px;
+}
+.insights-filters select {
+  padding: 9px 10px;
+  min-height: 42px;
+  font-size: 0.8rem;
+}
+.insights-filter-actions {
+  grid-column: 1 / -1;
+  position: relative;
+}
+.insights-extra-filters summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 36px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  list-style: none;
+}
+.insights-extra-filters summary::-webkit-details-marker {
+  display: none;
+}
+.insights-extra-filters[open] summary > svg {
+  transform: rotate(90deg);
+}
+.filter-count {
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+}
+.insights-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.insights-reset {
+  position: absolute;
+  right: 0;
+  top: 0;
+  min-height: 36px;
+  font-size: 0.75rem;
+}
+.insights-summary {
+  gap: 8px;
+}
+.insights-summary > div {
+  padding: 12px;
+  gap: 4px;
+}
+@media (max-width: 640px) {
+  .insights-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .insights-summary > div {
+    padding: 10px 6px;
+  }
+  .insights-summary span {
+    font-size: 0.65rem;
+  }
+  .insights-summary strong {
+    font-size: 1.3rem;
+  }
+  .insights-filters {
+    gap: 8px;
+    padding: 12px;
+  }
+  .insights-filters label {
+    font-size: 0.7rem;
+  }
+  .insights-filters select {
+    font-size: 0.75rem;
+  }
+  .insights-match-list .overview-section-title {
+    margin-bottom: 10px;
+  }
+  .insights-match-list .overview-section-title p {
+    display: none;
+  }
+  .insights-search {
+    grid-template-columns: minmax(0, 1fr) 110px;
+    gap: 6px;
+  }
+  .insights-search input,
+  .insights-search select {
+    font-size: 0.72rem;
+    padding: 10px 6px;
+    min-height: 42px;
+  }
+}
+@media (max-width: 640px) {
+  .main-content:has(.insights-view) {
+    padding-top: 12px;
+  }
+  .page-view.insights-view {
+    gap: 10px !important;
+  }
+  .insights-view .overview-back {
+    min-height: 32px;
+    font-size: 0.75rem;
+  }
+  .insights-view .page-header h1 {
+    margin: 0 !important;
+  }
+  .insights-view .page-header p {
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+  .page-view.insights-view > .insights-filters {
+    padding: 10px !important;
+    gap: 6px;
+  }
+  .page-view.insights-view > .insights-match-list {
+    padding: 12px !important;
+  }
+  .insights-match-list h2 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .insights-chart {
+    padding: 14px;
+  }
+  .insights-chart p {
+    font-size: 0.72rem;
+    margin-top: 4px;
+  }
+  .insights-bar-row {
+    padding: 8px;
+    gap: 6px;
   }
 }
