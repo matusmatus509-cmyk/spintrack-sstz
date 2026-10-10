@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   LayoutDashboard,
+  Users,
   Shield,
   Layers,
   Calendar,
@@ -17,6 +18,7 @@ import {
 import { useDialog } from '../hooks/useDialog';
 
 export type NavTab =
+  | 'community'
   | 'performance'
   | 'matches'
   | 'dashboard'
@@ -56,6 +58,7 @@ export const NAV_TABS = [
     icon: Calendar,
     description: 'Najbližšie stretnutia',
   },
+  { id: 'community' as NavTab, label: 'Komunita', icon: Users, description: 'Priatelia a spoločné tréningy' },
   {
     id: 'opponents' as NavTab,
     label: 'Súperi',

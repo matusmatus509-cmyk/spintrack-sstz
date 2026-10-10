@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ActivityCategory } from './types';
 import { AppProvider } from './context/AppContext';
 import { AppTopBar } from './components/AppTopBar';
@@ -15,8 +15,12 @@ import { StatsView } from './views/StatsView';
 import { SettingsModal } from './components/SettingsModal';
 import { SyncStatus } from './components/SyncStatus';
 import { AddActivityModal } from './components/AddActivityModal';
+import { CommunityProvider, useCommunity } from './context/CommunityContext';
+import { CommunityView } from './views/CommunityView';
+import './views/Community.css';
 
 const AppContent: React.FC = () => {
+  const community = useCommunity();
   const [diaryCategory, setDiaryCategory] = useState<'all' | ActivityCategory>('all');
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -29,11 +33,12 @@ const AppContent: React.FC = () => {
     requestAnimationFrame(() => document.getElementById('main-content')?.focus({ preventScroll: true }));
   };
 
+  useEffect(() => { if (community.recovering) setCurrentTab('community'); }, [community.recovering]);
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Prejsť na obsah</a>
       {/* Sleek Minimal App Top Bar */}
-      <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} />
+      <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} onOpenCommunity={() => selectTab('community')} />
 
       {/* Main Container */}
       <div className="app-container">
@@ -68,6 +73,7 @@ const AppContent: React.FC = () => {
           {(currentTab === 'performance' || currentTab === 'matches') && <MatchInsightsView key={currentTab} mode={currentTab} onNavigate={selectTab} />}
 
           {currentTab === 'stats' && <StatsView />}
+          {currentTab === 'community' && <CommunityView onNavigate={selectTab} />}
         </main>
       </div>
 
@@ -88,10 +94,25 @@ const AppContent: React.FC = () => {
   );
 };
 
-export const App: React.FC = () => {
-  return (
-    <AppProvider>
+function AccountWorkspace() {
+  const account = useCommunity();
+  if (account.authLoading || (account.user && !account.dataReady)) {
+    return <div className="account-loading" role="status">
+      <h1>SpinTrack</h1>
+      <p>{account.accountError || "Načítavam tvoj účet…"}</p>
+      {account.accountError && <div className="community-actions">
+        <button className="btn-primary" onClick={account.retryAccount}>Skúsiť znova</button>
+        <button className="btn-secondary" onClick={() => { void account.logout().catch(() => {}); }}>Odhlásiť sa</button>
+      </div>}
+    </div>;
+  }
+  return <AppProvider key={account.user?.id || 'guest'}
+    storageKey={account.user ? `spintrack_account_${account.user.id}` : undefined}
+    initialData={account.user ? account.initialData : undefined}
+    onPersist={account.user ? account.saveAccountData : undefined}
+    beforeDeleteActivity={account.user ? account.unshareOwnActivity : undefined}
+    beforeReset={account.user ? account.unshareAllActivities : undefined}>
       <AppContent />
-    </AppProvider>
-  );
-};
+    </AppProvider>;
+}
+export const App: React.FC = () => <CommunityProvider><AccountWorkspace /></CommunityProvider>;

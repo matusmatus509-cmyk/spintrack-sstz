@@ -1,6 +1,8 @@
 import { useDialog } from '../hooks/useDialog';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useCommunity } from '../context/CommunityContext';
+import { ActivityPreview, communityError } from './CommunityView';
 import { useApp } from '../context/AppContext';
 import {
   Calendar as CalendarIcon,
@@ -19,12 +21,17 @@ import { TeamScheduleMatch } from '../types';
 
 export const CalendarView: React.FC = () => {
   const {
+    activities,
     teamSchedule,
     sstzProfile,
     addScheduleMatchToMatches,
     activeRacket
   } = useApp();
 
+  const account = useCommunity();
+  const [calendarError, setCalendarError] = useState('');
+  const [removing, setRemoving] = useState('');
+  const localActivities = [...activities].sort((a, b) => a.date.localeCompare(b.date));
   const [filterType, setFilterType] = useState<'all' | 'upcoming' | 'played' | 'home' | 'away'>('all');
   const [selectedMatch, setSelectedMatch] = useState<TeamScheduleMatch | null>(null);
 
@@ -85,7 +92,7 @@ export const CalendarView: React.FC = () => {
             )}
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            Kalendár zápasov
+            Tvoj kalendár
           </h1>
         </div>
 
@@ -94,6 +101,23 @@ export const CalendarView: React.FC = () => {
         </span>
       </div>
 
+      <section className="account-calendar" aria-labelledby="personal-calendar-title">
+        <h2 id="personal-calendar-title">Moje aktivity a spoločné tréningy</h2>
+        {calendarError && <p role="alert" className="community-error">{calendarError}</p>}
+        {!localActivities.length && !account.calendar.length && <p style={{ color: 'var(--text-muted)', fontSize: '.85rem' }}>Sem sa pridajú tvoje aktivity aj prijaté pozvánky od priateľov.</p>}
+        {account.calendar.map(entry => <article className="glass-panel community-card" key={entry.id}>
+          <span className="community-kicker">S {entry.data.authorName}</span>
+          <ActivityPreview data={entry.data} />
+          <button className="text-button" disabled={Boolean(removing)} onClick={async () => {
+            setRemoving(entry.id); setCalendarError('');
+            try { await account.removeCalendarEntry(entry.id); } catch (error) { setCalendarError(communityError(error)); } finally { setRemoving(''); }
+          }}>Odobrať z kalendára</button>
+        </article>)}
+        {localActivities.map(activity => <article className="glass-panel community-card" key={activity.id}>
+          <ActivityPreview data={activity} />
+        </article>)}
+      </section>
+      <h2>Ligový rozpis SSTZ</h2>
       {/* Highlight: Next Upcoming Fixture */}
       {nextMatch && (
         <div className="glass-panel" style={{

@@ -18,6 +18,7 @@ import {
   Trash2,
   ArrowDown,
 } from 'lucide-react';
+import { communityError } from '../views/CommunityView';
 import { useApp } from '../context/AppContext';
 import { useDialog } from '../hooks/useDialog';
 import { AddActivityModal } from '../components/AddActivityModal';
@@ -66,6 +67,8 @@ const rubberLabel = (value: string) =>
 
 export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }> = ({ initialCategory = 'all' }) => {
   const { activities, matches, doublesMatches, deleteActivity } = useApp();
+  const [deleting, setDeleting] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const [filters, setFilters] = useState<DiaryFilters>({ ...emptyDiaryFilters, category: initialCategory });
   const [showFilters, setShowFilters] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -98,6 +101,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
 
   return (
     <div className="page-view diary-view animate-fade-in">
+      {deleteError && <p role="alert" className="community-error">{deleteError}</p>}
       <header className="diary-header">
         <div>
           <span className="diary-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
@@ -346,7 +350,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                             ? 'Len ja'
                             : activity.visibility === 'friends'
                               ? 'Priatelia'
-                              : 'Komunita'}
+                              : 'Verejná'}
                         </span>
                       </div>
                       {(activity.teamHome || activity.teamAway) && (
@@ -435,13 +439,13 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                         </span>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                'Naozaj chceš zmazať túto aktivitu?',
-                              )
-                            )
-                              deleteActivity(activity.id);
+                          disabled={Boolean(deleting)}
+                          onClick={async () => {
+                            if (!window.confirm('Naozaj chceš zmazať túto aktivitu?')) return;
+                            setDeleting(activity.id); setDeleteError('');
+                            try { await deleteActivity(activity.id); }
+                            catch (error) { setDeleteError(communityError(error)); }
+                            finally { setDeleting(''); }
                           }}
                         >
                           <Trash2 size={15} /> Zmazať

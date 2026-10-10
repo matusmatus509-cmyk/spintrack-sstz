@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useCommunity } from "../context/CommunityContext";
 import { useApp } from "../context/AppContext";
 import type { ActivityCategory } from "../types";
 import type { NavTab } from "../components/Navigation";
@@ -32,6 +33,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     rubbers,
     getRubberHealth,
   } = useApp();
+  const account = useCommunity();
+  const welcomeName = sstzProfile?.name || account.profile?.display_name;
+  const welcomeClub = sstzProfile?.clubName || account.profile?.club;
   const results = useMemo(
     () => summarizeMatches(allInsightMatches(matches, doublesMatches)),
     [matches, doublesMatches],
@@ -66,13 +70,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <header className="dashboard-heading">
           <div className="dashboard-welcome">
-            <h1 title={sstzProfile ? `Vitaj, ${sstzProfile.name}` : undefined}>
-              {sstzProfile
-                ? `Vitaj, ${sstzProfile.name}`
-                : "Vitaj v SpinTracku"}
+            <h1 title={welcomeName ? `Vitaj, ${welcomeName}` : undefined}>
+              {welcomeName ? `Vitaj, ${welcomeName}` : "Vitaj v SpinTracku"}
             </h1>
-            <p title={sstzProfile?.clubName}>
-              {sstzProfile?.clubName || "Tvoj stolnotenisový prehľad"}
+            <p title={welcomeClub}>
+              {welcomeClub || "Tvoj stolnotenisový prehľad"}
             </p>
           </div>
           <button className="btn-primary" onClick={onOpenQuickLog}>
