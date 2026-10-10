@@ -527,3 +527,65 @@
 .app-container:has(.practical-dashboard) .sidebar-note {
   display: none;
 }
+
+/* Personal welcome and quick logging remain visible alongside the four cards. */
+.dashboard-at-glance .dashboard-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+}
+.dashboard-welcome {
+  min-width: 0;
+}
+.dashboard-at-glance .dashboard-heading h1 {
+  font-size: 1.6rem !important;
+  line-height: 1.25;
+  margin: 0 0 4px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard-welcome p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard-heading .btn-primary {
+  flex-shrink: 0;
+  min-height: 44px;
+  gap: 6px;
+}
+@media (max-width: 640px), (max-height: 500px) {
+  .dashboard-at-glance .dashboard-heading {
+    gap: 8px;
+  }
+  .dashboard-at-glance .dashboard-heading h1 {
+    font-size: 1.1rem !important;
+  }
+  .dashboard-welcome p {
+    font-size: 0.7rem;
+  }
+  .dashboard-heading .btn-primary {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
+@media (max-width: 640px) {
+  .main-content:has(.practical-dashboard) {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (max-height: 500px) and (max-width: 640px) {
+  .dashboard-at-glance .next-match-card {
+    padding: 12px;
+  }
+  .dashboard-at-glance .match-teams h2 {
+    font-size: 0.9rem;
+  }
+}
