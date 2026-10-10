@@ -48,65 +48,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const upcomingMatch = teamSchedule.find((match) => !match.isPlayed);
   return (
     <div className="page-view dashboard-view practical-dashboard animate-fade-in">
-      <div className="page-header dashboard-heading">
-        <div>
-          <span className="eyebrow">TVOJA HRA NA JEDNOM MIESTE</span>
-          <h1>{sstzProfile?.name || "Tvoj stolnotenisový prehľad"}</h1>
-          <p>
-            {sstzProfile?.clubName ||
-              "Výsledky, tréningy a ďalší zápas. Všetko poruke."}
-          </p>
-        </div>
-        <button className="btn-primary" onClick={() => setShowAdd(true)}>
-          <Plus size={19} /> Pridať aktivitu
-        </button>
-      </div>
       <section
-        className="dashboard-metrics"
-        aria-label="Otvor prehľad svojich výsledkov"
+        className="dashboard-at-glance"
+        aria-label="Najbližší zápas a tvoje výsledky"
       >
-        {[
-          {
-            label: "Úspešnosť",
-            value: results.rate === null ? "—" : `${results.rate}%`,
-            detail: `${results.wins} výhier · ${results.losses} prehier`,
-            icon: TrendingUp,
-            tone: "green",
-            tab: "performance" as NavTab,
-          },
-          {
-            label: "Všetky zápasy",
-            value: results.played,
-            detail: "Dvojhry aj štvorhry",
-            icon: Trophy,
-            tone: "blue",
-            tab: "matches" as NavTab,
-          },
-          {
-            label: "Tréningy",
-            value: `${trainingHours} h`,
-            detail: "Čas zo zapísaných tréningov",
-            icon: Clock,
-            tone: "amber",
-            tab: "diary" as NavTab,
-          },
-        ].map(({ label, value, detail, icon: Icon, tone, tab }) => (
-          <button
-            className={`metric-card metric-${tone} overview-metric`}
-            key={label}
-            onClick={() => onNavigate(tab, tab === "diary" ? "tréning" : "all")}
-          >
-            <span className="metric-icon">
-              <Icon size={21} />
-            </span>
-            <ArrowUpRight className="metric-arrow" size={18} />
-            <span className="metric-label">{label}</span>
-            <strong className="metric-value">{value}</strong>
-            <span className="metric-detail">{detail}</span>
+        <div className="page-header dashboard-heading">
+          <div>
+            <span className="eyebrow">TVOJA HRA NA JEDNOM MIESTE</span>
+            <h1 title={sstzProfile?.name}>
+              {sstzProfile?.name || "Tvoj prehľad"}
+            </h1>
+            <p>
+              {sstzProfile?.clubName ||
+                "Výsledky, tréningy a ďalší zápas. Všetko poruke."}
+            </p>
+          </div>
+          <button className="btn-primary" onClick={() => setShowAdd(true)}>
+            <Plus size={19} />{" "}
+            <span className="overview-add-label">Pridať aktivitu</span>
           </button>
-        ))}
-      </section>
-      <div className="overview-content-grid">
+        </div>
         <section className="next-match-card" aria-labelledby="next-match-title">
           <div className="next-match-top">
             <span className="eyebrow" id="next-match-title">
@@ -124,12 +85,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <div className="match-teams">
                 <div>
                   <span className="team-caption">Domáci</span>
-                  <h2>{upcomingMatch.homeTeam}</h2>
+                  <h2 title={upcomingMatch.homeTeam}>
+                    {upcomingMatch.homeTeam}
+                  </h2>
                 </div>
                 <span className="match-vs">VS</span>
                 <div>
                   <span className="team-caption">Hostia</span>
-                  <h2>{upcomingMatch.awayTeam}</h2>
+                  <h2 title={upcomingMatch.awayTeam}>
+                    {upcomingMatch.awayTeam}
+                  </h2>
                 </div>
               </div>
               <div className="match-footer">
@@ -138,12 +103,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 </span>
                 {upcomingMatch.round && <span>{upcomingMatch.round}</span>}
               </div>
-              <button
-                className="btn-secondary overview-calendar"
-                onClick={() => onNavigate("calendar")}
-              >
-                Otvoriť rozpis <ChevronRight size={16} />
-              </button>
             </>
           ) : (
             <div className="next-match-empty">
@@ -168,57 +127,101 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             </div>
           )}
         </section>
-        <section className="glass-panel overview-recent">
-          <div className="overview-section-title">
-            <h2>Posledné aktivity</h2>
-            <button className="text-button" onClick={() => onNavigate("diary")}>
-              Všetky <ArrowUpRight size={16} />
+        <section
+          className="dashboard-metrics"
+          aria-label="Otvor prehľad svojich výsledkov"
+        >
+          {[
+            {
+              label: "Úspešnosť",
+              value: results.rate === null ? "—" : `${results.rate}%`,
+              detail: `${results.wins} výhier · ${results.losses} prehier`,
+              icon: TrendingUp,
+              tone: "green",
+              tab: "performance" as NavTab,
+            },
+            {
+              label: "Všetky zápasy",
+              value: results.played,
+              detail: "Dvojhry aj štvorhry",
+              icon: Trophy,
+              tone: "blue",
+              tab: "matches" as NavTab,
+            },
+            {
+              label: "Tréningy",
+              value: `${trainingHours} h`,
+              detail: "Čas zo zapísaných tréningov",
+              icon: Clock,
+              tone: "amber",
+              tab: "diary" as NavTab,
+            },
+          ].map(({ label, value, detail, icon: Icon, tone, tab }) => (
+            <button
+              className={`metric-card metric-${tone} overview-metric`}
+              key={label}
+              onClick={() =>
+                onNavigate(tab, tab === "diary" ? "tréning" : "all")
+              }
+            >
+              <span className="metric-icon">
+                <Icon size={21} />
+              </span>
+              <ArrowUpRight className="metric-arrow" size={18} />
+              <span className="metric-label">{label}</span>
+              <strong className="metric-value">{value}</strong>
+              <span className="metric-detail">{detail}</span>
+            </button>
+          ))}
+        </section>
+      </section>
+      <section className="glass-panel overview-recent">
+        <div className="overview-section-title">
+          <h2>Posledné aktivity</h2>
+          <button className="text-button" onClick={() => onNavigate("diary")}>
+            Všetky <ArrowUpRight size={16} />
+          </button>
+        </div>
+        {recent.length ? (
+          recent.map((entry) => (
+            <button
+              className="overview-recent-row"
+              key={entry.id}
+              onClick={() => onNavigate(entry.match ? "matches" : "diary")}
+            >
+              <span
+                className={`result-dot ${entry.result === "WIN" ? "win" : entry.result === "LOSS" ? "loss" : ""}`}
+              >
+                {entry.result ? (
+                  entry.result === "WIN" ? (
+                    "V"
+                  ) : (
+                    "P"
+                  )
+                ) : (
+                  <Activity size={16} />
+                )}
+              </span>
+              <span>
+                <strong>{entry.title}</strong>
+                <small>
+                  {entry.originalDate || "Bez dátumu"}
+                  {entry.subtitle ? ` · ${entry.subtitle}` : ""}
+                </small>
+              </span>
+              {entry.score && <b>{entry.score}</b>}
+              <ChevronRight size={16} />
+            </button>
+          ))
+        ) : (
+          <div className="insights-empty">
+            <p>Zaznamenaj prvý tréning alebo si importuj zápasy.</p>
+            <button className="btn-secondary" onClick={() => setShowAdd(true)}>
+              <Plus size={16} /> Pridať aktivitu
             </button>
           </div>
-          {recent.length ? (
-            recent.map((entry) => (
-              <button
-                className="overview-recent-row"
-                key={entry.id}
-                onClick={() => onNavigate(entry.match ? "matches" : "diary")}
-              >
-                <span
-                  className={`result-dot ${entry.result === "WIN" ? "win" : entry.result === "LOSS" ? "loss" : ""}`}
-                >
-                  {entry.result ? (
-                    entry.result === "WIN" ? (
-                      "V"
-                    ) : (
-                      "P"
-                    )
-                  ) : (
-                    <Activity size={16} />
-                  )}
-                </span>
-                <span>
-                  <strong>{entry.title}</strong>
-                  <small>
-                    {entry.originalDate || "Bez dátumu"}
-                    {entry.subtitle ? ` · ${entry.subtitle}` : ""}
-                  </small>
-                </span>
-                {entry.score && <b>{entry.score}</b>}
-                <ChevronRight size={16} />
-              </button>
-            ))
-          ) : (
-            <div className="insights-empty">
-              <p>Zaznamenaj prvý tréning alebo si importuj zápasy.</p>
-              <button
-                className="btn-secondary"
-                onClick={() => setShowAdd(true)}
-              >
-                <Plus size={16} /> Pridať aktivitu
-              </button>
-            </div>
-          )}
-        </section>
-      </div>
+        )}
+      </section>
       <section className="overview-tools" aria-label="Rýchly prístup">
         {[
           {
