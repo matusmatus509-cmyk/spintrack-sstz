@@ -8,9 +8,9 @@ export interface Rubber {
   color: 'black' | 'red' | 'blue' | 'green' | 'pink' | 'purple';
   spongeThickness: string; // e.g., '2.0mm', 'MAX', '1.8mm'
   spongeHardness?: number; // degrees, e.g. 47.5
-  speed: number; // 1-100
-  spin: number; // 1-100
-  control: number; // 1-100
+  speed?: number; // 1-100, absent when not supplied
+  spin?: number; // 1-100, absent when not supplied
+  control?: number; // 1-100, absent when not supplied
   hoursPlayed: number;
   maxRecommendedHours: number; // usually 60-90 hours before spin degradation
   dateInstalled: string; // YYYY-MM-DD
@@ -23,10 +23,10 @@ export interface Blade {
   brand: string;
   model: string;
   plies: string; // e.g. '5 wood + 2 ALC'
-  weightGrams: number;
+  weightGrams?: number;
   grip: 'FL' | 'ST' | 'AN' | 'CPEN';
-  speed: number;
-  control: number;
+  speed?: number;
+  control?: number;
   hoursPlayed: number;
   dateAcquired: string;
   notes?: string;

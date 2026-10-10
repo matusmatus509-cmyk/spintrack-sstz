@@ -2,7 +2,8 @@ import { useDialog } from '../hooks/useDialog';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
-import { CATALOG_RUBBERS, CATALOG_BLADES } from '../data/gearCatalog';
+import { CATALOG_RUBBERS } from '../data/gearCatalog';
+import type { EquipmentModel } from '../utils/equipmentCatalog';
 import { Rubber, Blade, RacketSetup } from '../types';
 import {
   Layers,
@@ -16,9 +17,10 @@ import {
   TrendingUp,
   Info,
   Clock,
-  RotateCcw,
-  Search
+  RotateCcw
 } from 'lucide-react';
+
+const EquipmentCatalog = React.lazy(() => import('../components/EquipmentCatalog').then(module => ({ default: module.EquipmentCatalog })));
 
 const gearInputStyle: React.CSSProperties = {
   display: 'block',
@@ -50,9 +52,6 @@ export const EquipmentView: React.FC = () => {
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'rackets' | 'rubbers' | 'blades' | 'catalog' | 'compare'>('rackets');
-  const [catalogSearch, setCatalogSearch] = useState('');
-  const [catalogKind, setCatalogKind] = useState<'all' | 'rubber' | 'blade'>('all');
-  const [catalogBrand, setCatalogBrand] = useState('all');
 
   // New Racket Modal
   const [showNewRacketModal, setShowNewRacketModal] = useState(false);
@@ -64,17 +63,13 @@ export const EquipmentView: React.FC = () => {
   // New Rubber Modal
   const [showNewRubberModal, setShowNewRubberModal] = useState(false);
   const [showNewBladeModal, setShowNewBladeModal] = useState(false);
-  const [bladeForm, setBladeForm] = useState({ brand: '', model: '', plies: '', weightGrams: 85, grip: 'FL' as Blade['grip'], speed: 85, control: 85 });
-  const [rubberForm, setRubberForm] = useState({
+  const [bladeForm, setBladeForm] = useState<Omit<Blade, 'id' | 'hoursPlayed' | 'dateAcquired'>>({ brand: '', model: '', plies: '', grip: 'FL' });
+  const [rubberForm, setRubberForm] = useState<Omit<Rubber, 'id' | 'hoursPlayed' | 'dateInstalled' | 'type'> & { type: Rubber['type'] | '' }>({
     brand: 'Butterfly',
     model: '',
-    type: 'inverted' as const,
+    type: '',
     color: 'black' as const,
     spongeThickness: '2.1mm',
-    spongeHardness: 45,
-    speed: 90,
-    spin: 90,
-    control: 85,
     maxRecommendedHours: 80,
     notes: ''
   });
@@ -83,23 +78,15 @@ export const EquipmentView: React.FC = () => {
   const [compareItemA, setCompareItemA] = useState<string>(CATALOG_RUBBERS[0].model);
   const [compareItemB, setCompareItemB] = useState<string>(CATALOG_RUBBERS[1].model);
 
-  const catalogItems = [
-    ...CATALOG_RUBBERS.map(item => ({ kind: 'rubber' as const, item })),
-    ...rubbers
-      .filter(item => !CATALOG_RUBBERS.some(catalog => catalog.brand.toLowerCase() === item.brand.toLowerCase() && catalog.model.toLowerCase() === item.model.toLowerCase()))
-      .map(item => ({ kind: 'rubber' as const, item })),
-    ...CATALOG_BLADES.map(item => ({ kind: 'blade' as const, item })),
-    ...blades
-      .filter(item => !CATALOG_BLADES.some(catalog => catalog.brand.toLowerCase() === item.brand.toLowerCase() && catalog.model.toLowerCase() === item.model.toLowerCase()))
-      .map(item => ({ kind: 'blade' as const, item }))
-  ];
-  const catalogBrands = Array.from(new Set(catalogItems.map(({ item }) => item.brand))).sort((a, b) => a.localeCompare(b));
-  const visibleCatalogItems = catalogItems.filter(({ kind, item }) => {
-    const query = catalogSearch.trim().toLocaleLowerCase('sk');
-    return (catalogKind === 'all' || catalogKind === kind)
-      && (catalogBrand === 'all' || item.brand === catalogBrand)
-      && (!query || `${item.brand} ${item.model}`.toLocaleLowerCase('sk').includes(query));
-  });
+  const selectCatalogModel = (entry: EquipmentModel) => {
+    if (entry.kind === 'rubber') {
+      setRubberForm({ brand: entry.brand, model: entry.model, type: '', color: 'black', spongeThickness: '2.0mm', maxRecommendedHours: 80, notes: '' });
+      setShowNewRubberModal(true);
+    } else {
+      setBladeForm({ brand: entry.brand, model: entry.model, plies: '', grip: 'FL' });
+      setShowNewBladeModal(true);
+    }
+  };
 
   // Handle Add Racket Setup
   const handleCreateRacket = (e: React.FormEvent) => {
@@ -121,18 +108,18 @@ export const EquipmentView: React.FC = () => {
   // Handle Add Custom Rubber
   const handleCreateRubber = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rubberForm.model) return;
+    if (!rubberForm.model.trim() || !rubberForm.brand.trim() || !rubberForm.type) return;
 
     addRubber({
-      brand: rubberForm.brand,
-      model: rubberForm.model,
+      brand: rubberForm.brand.trim(),
+      model: rubberForm.model.trim(),
       type: rubberForm.type,
       color: rubberForm.color,
       spongeThickness: rubberForm.spongeThickness,
-      spongeHardness: Number(rubberForm.spongeHardness),
-      speed: Number(rubberForm.speed),
-      spin: Number(rubberForm.spin),
-      control: Number(rubberForm.control),
+      spongeHardness: rubberForm.spongeHardness,
+      speed: rubberForm.speed,
+      spin: rubberForm.spin,
+      control: rubberForm.control,
       hoursPlayed: 0,
       maxRecommendedHours: Number(rubberForm.maxRecommendedHours),
       dateInstalled: new Date().toISOString().split('T')[0],
@@ -150,33 +137,14 @@ export const EquipmentView: React.FC = () => {
       brand: bladeForm.brand.trim(),
       model: bladeForm.model.trim(),
       plies: bladeForm.plies.trim(),
-      weightGrams: Number(bladeForm.weightGrams),
-      speed: Number(bladeForm.speed),
-      control: Number(bladeForm.control),
+      weightGrams: bladeForm.weightGrams,
+      speed: bladeForm.speed,
+      control: bladeForm.control,
       hoursPlayed: 0,
       dateAcquired: new Date().toISOString().split('T')[0]
     });
     setShowNewBladeModal(false);
-    setBladeForm({ brand: '', model: '', plies: '', weightGrams: 85, grip: 'FL', speed: 85, control: 85 });
-  };
-
-  // Add from catalog helper
-  const handleAddFromCatalog = (catRubber: typeof CATALOG_RUBBERS[0]) => {
-    addRubber({
-      ...catRubber,
-      hoursPlayed: 0,
-      dateInstalled: new Date().toISOString().split('T')[0]
-    });
-    alert(`Poťah ${catRubber.brand} ${catRubber.model} bol pridaný do tvojej výbavy!`);
-  };
-
-  const handleAddBladeFromCatalog = (catBlade: typeof CATALOG_BLADES[0]) => {
-    addBlade({
-      ...catBlade,
-      hoursPlayed: 0,
-      dateAcquired: new Date().toISOString().split('T')[0]
-    });
-    alert(`Drevo ${catBlade.brand} ${catBlade.model} bolo pridané do tvojej výbavy!`);
+    setBladeForm({ brand: '', model: '', plies: '', grip: 'FL' });
   };
 
   const dialogRef = useDialog(showNewRacketModal || showNewRubberModal || showNewBladeModal, () => { setShowNewRacketModal(false); setShowNewRubberModal(false); setShowNewBladeModal(false); });
@@ -380,7 +348,7 @@ export const EquipmentView: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setShowNewRubberModal(true)}
+              onClick={() => setActiveSubTab('catalog')}
               className="btn-primary"
             >
               <Plus size={16} /> Pridať poťah
@@ -423,7 +391,7 @@ export const EquipmentView: React.FC = () => {
                           {rubber.brand} {rubber.model}
                         </h3>
                         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                          Hrúbka: {rubber.spongeThickness} • Tvrdosť: {rubber.spongeHardness || 45}°
+                          Hrúbka: {rubber.spongeThickness} • Tvrdosť: {rubber.spongeHardness != null ? `${rubber.spongeHardness}°` : 'neuvedená'}
                         </span>
                       </div>
                     </div>
@@ -508,9 +476,9 @@ export const EquipmentView: React.FC = () => {
                   {/* Specs & Reset Action */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{ color: 'var(--text-dim)' }}>Rýchlosť: <strong>{rubber.speed}</strong></span>
-                      <span style={{ color: 'var(--text-dim)' }}>Rotácia: <strong>{rubber.spin}</strong></span>
-                      <span style={{ color: 'var(--text-dim)' }}>Kontrola: <strong>{rubber.control}</strong></span>
+                      <span style={{ color: 'var(--text-dim)' }}>Rýchlosť: <strong>{rubber.speed ?? '—'}</strong></span>
+                      <span style={{ color: 'var(--text-dim)' }}>Rotácia: <strong>{rubber.spin ?? '—'}</strong></span>
+                      <span style={{ color: 'var(--text-dim)' }}>Kontrola: <strong>{rubber.control ?? '—'}</strong></span>
                     </div>
 
                     <button
@@ -554,7 +522,7 @@ export const EquipmentView: React.FC = () => {
                 Zoznam tvojich herných a záložných driev.
               </p>
             </div>
-            <button onClick={() => setShowNewBladeModal(true)} className="btn-primary">
+            <button onClick={() => setActiveSubTab('catalog')} className="btn-primary">
               <Plus size={16} /> Pridať drevo
             </button>
           </div>
@@ -574,7 +542,7 @@ export const EquipmentView: React.FC = () => {
                   <div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{b.brand} {b.model}</h3>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Rúčka: {b.grip} • Hmotnosť: ~{b.weightGrams}g
+                      Rúčka: {b.grip} • Hmotnosť: {b.weightGrams ? `${b.weightGrams} g` : 'neuvedená'}
                     </span>
                   </div>
                   <button
@@ -594,8 +562,8 @@ export const EquipmentView: React.FC = () => {
                   flexDirection: 'column',
                   gap: '6px'
                 }}>
-                  <div>Vrstvy: <strong>{b.plies}</strong></div>
-                  <div>Rýchlosť: <strong>{b.speed}/100</strong> • Kontrola: <strong>{b.control}/100</strong></div>
+                  <div>Vrstvy: <strong>{b.plies || 'neuvedené'}</strong></div>
+                  <div>Rýchlosť: <strong>{b.speed ?? '—'}</strong> • Kontrola: <strong>{b.control ?? '—'}</strong></div>
                   <div>Odohrané s týmto drevom: <strong>{b.hoursPlayed} hod.</strong></div>
                 </div>
 
@@ -611,57 +579,7 @@ export const EquipmentView: React.FC = () => {
       )}
 
       {/* 4. CATALOG & WISHLIST */}
-      {activeSubTab === 'catalog' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Katalóg poťahov a driev</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Hľadaj podľa názvu alebo značky. Výbava, ktorú už máš uloženú, sa zobrazí tiež.
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
-              <button onClick={() => setShowNewRubberModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={15} /> Pridať vlastný poťah</button>
-              <button onClick={() => setShowNewBladeModal(true)} className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Plus size={15} /> Pridať vlastné drevo</button>
-            </div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))', gap: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 10px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)' }}>
-              <Search size={17} color="var(--text-muted)" />
-              <input aria-label="Hľadať výbavu" value={catalogSearch} onChange={e => setCatalogSearch(e.target.value)} placeholder="Hľadať poťah alebo drevo…" style={{ width: '100%', minWidth: 0, padding: '10px 0', border: 0, outline: 0, color: 'var(--text-main)', background: 'transparent' }} />
-            </label>
-            <select aria-label="Typ výbavy" value={catalogKind} onChange={e => setCatalogKind(e.target.value as typeof catalogKind)} style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-subtle)' }}>
-              <option value="all">Všetko ({catalogItems.length})</option><option value="rubber">Poťahy</option><option value="blade">Drevá</option>
-            </select>
-            <select aria-label="Značka" value={catalogBrand} onChange={e => setCatalogBrand(e.target.value)} style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-subtle)' }}>
-              <option value="all">Všetky značky</option>{catalogBrands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
-            </select>
-          </div>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>Zobrazených {visibleCatalogItems.length} z {catalogItems.length} položiek</p>
-
-          {visibleCatalogItems.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '14px' }}>
-            {visibleCatalogItems.map(({ kind, item }) => {
-              const isRubber = kind === 'rubber';
-              const rubber = isRubber ? item as typeof CATALOG_RUBBERS[number] : null;
-              const blade = !isRubber ? item as typeof CATALOG_BLADES[number] : null;
-              return <article key={`${kind}-${item.brand}-${item.model}`} className="glass-panel" style={{ padding: '17px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <span className="badge-pill badge-green" style={{ fontSize: '0.65rem' }}>{isRubber ? 'POŤAH' : 'DREVO'}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{item.brand}</span>
-                </div>
-                <div><h3 style={{ fontSize: '1.02rem', fontWeight: 750 }}>{item.model}</h3>
-                  {rubber && <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '5px' }}>{rubber.type.replace('_', ' ')} · {rubber.spongeThickness}{rubber.spongeHardness ? ` · ${rubber.spongeHardness}°` : ''}</p>}
-                  {blade && <p style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '5px' }}>{blade.plies} · {blade.weightGrams} g · {blade.grip}</p>}
-                </div>
-                {rubber && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Rýchlosť {rubber.speed} · Rotácia {rubber.spin} · Kontrola {rubber.control}</p>}
-                {blade && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>Rýchlosť {blade.speed} · Kontrola {blade.control}</p>}
-                <button onClick={() => isRubber ? handleAddFromCatalog(rubber!) : handleAddBladeFromCatalog(blade!)} className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.8rem', marginTop: 'auto' }}>
-                  <Plus size={14} /> Pridať do výbavy
-                </button>
-              </article>;
-            })}
-          </div> : <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenašli sa žiadne položky. Skús iný názov alebo značku.</div>}
-        </div>
-      )}
+      {activeSubTab === 'catalog' && <React.Suspense fallback={<p role="status">Načítavam katalóg výbavy…</p>}><EquipmentCatalog rubbers={rubbers} blades={blades} onSelect={selectCatalogModel} onCustom={kind => selectCatalogModel({ kind, brand: '', model: '' })} /></React.Suspense>}
 
       {/* 5. COMPARE TOOL */}
       {activeSubTab === 'compare' && (
@@ -949,9 +867,9 @@ export const EquipmentView: React.FC = () => {
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Značka<input required value={bladeForm.brand} onChange={e => setBladeForm({ ...bladeForm, brand: e.target.value })} placeholder="napr. Butterfly" style={gearInputStyle} /></label>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model<input required value={bladeForm.model} onChange={e => setBladeForm({ ...bladeForm, model: e.target.value })} placeholder="napr. Viscaria" style={gearInputStyle} /></label>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Konštrukcia<input value={bladeForm.plies} onChange={e => setBladeForm({ ...bladeForm, plies: e.target.value })} placeholder="5 drevo + 2 ALC" style={gearInputStyle} /></label>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hmotnosť (g)<input type="number" min="1" value={bladeForm.weightGrams} onChange={e => setBladeForm({ ...bladeForm, weightGrams: Number(e.target.value) })} style={gearInputStyle} /></label>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hmotnosť (g)<input type="number" min="1" value={bladeForm.weightGrams ?? ''} onChange={e => setBladeForm({ ...bladeForm, weightGrams: e.target.value ? Number(e.target.value) : undefined })} style={gearInputStyle} /></label>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rúčka<select value={bladeForm.grip} onChange={e => setBladeForm({ ...bladeForm, grip: e.target.value as Blade['grip'] })} style={gearInputStyle}><option value="FL">FL</option><option value="ST">ST</option><option value="AN">AN</option><option value="CPEN">CPEN</option></select></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rýchlosť<input type="number" min="0" max="100" value={bladeForm.speed} onChange={e => setBladeForm({ ...bladeForm, speed: Number(e.target.value) })} style={gearInputStyle} /></label><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kontrola<input type="number" min="0" max="100" value={bladeForm.control} onChange={e => setBladeForm({ ...bladeForm, control: Number(e.target.value) })} style={gearInputStyle} /></label></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rýchlosť<input type="number" min="0" max="100" value={bladeForm.speed ?? ''} onChange={e => setBladeForm({ ...bladeForm, speed: e.target.value ? Number(e.target.value) : undefined })} style={gearInputStyle} /></label><label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kontrola<input type="number" min="0" max="100" value={bladeForm.control ?? ''} onChange={e => setBladeForm({ ...bladeForm, control: e.target.value ? Number(e.target.value) : undefined })} style={gearInputStyle} /></label></div>
               </div>
               <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-dim)' }}>Údaje si môžeš upraviť podľa svojho modelu; katalógové hodnotenia sa automaticky nevymýšľajú.</p>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}><button type="button" onClick={() => setShowNewBladeModal(false)} className="btn-secondary">Zrušiť</button><button type="submit" className="btn-primary">Uložiť drevo</button></div>
@@ -1039,6 +957,8 @@ export const EquipmentView: React.FC = () => {
                     <option value="red">Červená</option>
                     <option value="blue">Modrá</option>
                     <option value="green">Zelená</option>
+                    <option value="pink">Ružová</option>
+                    <option value="purple">Fialová</option>
                   </select>
                 </div>
                 <div>
@@ -1051,6 +971,12 @@ export const EquipmentView: React.FC = () => {
                   />
                 </div>
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <label style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Typ poťahu<select required value={rubberForm.type} onChange={e => setRubberForm({ ...rubberForm, type: e.target.value as Rubber['type'] })} style={gearInputStyle}><option value="">Vyber typ poťahu</option><option value="inverted">Hladký (inverted)</option><option value="short_pips">Krátke trávy</option><option value="long_pips">Dlhé trávy</option><option value="antispin">Antispin</option></select></label>
+                <label style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Tvrdosť huby (voliteľná)<input type="number" min="0" max="100" step="0.5" value={rubberForm.spongeHardness ?? ''} placeholder="Neuvedená" onChange={e => setRubberForm({ ...rubberForm, spongeHardness: e.target.value ? Number(e.target.value) : undefined })} style={gearInputStyle} /></label>
+              </div>
+              <label style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Vlastný interval výmeny (hodiny)<input required type="number" min="1" value={rubberForm.maxRecommendedHours} onChange={e => setRubberForm({ ...rubberForm, maxRecommendedHours: Number(e.target.value) })} style={gearInputStyle} /></label>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
                 <button
