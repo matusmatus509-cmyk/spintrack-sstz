@@ -7,6 +7,7 @@ import {
   Calendar,
   Activity,
   BarChart3,
+  TrendingUp,
   Target,
   Trophy,
   MoreHorizontal,
@@ -16,6 +17,8 @@ import {
 import { useDialog } from '../hooks/useDialog';
 
 export type NavTab =
+  | 'performance'
+  | 'matches'
   | 'dashboard'
   | 'sstz'
   | 'opponents'
@@ -71,6 +74,8 @@ export const NAV_TABS = [
     icon: Layers,
     description: 'Rakety, drevá a poťahy',
   },
+  { id: 'performance' as NavTab, label: 'Úspešnosť', icon: TrendingUp, description: 'Výsledky podľa sezón a líg' },
+  { id: 'matches' as NavTab, label: 'Zápasy', icon: Trophy, description: 'Všetky dvojhry a štvorhry' },
   {
     id: 'stats' as NavTab,
     label: 'Štatistiky',
