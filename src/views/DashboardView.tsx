@@ -18,9 +18,20 @@ interface DashboardViewProps {
   onOpenQuickLog?: () => void;
   onOpenMatchModal?: () => void;
 }
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpenQuickLog }) => {
-  const { matches, doublesMatches, activities, sstzProfile, teamSchedule } =
-    useApp();
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  onNavigate,
+  onOpenQuickLog,
+}) => {
+  const {
+    matches,
+    doublesMatches,
+    activities,
+    sstzProfile,
+    teamSchedule,
+    activeRacket,
+    rubbers,
+    getRubberHealth,
+  } = useApp();
   const results = useMemo(
     () => summarizeMatches(allInsightMatches(matches, doublesMatches)),
     [matches, doublesMatches],
@@ -33,6 +44,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
         60) *
         10,
     ) / 10;
+  const forehand = rubbers.find(
+    (rubber) => rubber.id === activeRacket?.forehandRubberId,
+  );
+  const backhand = rubbers.find(
+    (rubber) => rubber.id === activeRacket?.backhandRubberId,
+  );
+  const forehandWear = forehand
+    ? 100 - getRubberHealth(forehand).percent
+    : null;
+  const backhandWear = backhand
+    ? 100 - getRubberHealth(backhand).percent
+    : null;
+  const wearText = `FH ${forehandWear === null ? "—" : `${forehandWear}%`} · BH ${backhandWear === null ? "—" : `${backhandWear}%`}`;
   const upcomingMatch = teamSchedule.find((match) => !match.isPlayed);
   return (
     <div className="page-view dashboard-view practical-dashboard animate-fade-in">
@@ -43,7 +67,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
         <header className="dashboard-heading">
           <div className="dashboard-welcome">
             <h1 title={sstzProfile ? `Vitaj, ${sstzProfile.name}` : undefined}>
-              {sstzProfile ? `Vitaj, ${sstzProfile.name}` : "Vitaj v SpinTracku"}
+              {sstzProfile
+                ? `Vitaj, ${sstzProfile.name}`
+                : "Vitaj v SpinTracku"}
             </h1>
             <p title={sstzProfile?.clubName}>
               {sstzProfile?.clubName || "Tvoj stolnotenisový prehľad"}
@@ -156,7 +182,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onOpen
               <ArrowUpRight className="metric-arrow" size={18} />
               <span className="metric-label">{label}</span>
               <strong className="metric-value">{value}</strong>
-              <span className="metric-detail">{detail}</span>
+              {tab === "diary" ? (
+                <span
+                  className="training-wear"
+                  title={
+                    activeRacket
+                      ? `Opotrebovanie poťahov rakety ${activeRacket.name}: forhend ${forehandWear === null ? "neuvedené" : `${forehandWear}%`}, bekhend ${backhandWear === null ? "neuvedené" : `${backhandWear}%`}`
+                      : "Najprv si pridaj raketu vo výbave"
+                  }
+                >
+                  <span>Opotrebovanie</span>
+                  <strong>{activeRacket ? wearText : "Bez rakety"}</strong>
+                </span>
+              ) : (
+                <span className="metric-detail">{detail}</span>
+              )}
             </button>
           ))}
         </section>

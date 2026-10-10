@@ -675,3 +675,54 @@
     font-size: 0.7rem;
   }
 }
+.dashboard-at-glance .training-wear {
+  display: grid;
+  gap: 3px;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--text-secondary);
+}
+.training-wear strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .dashboard-at-glance .training-wear {
+    font-size: 0.6rem;
+    gap: 2px;
+  }
+}
+@media (max-height: 500px) and (max-width: 640px) {
+  .main-content:has(.practical-dashboard) {
+    padding-top: 8px;
+  }
+  .dashboard-at-glance {
+    height: calc(100dvh - 156px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    grid-template-rows: auto minmax(0, 1fr) 78px;
+    gap: 4px;
+  }
+  .dashboard-at-glance .metric-card:last-child {
+    padding: 6px;
+    gap: 2px;
+  }
+  .dashboard-at-glance .metric-card:last-child .metric-value {
+    font-size: 1.4rem;
+  }
+}
+.dashboard-at-glance .training-wear strong {
+  font-size: inherit;
+  line-height: inherit;
+}
+@media (max-height: 500px) and (max-width: 640px) {
+  .dashboard-at-glance .metric-card:last-child .metric-label,
+  .dashboard-at-glance .metric-card:last-child .metric-value {
+    line-height: 1.1;
+  }
+  .dashboard-at-glance .training-wear {
+    font-size: 0.55rem;
+    line-height: 1.2;
+  }
+  .dashboard-at-glance .training-wear strong {
+    white-space: nowrap;
+  }
+}
