@@ -21,21 +21,6 @@
   top: 20px;
   color: var(--text-muted);
 }
-.overview-content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
-}
-.overview-content-grid .next-match-empty {
-  flex-wrap: wrap;
-}
-.overview-calendar {
-  margin-top: 16px;
-}
-.overview-recent {
-  padding: 22px;
-}
 .overview-section-title {
   display: flex;
   align-items: center;
@@ -52,46 +37,6 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 6px;
-}
-.overview-recent-row {
-  width: 100%;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  text-align: left;
-  background: transparent;
-  color: var(--text-main);
-  padding: 14px 0;
-  border: 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.overview-recent-row > span:nth-child(2) {
-  flex: 1;
-  min-width: 0;
-}
-.overview-recent-row strong {
-  display: block;
-  font-size: 0.85rem;
-  overflow-wrap: anywhere;
-}
-.overview-recent-row small {
-  display: block;
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  margin-top: 4px;
-}
-.overview-tools {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-.overview-tools .shortcut-card {
-  min-width: 0;
-  padding: 18px;
-}
-.overview-tools .shortcut-card > span:nth-child(2) {
-  min-width: 0;
-  flex: 1;
 }
 .insights-view {
   display: flex;
@@ -309,10 +254,6 @@
   outline-offset: 3px;
 }
 @media (max-width: 1000px) {
-  .overview-tools {
-    grid-template-columns: 1fr 1fr;
-  }
-  .overview-content-grid,
   .insights-charts {
     grid-template-columns: 1fr;
   }
@@ -327,17 +268,13 @@
   }
   .insights-filters,
   .insights-chart,
-  .insights-match-list,
-  .overview-recent {
+  .insights-match-list {
     padding: 16px;
   }
   .insights-filters label {
     flex-basis: 100%;
   }
   .insights-search {
-    grid-template-columns: 1fr;
-  }
-  .overview-tools {
     grid-template-columns: 1fr;
   }
   .practical-dashboard .metric-card:last-child {
@@ -358,42 +295,15 @@
   gap: 14px;
   min-width: 0;
 }
-.dashboard-at-glance .dashboard-heading {
-  padding: 0;
-  margin: 0;
-  flex-wrap: nowrap;
-  align-items: center;
-}
-.dashboard-at-glance .dashboard-heading > div {
-  flex: 1;
-  min-width: 0;
-}
-.dashboard-at-glance .dashboard-heading h1 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dashboard-at-glance .dashboard-heading p {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 3px;
-}
-.dashboard-at-glance .dashboard-heading .btn-primary {
-  width: auto;
-  flex-shrink: 0;
-  margin: 0;
-  min-height: 44px;
-}
 .dashboard-at-glance .next-match-card {
-  padding: 16px 20px;
+  padding: 22px 24px;
   border-radius: 18px;
 }
 .dashboard-at-glance .next-match-top .text-button {
   min-height: 32px;
 }
 .dashboard-at-glance .match-teams {
-  padding: 12px 0;
+  padding: 18px 0;
   gap: 12px;
 }
 .dashboard-at-glance .match-teams h2 {
@@ -468,7 +378,7 @@
 }
 .dashboard-at-glance .metric-value,
 .dashboard-at-glance .metric-card:last-child .metric-value {
-  font-size: 1.9rem;
+  font-size: 2.2rem;
 }
 .dashboard-at-glance .metric-arrow {
   right: 12px;
@@ -480,31 +390,8 @@
   .dashboard-at-glance {
     gap: 10px;
   }
-  .dashboard-at-glance .dashboard-heading {
-    gap: 10px !important;
-  }
-  .dashboard-at-glance .dashboard-heading .eyebrow {
-    display: none;
-  }
-  .dashboard-at-glance .dashboard-heading h1 {
-    font-size: 1.2rem !important;
-    margin: 0 !important;
-  }
-  .dashboard-at-glance .dashboard-heading p {
-    font-size: 0.73rem;
-  }
-  .dashboard-at-glance .dashboard-heading .btn-primary {
-    padding: 10px;
-  }
-  .dashboard-at-glance .overview-add-label {
-    font-size: 0;
-  }
-  .dashboard-at-glance .overview-add-label::after {
-    content: "Aktivita";
-    font-size: 0.75rem;
-  }
   .dashboard-at-glance .next-match-card {
-    padding: 12px;
+    padding: 16px;
   }
   .dashboard-at-glance .next-match-empty {
     grid-template-columns: auto minmax(0, 1fr);
@@ -520,7 +407,7 @@
     font-size: 0.9rem;
   }
   .dashboard-at-glance .match-teams h2 {
-    font-size: 0.88rem;
+    font-size: 1rem;
   }
   .dashboard-at-glance .team-caption {
     font-size: 0.6rem;
@@ -533,7 +420,7 @@
   }
   .dashboard-at-glance .metric-card,
   .dashboard-at-glance .metric-card:last-child {
-    padding: 12px 10px;
+    padding: 16px 10px;
     gap: 7px;
   }
   .dashboard-at-glance .metric-label {
@@ -542,7 +429,7 @@
   }
   .dashboard-at-glance .metric-value,
   .dashboard-at-glance .metric-card:last-child .metric-value {
-    font-size: 1.65rem;
+    font-size: 1.85rem;
   }
   .dashboard-at-glance .metric-detail {
     display: none;
@@ -558,20 +445,9 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px 12px;
   }
-  .dashboard-at-glance .dashboard-heading {
-    grid-column: 1/-1;
-  }
-  .dashboard-at-glance .dashboard-heading .eyebrow,
-  .dashboard-at-glance .dashboard-heading p {
-    display: none;
-  }
-  .dashboard-at-glance .dashboard-heading h1 {
-    font-size: 1.2rem !important;
-    margin: 0 !important;
-  }
   .dashboard-at-glance .metric-card,
   .dashboard-at-glance .metric-card:last-child {
-    padding: 12px 10px;
+    padding: 16px 10px;
   }
   .dashboard-at-glance .metric-value,
   .dashboard-at-glance .metric-card:last-child .metric-value {
@@ -610,16 +486,13 @@
   .dashboard-at-glance {
     gap: 8px;
   }
-  .dashboard-at-glance .dashboard-heading p {
-    display: none;
-  }
   .dashboard-at-glance .metric-icon {
     display: none;
   }
   .dashboard-at-glance .metric-card,
   .dashboard-at-glance .metric-card:last-child {
     gap: 6px;
-    padding: 12px 10px;
+    padding: 16px 10px;
   }
   .dashboard-at-glance .metric-arrow {
     display: none;
@@ -643,4 +516,14 @@
   .dashboard-at-glance .metric-card:last-child {
     padding-block: 10px;
   }
+}
+/* Keep home itself free of scrolling; long desktop navigation scrolls independently. */
+.app-container:has(.practical-dashboard) .desktop-sidebar {
+  height: calc(100dvh - 74px - env(safe-area-inset-top, 0px));
+  min-height: 0;
+  padding-block: 18px;
+  overflow-y: auto;
+}
+.app-container:has(.practical-dashboard) .sidebar-note {
+  display: none;
 }
