@@ -732,6 +732,52 @@
     white-space: nowrap;
   }
 }
+/* Let home cards grow with their contents instead of overflowing a fixed row. */
+.dashboard-at-glance {
+  height: auto;
+  min-height: calc(100dvh - 114px - env(safe-area-inset-top, 0px));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.dashboard-at-glance .metric-card,
+.dashboard-at-glance .metric-card:last-child {
+  container-type: inline-size;
+  grid-template-rows: auto auto auto auto;
+  align-content: start;
+  min-height: 170px;
+  gap: 8px;
+}
+.dashboard-at-glance .metric-value,
+.dashboard-at-glance .metric-card:last-child .metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+  white-space: nowrap;
+  font-size: clamp(1.25rem, 24cqw, 3.5rem);
+  line-height: 1.2;
+}
+.dashboard-at-glance .metric-unit {
+  font-size: 0.5em;
+  letter-spacing: normal;
+}
+.dashboard-at-glance .training-wear,
+.dashboard-at-glance .training-wear strong {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .dashboard-at-glance {
+    min-height: calc(
+      100dvh - 160px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .dashboard-at-glance .metric-card,
+  .dashboard-at-glance .metric-card:last-child {
+    padding: 12px 10px;
+  }
+}
 /* Keep the primary filters compact; secondary choices open on demand. */
 .insights-view {
   gap: 14px;

@@ -183,7 +183,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <ArrowUpRight className="metric-arrow" size={18} />
               <span className="metric-label">{label}</span>
-              <strong className="metric-value">{value}</strong>
+              <strong className="metric-value">
+                {tab === "diary" ? (
+                  <>{trainingHours}<span className="metric-unit">h</span></>
+                ) : value}
+              </strong>
               {tab === "diary" ? (
                 <span
                   className="training-wear"

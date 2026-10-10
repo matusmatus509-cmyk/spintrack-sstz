@@ -753,7 +753,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   };
 
   const updateActivity = (id: string, updates: Partial<ActivityRecord>) => {
-    setActivities(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    const existing = activities.find(activity => activity.id === id);
+    if (!existing) return;
+    const updated = { ...existing, ...updates };
+    setActivities(prev => prev.map(activity => activity.id === id ? updated : activity));
+    if (existing.category === 'tréning' || updated.category === 'tréning') {
+      const session: TrainingSession = {
+        id,
+        date: updated.date,
+        durationMinutes: updated.category === 'tréning' ? updated.durationMinutes : 0,
+        type: 'tréning',
+        focusDrills: updated.category === 'tréning' ? updated.focusDrills : [],
+        racketId: updated.racketId,
+        intensity: updated.intensity || 4,
+        location: updated.location,
+        notes: [updated.publicNote, updated.privateNote].filter(Boolean).join(' | '),
+      };
+      setTrainingSessions(prev => updated.category === 'tréning'
+        ? [session, ...prev.filter(item => item.id !== id)]
+        : prev.filter(item => item.id !== id));
+    }
+    const wearHours = (activity: ActivityRecord) =>
+      activity.category === 'tréning' && activity.addEquipmentWear
+        ? activity.durationMinutes / 60
+        : 0;
+    const previousRacket = rackets.find(racket => racket.id === existing.racketId);
+    const nextRacket = rackets.find(racket => racket.id === updated.racketId);
+    if (previousRacket && existing.racketId !== updated.racketId) {
+      addHoursToActiveRacket(-wearHours(existing), previousRacket);
+    } else if (previousRacket) {
+      addHoursToActiveRacket(wearHours(updated) - wearHours(existing), previousRacket);
+    }
+    if (nextRacket && existing.racketId !== updated.racketId) {
+      addHoursToActiveRacket(wearHours(updated), nextRacket);
+    }
   };
 
   const deleteActivity = async (id: string) => {
