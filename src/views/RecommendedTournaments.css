@@ -1,0 +1,32 @@
+.recommendations-panel { border:1px solid #facc1535; border-radius:20px; padding:22px; background:linear-gradient(135deg,#facc150d,transparent 60%),var(--bg-card); }
+.recommendations-heading,.recommendations-title { display:flex; align-items:center; gap:12px; }
+.recommendations-heading { justify-content:space-between; }
+.recommendations-title h2 { margin:4px 0 0; font-size:1.25rem; letter-spacing:-.03em; }
+.recommendations-icon { display:grid; place-items:center; width:44px; height:44px; border-radius:13px; background:#facc1524; color:#facc15; flex-shrink:0; }
+.recommendations-refresh { border:1px solid var(--border-subtle); background:transparent; color:var(--text-main); border-radius:10px; min-width:40px; min-height:40px; cursor:pointer; }
+.recommendations-intro,.recommendations-footnote { color:var(--text-muted); font-size:.8rem; line-height:1.6; }
+.recommendations-intro { margin:16px 0; }
+.recommendations-profile { display:flex; flex-wrap:wrap; gap:7px; margin:16px 0; }
+.recommendations-profile span { padding:6px 10px; border-radius:8px; background:#ffffff08; font-size:.72rem; color:var(--text-muted); }
+.recommendations-profile span:first-child { color:var(--text-main); font-weight:700; }
+.recommendations-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:14px; }
+.recommended-tournament { display:flex; gap:16px; border:1px solid #facc1535; border-left:4px solid #facc15; border-radius:14px; padding:18px; background:#facc150a; min-width:0; }
+.recommended-date { display:flex; flex-direction:column; align-items:center; gap:5px; padding-top:5px; min-width:60px; color:#facc15; }
+.recommended-date span:first-child { font-size:1rem; font-weight:800; }
+.recommended-date span:last-child { font-size:.65rem; color:var(--text-muted); }
+.recommended-content { min-width:0; flex:1; }
+.recommended-label { display:flex; align-items:center; gap:5px; color:#34e6a0; font-size:.65rem; font-weight:600; }
+.recommended-content h3 { font-size:1rem; line-height:1.45; margin:9px 0 14px; overflow-wrap:anywhere; }
+.recommended-category { display:flex; flex-direction:column; gap:6px; font-size:.7rem; color:var(--text-muted); }
+.recommended-category select { max-width:100%; background:var(--bg-card); color:#facc15; border:1px solid #facc1540; border-radius:8px; min-height:38px; padding:8px; }
+.recommended-content p { color:var(--text-muted); font-size:.68rem; line-height:1.5; }
+.recommended-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:16px; }
+.recommended-actions button { display:flex; align-items:center; justify-content:center; gap:7px; background:#facc15; color:#171b0e; border:0; border-radius:9px; padding:10px 12px; min-height:40px; font-size:.73rem; font-weight:700; cursor:pointer; }
+.recommended-actions button:disabled { background:#34e6a018; color:#34e6a0; cursor:default; }
+.recommended-actions a,.recommendations-empty a,.recommendations-footnote a { display:inline-flex; align-items:center; gap:5px; color:#facc15; font-size:.73rem; }
+.recommendations-empty { padding:22px 14px; border:1px dashed var(--border-subtle); border-radius:12px; color:var(--text-muted); font-size:.82rem; line-height:1.6; }
+.recommendations-empty h3 { color:var(--text-main); font-size:.95rem; margin:0 0 8px; }
+.recommendations-empty p { margin:0 0 12px; }
+.recommendations-footnote { font-size:.68rem; margin:16px 0 0; }
+.recommendations-notice { display:flex; align-items:center; gap:8px; font-size:.78rem; line-height:1.6; color:#34e6a0; }
+@media(max-width:640px) { .recommendations-panel { padding:16px; } .recommendations-title h2 { font-size:1.1rem; } .recommended-tournament { padding:14px; gap:10px; } .recommended-date { min-width:48px; } .recommended-actions button { width:100%; } }

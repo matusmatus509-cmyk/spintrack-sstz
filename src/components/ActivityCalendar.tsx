@@ -74,7 +74,7 @@ export const ActivityCalendar: React.FC<Props> = ({ events, selectedDate, onSele
           const key = calendarDate(date);
           const dayEvents = byDay.get(key) || [];
           const categories = [...new Set(dayEvents.map(event => event.category))];
-          return <button type="button" key={key} data-date={key}
+          return <button type="button" key={key} data-date={key} data-category={categories[0]}
             className={`calendar-day ${date.getMonth() !== month.getMonth() ? 'outside-month' : ''} ${key === today ? 'is-today' : ''} ${key === selectedDate ? 'is-selected' : ''} ${dayEvents.length ? 'has-events' : ''}`}
             aria-pressed={key === selectedDate}
             aria-label={`${date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' })}${key === today ? ', dnes' : ''}, ${dayEvents.length} aktivít${dayEvents.length ? ': ' + dayEvents.map(event => event.title).join(', ') : ''}`}
