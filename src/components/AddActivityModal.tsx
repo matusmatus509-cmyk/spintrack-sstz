@@ -31,6 +31,8 @@ interface AddActivityModalProps {
   onClose: () => void;
   defaultCategory?: ActivityCategory;
   editActivity?: ActivityRecord | null;
+  defaultDate?: string;
+  defaultPlanned?: boolean;
 }
 
 const categories = [
@@ -92,6 +94,7 @@ const localDate = () => {
 };
 const initialForm = (category: ActivityCategory, racketId: string) => ({
   category,
+  planned: false,
   date: localDate(),
   duration: 60,
   startTime: "",
@@ -125,6 +128,8 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   onClose,
   defaultCategory = "tréning",
   editActivity = null,
+  defaultDate,
+  defaultPlanned = false,
 }) => {
   const community = useCommunity();
   const [invitees, setInvitees] = useState<string[]>([]);
@@ -145,11 +150,14 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
         editActivity?.category || defaultCategory,
         activeRacket?.id || "",
       );
+      nextForm.date = defaultDate || localDate();
+      nextForm.planned = defaultPlanned || nextForm.date > localDate();
       if (editActivity) {
         const [ownScore = "", opponentScore = ""] = (editActivity.matchScore || "").split(":");
         setForm({
           ...nextForm,
           category: editActivity.category,
+          planned: editActivity.planned || false,
           date: editActivity.date,
           duration: editActivity.durationMinutes || 60,
           startTime: editActivity.startTime || "",
@@ -185,16 +193,16 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       setInvitees([]);
       localId.current = newActivityId();
     }
-  }, [isOpen, defaultCategory, activeRacket?.id, editActivity]);
+  }, [isOpen, defaultCategory, activeRacket?.id, editActivity, defaultDate, defaultPlanned]);
   const field = <K extends keyof typeof form>(
     key: K,
     value: (typeof form)[K],
   ) => setForm((prev) => ({ ...prev, [key]: value }));
   const training = form.category === "tréning";
-  const match =
+  const match = !form.planned && (
     form.category === "liga" ||
     form.category === "priatelsky" ||
-    (form.category === "turnaj" && form.tournamentDuel);
+    (form.category === "turnaj" && form.tournamentDuel));
   const current = categories.find((c) => c.id === form.category)!;
   const Icon = current.icon;
 
@@ -270,6 +278,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     const activity: Omit<ActivityRecord, "id" | "createdAt"> = {
       startTime: form.startTime || undefined,
       category: form.category,
+      planned: form.planned,
       date: form.date,
       durationMinutes: training ? form.duration : 0,
       focusDrills: training ? form.drills : [],
@@ -297,7 +306,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       visibility: form.visibility,
       racketId:
         form.category !== "podujatie" ? form.racketId || undefined : undefined,
-      addEquipmentWear: training && form.wear,
+      addEquipmentWear: training && !form.planned && form.wear,
       photos: form.photos.length ? form.photos : undefined,
     };
     if (form.visibility !== "private" && !community.user) {
@@ -365,6 +374,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
               {categories.map((c) => (
                 <button
                   key={c.id}
+                  data-category={c.id}
                   type="button"
                   aria-pressed={form.category === c.id}
                   className={form.category === c.id ? "selected" : ""}
@@ -378,7 +388,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 </button>
               ))}
             </div>
-            <div className="activity-context">
+            <div className="activity-context" data-category={form.category}>
               <Icon size={23} />
               <div>
                 <strong>{current.label}</strong>
@@ -387,6 +397,12 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
             </div>
             <section className="activity-section">
               <h3>Základné údaje</h3>
+              <label className="activity-check activity-plan-toggle">
+                <input type="checkbox" checked={form.planned}
+                  onChange={(e) => field("planned", e.target.checked)} />
+                Naplánovaná aktivita
+              </label>
+              {form.planned && <p className="activity-hint">Uloží sa do kalendára. Výsledok a odohraný čas doplníš po aktivite.</p>}
               <div className="activity-grid">
                 <label>
                   Dátum
@@ -394,7 +410,10 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                     type="date"
                     required
                     value={form.date}
-                    onChange={(e) => field("date", e.target.value)}
+                    onChange={(e) => {
+                      field("date", e.target.value);
+                      if (e.target.value > localDate()) field("planned", true);
+                    }}
                   />
                 </label>
                 <label>
@@ -474,6 +493,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                     <label>
                       Umiestnenie
                       <input
+                        disabled={form.planned}
                         placeholder="Napr. 3. miesto"
                         value={form.placing}
                         onChange={(e) => field("placing", e.target.value)}
@@ -484,6 +504,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                     <input
                       type="checkbox"
                       checked={form.tournamentDuel}
+                      disabled={form.planned}
                       onChange={(e) =>
                         field("tournamentDuel", e.target.checked)
                       }
@@ -492,7 +513,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                   </label>
                 </>
               )}
-              {form.category === "podujatie" && (
+              {form.category === "podujatie" && !form.planned && (
                 <label>
                   Výsledok / skóre (voliteľné)
                   <input
@@ -883,7 +904,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                   </select>
                 </label>
               )}
-              {training && (
+              {training && !form.planned && (
                 <label className="activity-check">
                   <input
                     type="checkbox"

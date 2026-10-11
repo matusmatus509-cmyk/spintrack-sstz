@@ -43,7 +43,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const trainingHours =
     Math.round(
       (activities
-        .filter((item) => item.category === "tréning")
+        .filter((item) => item.category === "tréning" && !item.planned)
         .reduce((sum, item) => sum + (item.durationMinutes || 0), 0) /
         60) *
         10,

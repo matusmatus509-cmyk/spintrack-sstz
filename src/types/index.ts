@@ -54,6 +54,7 @@ export type ActivityOpponentRubber = 'in' | 'long_pips' | 'short_pips' | 'anti';
 export interface ActivityRecord {
   id: string;
   category: ActivityCategory;
+  planned?: boolean; // Planned events do not contribute to played hours or results.
   date: string; // YYYY-MM-DD
   durationMinutes: number;
   startTime?: string; // HH:mm, optional start time for calendar invitations

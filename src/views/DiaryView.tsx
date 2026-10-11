@@ -22,6 +22,7 @@ import {
 import { communityError } from '../views/CommunityView';
 import { useApp } from '../context/AppContext';
 import { formatDuration } from '../utils/formatDuration';
+import './ActivityCalendar.css';
 import { useDialog } from '../hooks/useDialog';
 import { AddActivityModal } from '../components/AddActivityModal';
 import { SetBreakdown } from '../components/SetBreakdown';
@@ -73,6 +74,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
   const [deleteError, setDeleteError] = useState('');
   const [filters, setFilters] = useState<DiaryFilters>({ ...emptyDiaryFilters, category: initialCategory });
   const [showFilters, setShowFilters] = useState(false);
+  const [activityStatus, setActivityStatus] = useState<'all' | 'planned' | 'completed'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityRecord | null>(null);
   const [limit, setLimit] = useState(pageSize);
@@ -83,10 +85,11 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
     [activities, matches, doublesMatches],
   );
   const filtered = useMemo(
-    () => filterDiaryEntries(entries, filters),
-    [entries, filters],
+    () => filterDiaryEntries(entries, filters).filter(entry =>
+      activityStatus === 'all' || (activityStatus === 'planned' ? !!entry.activity?.planned : !entry.activity?.planned)),
+    [entries, filters, activityStatus],
   );
-  useEffect(() => setLimit(pageSize), [filters]);
+  useEffect(() => setLimit(pageSize), [filters, activityStatus]);
   const setFilter = <K extends keyof DiaryFilters>(
     key: K,
     value: DiaryFilters[K],
@@ -128,6 +131,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
             <button
               key={category.id}
               type="button"
+              data-category={category.id}
               aria-pressed={filters.category === category.id}
               className={filters.category === category.id ? 'selected' : ''}
               onClick={() => setFilter('category', category.id)}
@@ -253,6 +257,10 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
           </div>
         )}
       </section>
+      <div className="activity-status-tabs" role="group" aria-label="Stav aktivít">
+        {([{id: 'all', label: 'Všetky'}, {id: 'completed', label: 'Odohrané'}, {id: 'planned', label: 'Naplánované'}] as const).map(status =>
+          <button type="button" key={status.id} aria-pressed={activityStatus === status.id} onClick={() => setActivityStatus(status.id)}>{status.label}</button>)}
+      </div>
       <div className="diary-list-info">
         <span role="status" aria-live="polite">
           <strong>{filtered.length}</strong>{' '}
@@ -276,7 +284,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                 visible[index - 1].date.slice(0, 7) !== month) && (
                 <h2 className="diary-month">{monthLabel(entry.date)}</h2>
               )}
-              <details className={`diary-card diary-${entry.category}`}>
+              <details className={`diary-card diary-${entry.category}`} data-category={entry.category}>
                 <summary>
                   <span className="diary-card-icon">
                     <Icon size={21} />
@@ -287,6 +295,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                         {category.label}
                         {doubles ? ' · Štvorhra' : ''}
                       </span>
+                      {activity?.planned && <span className="activity-status">Naplánované</span>}
                       <span className="diary-source">
                         {entry.source === 'sstz' ? 'SSTZ' : 'Vlastný záznam'}
                       </span>
@@ -435,7 +444,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                       <div className="diary-card-actions">
                         <span className="diary-muted">
                           {activity.category === 'tréning' &&
-                          activity.addEquipmentWear
+                          !activity.planned && activity.addEquipmentWear
                             ? `+${formatDuration(activity.durationMinutes)} k opotrebovaniu rakety`
                             : ''}
                         </span>
