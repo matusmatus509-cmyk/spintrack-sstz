@@ -1,27 +1,28 @@
 import { useDialog } from '../hooks/useDialog';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useCommunity } from '../context/CommunityContext';
-import { ActivityPreview, communityError } from './CommunityView';
+import { communityError } from './CommunityView';
+import { ActivityCalendar, CalendarEvent } from '../components/ActivityCalendar';
+import { AddActivityModal } from '../components/AddActivityModal';
+import { calendarDate } from '../utils/calendar';
+import { getDiaryEntries, normalizeDiaryDate } from '../utils/diary';
+import './ActivityCalendar.css';
 import { useApp } from '../context/AppContext';
 import {
   Calendar as CalendarIcon,
   Clock,
-  MapPin,
   ExternalLink,
   Plus,
-  CheckCircle2,
-  Filter,
-  Shield,
-  Layers,
-  ChevronLeft,
-  ChevronRight
+  Shield
 } from 'lucide-react';
-import { TeamScheduleMatch } from '../types';
+import { ActivityRecord, TeamScheduleMatch } from '../types';
 
 export const CalendarView: React.FC = () => {
   const {
     activities,
+    matches,
+    doublesMatches,
     teamSchedule,
     sstzProfile,
     addScheduleMatchToMatches,
@@ -31,7 +32,40 @@ export const CalendarView: React.FC = () => {
   const account = useCommunity();
   const [calendarError, setCalendarError] = useState('');
   const [removing, setRemoving] = useState('');
-  const localActivities = [...activities].sort((a, b) => a.date.localeCompare(b.date));
+  const [view, setView] = useState<'calendar' | 'schedule'>('calendar');
+  const [selectedDate, setSelectedDate] = useState(() => calendarDate(new Date()));
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<ActivityRecord | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const events = useMemo<CalendarEvent[]>(() => [
+    ...getDiaryEntries(activities, matches, doublesMatches).map(entry => ({
+      id: entry.id, date: entry.date, category: entry.category, title: entry.title,
+      time: entry.activity?.startTime, location: entry.activity?.location,
+      duration: entry.activity?.durationMinutes,
+      detail: entry.activity ? [entry.activity.leagueName, entry.activity.round, entry.activity.eventCategory].filter(Boolean).join(' · ') : entry.subtitle,
+      planned: entry.activity?.planned,
+      actionLabel: entry.activity ? 'Upraviť aktivitu' : undefined,
+    })),
+    ...teamSchedule.map(match => ({
+      id: `fixture-${match.id}`, date: normalizeDiaryDate(match.dateTime), category: 'liga' as const,
+      title: `${match.homeTeam} – ${match.awayTeam}`,
+      time: match.dateTime.match(/(\d{1,2}:\d{2})/)?.[1],
+      detail: `${match.round}${match.isPlayed ? ` · ${match.homeScore}:${match.awayScore}` : ''}`,
+      planned: !match.isPlayed, actionLabel: 'Zapísať výsledok',
+    })),
+    ...account.calendar.map(entry => ({
+      id: `invitation-${entry.id}`, date: normalizeDiaryDate(entry.data.date),
+      category: entry.data.category, title: entry.data.title || entry.data.opponentName || 'Spoločná aktivita',
+      time: entry.data.startTime, location: entry.data.location, duration: entry.data.durationMinutes,
+      detail: `S ${entry.data.authorName}`, planned: entry.data.date > calendarDate(new Date()),
+      actionLabel: 'Odobrať z kalendára',
+    })),
+  ], [activities, matches, doublesMatches, teamSchedule, account.calendar]);
+  const openActivity = (planned = selectedDate > calendarDate(new Date())) => {
+    setEditingActivity(null);
+    setPlanning(planned);
+    setShowActivityModal(true);
+  };
   const [filterType, setFilterType] = useState<'all' | 'upcoming' | 'played' | 'home' | 'away'>('all');
   const [selectedMatch, setSelectedMatch] = useState<TeamScheduleMatch | null>(null);
 
@@ -40,8 +74,9 @@ export const CalendarView: React.FC = () => {
   const [matchOutcome, setMatchOutcome] = useState<'WIN' | 'LOSS'>('WIN');
   const [matchScore, setMatchScore] = useState('3:1');
 
-  // Filter matches
-  const filteredSchedule = teamSchedule.filter(m => {
+  // Keep the fixture list chronological even when the upstream order changes.
+  const orderedSchedule = [...teamSchedule].sort((a, b) => normalizeDiaryDate(a.dateTime).localeCompare(normalizeDiaryDate(b.dateTime)));
+  const filteredSchedule = orderedSchedule.filter(m => {
     if (filterType === 'upcoming') return !m.isPlayed;
     if (filterType === 'played') return m.isPlayed;
     if (filterType === 'home') {
@@ -73,50 +108,38 @@ export const CalendarView: React.FC = () => {
   const dialogRef = useDialog(showLogModal && !!selectedMatch, () => { setShowLogModal(false); });
 
   // Next upcoming match
-  const nextMatch = teamSchedule.find(m => !m.isPlayed);
+  const nextMatch = orderedSchedule.find(m => !m.isPlayed);
 
   return (
     <div className="page-view calendar-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
-      {/* Top Compact Header */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="badge-pill badge-blue" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-              <CalendarIcon size={12} /> SSTZ Rozpis
-            </span>
-            {sstzProfile?.clubName && (
-              <span className="badge-pill badge-green" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-                <Shield size={10} /> {sstzProfile.clubName}
-              </span>
-            )}
-          </div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            Tvoj kalendár
-          </h1>
-        </div>
-
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          Zápasov: <strong style={{ color: '#38bdf8' }}>{teamSchedule.length}</strong>
-        </span>
+      <header className="calendar-page-heading">
+        <div><span className="calendar-eyebrow">TRÉNINGY · ZÁPASY · ZÁŽITKY</span><h1>Tvoj kalendár</h1><p>Celý športový program na jednom mieste.</p></div>
+        <button type="button" className="btn-primary" onClick={() => openActivity(true)}><Plus size={18} /> Naplánovať aktivitu</button>
+      </header>
+      <div className="calendar-view-tabs" role="group" aria-label="Zobrazenie kalendára">
+        <button type="button" aria-pressed={view === 'calendar'} onClick={() => setView('calendar')}><CalendarIcon size={17} /> Mesačný kalendár</button>
+        <button type="button" aria-pressed={view === 'schedule'} onClick={() => setView('schedule')}><Shield size={17} /> Rozpis zápasov <span>{teamSchedule.length}</span></button>
       </div>
-
-      <section className="account-calendar" aria-labelledby="personal-calendar-title">
-        <h2 id="personal-calendar-title">Moje aktivity a spoločné tréningy</h2>
-        {calendarError && <p role="alert" className="community-error">{calendarError}</p>}
-        {!localActivities.length && !account.calendar.length && <p style={{ color: 'var(--text-muted)', fontSize: '.85rem' }}>Sem sa pridajú tvoje aktivity aj prijaté pozvánky od priateľov.</p>}
-        {account.calendar.map(entry => <article className="glass-panel community-card" key={entry.id}>
-          <span className="community-kicker">S {entry.data.authorName}</span>
-          <ActivityPreview data={entry.data} />
-          <button className="text-button" disabled={Boolean(removing)} onClick={async () => {
-            setRemoving(entry.id); setCalendarError('');
-            try { await account.removeCalendarEntry(entry.id); } catch (error) { setCalendarError(communityError(error)); } finally { setRemoving(''); }
-          }}>Odobrať z kalendára</button>
-        </article>)}
-        {localActivities.map(activity => <article className="glass-panel community-card" key={activity.id}>
-          <ActivityPreview data={activity} />
-        </article>)}
-      </section>
+      {calendarError && <p role="alert" className="community-error">{calendarError}</p>}
+      {view === 'calendar' && <ActivityCalendar events={events} selectedDate={selectedDate} onSelectDate={setSelectedDate}
+        onAdd={() => openActivity()} busy={Boolean(removing)} onAction={async event => {
+          if (event.id.startsWith('activity-')) {
+            const activity = activities.find(activity => `activity-${activity.id}` === event.id);
+            if (activity) { setEditingActivity(activity); setShowActivityModal(true); }
+          } else if (event.id.startsWith('fixture-')) {
+            const match = teamSchedule.find(match => `fixture-${match.id}` === event.id);
+            if (match) handleOpenLogModal(match);
+          } else if (event.id.startsWith('invitation-')) {
+            setRemoving(event.id); setCalendarError('');
+            try { await account.removeCalendarEntry(event.id.slice('invitation-'.length)); }
+            catch (error) { setCalendarError(communityError(error)); }
+            finally { setRemoving(''); }
+          }
+        }} />}
+      <AddActivityModal isOpen={showActivityModal} editActivity={editingActivity} defaultDate={selectedDate}
+        defaultPlanned={planning} onClose={() => { setShowActivityModal(false); setEditingActivity(null); }} />
+      {view === 'schedule' && <>
       <h2>Ligový rozpis SSTZ</h2>
       {/* Highlight: Next Upcoming Fixture */}
       {nextMatch && (
@@ -298,6 +321,8 @@ export const CalendarView: React.FC = () => {
           </p>
         </div>
       )}
+
+      </>}
 
       {/* Modal: Zaznamenať do denníka */}
       {showLogModal && selectedMatch && createPortal(

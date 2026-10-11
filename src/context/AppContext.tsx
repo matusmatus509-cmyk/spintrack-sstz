@@ -669,6 +669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     };
 
     setActivities(prev => [newActivity, ...prev]);
+    if (newActivity.planned) return id;
 
     // Only training activities contribute to the training history.
     const newSession: TrainingSession = {
@@ -769,12 +770,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         location: updated.location,
         notes: [updated.publicNote, updated.privateNote].filter(Boolean).join(' | '),
       };
-      setTrainingSessions(prev => updated.category === 'tréning'
+      setTrainingSessions(prev => updated.category === 'tréning' && !updated.planned
         ? [session, ...prev.filter(item => item.id !== id)]
         : prev.filter(item => item.id !== id));
     }
     const wearHours = (activity: ActivityRecord) =>
-      activity.category === 'tréning' && activity.addEquipmentWear
+      activity.category === 'tréning' && !activity.planned && activity.addEquipmentWear
         ? activity.durationMinutes / 60
         : 0;
     const previousRacket = rackets.find(racket => racket.id === existing.racketId);
