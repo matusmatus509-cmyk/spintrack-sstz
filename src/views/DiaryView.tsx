@@ -17,6 +17,7 @@ import {
   Globe,
   Trash2,
   ArrowDown,
+  Pencil,
 } from 'lucide-react';
 import { communityError } from '../views/CommunityView';
 import { useApp } from '../context/AppContext';
@@ -24,7 +25,7 @@ import { formatDuration } from '../utils/formatDuration';
 import { useDialog } from '../hooks/useDialog';
 import { AddActivityModal } from '../components/AddActivityModal';
 import { SetBreakdown } from '../components/SetBreakdown';
-import { ActivityCategory } from '../types';
+import { ActivityCategory, ActivityRecord } from '../types';
 import {
   DiaryFilters,
   emptyDiaryFilters,
@@ -73,6 +74,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
   const [filters, setFilters] = useState<DiaryFilters>({ ...emptyDiaryFilters, category: initialCategory });
   const [showFilters, setShowFilters] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<ActivityRecord | null>(null);
   const [limit, setLimit] = useState(pageSize);
   const [photo, setPhoto] = useState<string | null>(null);
   const photoRef = useDialog(!!photo, () => setPhoto(null));
@@ -440,6 +442,16 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                         <button
                           type="button"
                           disabled={Boolean(deleting)}
+                          onClick={() => {
+                            setEditingActivity(activity);
+                            setShowAdd(true);
+                          }}
+                        >
+                          <Pencil size={15} /> Upraviť
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(deleting)}
                           onClick={async () => {
                             if (!window.confirm('Naozaj chceš zmazať túto aktivitu?')) return;
                             setDeleting(activity.id); setDeleteError('');
@@ -545,7 +557,11 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
       )}
       <AddActivityModal
         isOpen={showAdd}
-        onClose={() => setShowAdd(false)}
+        onClose={() => {
+          setShowAdd(false);
+          setEditingActivity(null);
+        }}
+        editActivity={editingActivity}
         defaultCategory={
           filters.category === 'all'
             ? 'tréning'

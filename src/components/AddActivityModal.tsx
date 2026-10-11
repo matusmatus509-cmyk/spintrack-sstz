@@ -30,6 +30,7 @@ interface AddActivityModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCategory?: ActivityCategory;
+  editActivity?: ActivityRecord | null;
 }
 
 const categories = [
@@ -123,12 +124,13 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   isOpen,
   onClose,
   defaultCategory = "tréning",
+  editActivity = null,
 }) => {
   const community = useCommunity();
   const [invitees, setInvitees] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const localId = useRef(newActivityId());
-  const { addActivity, rackets, activeRacket, opponents } = useApp();
+  const { addActivity, updateActivity, rackets, activeRacket, opponents } = useApp();
   const [form, setForm] = useState(() =>
     initialForm(defaultCategory, activeRacket?.id || ""),
   );
@@ -139,13 +141,51 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   });
   useEffect(() => {
     if (isOpen) {
-      setForm(initialForm(defaultCategory, activeRacket?.id || ""));
+      const nextForm = initialForm(
+        editActivity?.category || defaultCategory,
+        activeRacket?.id || "",
+      );
+      if (editActivity) {
+        const [ownScore = "", opponentScore = ""] = (editActivity.matchScore || "").split(":");
+        setForm({
+          ...nextForm,
+          category: editActivity.category,
+          date: editActivity.date,
+          duration: editActivity.durationMinutes || 60,
+          startTime: editActivity.startTime || "",
+          location: editActivity.location || "",
+          title: editActivity.title || "",
+          leagueName: editActivity.leagueName || "",
+          teamHome: editActivity.teamHome || "",
+          teamAway: editActivity.teamAway || "",
+          round: editActivity.round || "",
+          eventCategory: editActivity.eventCategory || "",
+          placing: editActivity.placing || "",
+          eventResult: editActivity.eventResult || "",
+          opponentName: editActivity.opponentName || "",
+          grip: editActivity.opponentGrip || "",
+          fh: editActivity.opponentFhRubber || "",
+          bh: editActivity.opponentBhRubber || "",
+          ownScore,
+          opponentScore,
+          publicNote: editActivity.publicNote || "",
+          privateNote: editActivity.privateNote || "",
+          visibility: editActivity.visibility,
+          racketId: editActivity.racketId || "",
+          wear: editActivity.addEquipmentWear,
+          drills: editActivity.focusDrills || [],
+          photos: editActivity.photos || [],
+          tournamentDuel: Boolean(editActivity.matchScore),
+        });
+      } else {
+        setForm(nextForm);
+      }
       setCustomDrill("");
       setError("");
       setInvitees([]);
       localId.current = newActivityId();
     }
-  }, [isOpen, defaultCategory, activeRacket?.id]);
+  }, [isOpen, defaultCategory, activeRacket?.id, editActivity]);
   const field = <K extends keyof typeof form>(
     key: K,
     value: (typeof form)[K],
@@ -267,10 +307,14 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
     setSaving(true);
     setError("");
     try {
-      if (community.user && form.visibility !== "private") {
+      if (editActivity) {
+        updateActivity(editActivity.id, activity);
+      } else if (community.user && form.visibility !== "private") {
         await community.publishActivity(localId.current, activity, invitees);
+        addActivity(activity, localId.current);
+      } else {
+        addActivity(activity, localId.current);
       }
-      addActivity(activity, localId.current);
       onClose();
     } catch (error) {
       setError(communityError(error));
@@ -299,7 +343,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
         <header className="activity-header">
           <div>
             <span className="activity-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
-            <h2 id="activity-title">Pridať aktivitu</h2>
+            <h2 id="activity-title">{editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
           </div>
           <button
             type="button"
@@ -762,6 +806,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 Viditeľnosť
                 <select
                   value={form.visibility}
+                  disabled={Boolean(editActivity)}
                   onChange={(e) => {
                     field("visibility", e.target.value as ActivityVisibility);
                     if (e.target.value === "private") setInvitees([]);
@@ -782,7 +827,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                   Komunita.
                 </p>
               )}
-              {community.user && (
+              {community.user && !editActivity && (
                 <>
                   <h3>Označiť priateľov</h3>
                   <p className="activity-hint">
@@ -865,7 +910,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
               Zrušiť
             </button>
             <button type="submit" className="btn-primary" disabled={saving}>
-              <Save size={18} /> {saving ? "Ukladám…" : "Uložiť"}{" "}
+              <Save size={18} /> {saving ? "Ukladám…" : editActivity ? "Uložiť zmeny" : "Uložiť"}{" "}
               {form.category === "tréning"
                 ? "tréning"
                 : form.category === "priatelsky" || form.category === "liga"
