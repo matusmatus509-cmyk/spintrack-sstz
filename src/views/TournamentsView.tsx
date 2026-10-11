@@ -1,3 +1,4 @@
+import { RecommendedTournaments } from '../components/RecommendedTournaments';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Trophy,
@@ -164,10 +165,11 @@ export const TournamentsView: React.FC = () => {
         <div>
           <span className="eyebrow">SSTZ · TURNAJE</span>
           <h1>Turnaje</h1>
-          <p>Tvoje turnajové duely, súperi a výsledky.</p>
+          <p>Odporúčané podujatia a tvoje turnajové výsledky.</p>
         </div>
         <Trophy size={28} color="var(--accent-tt-green)" aria-hidden="true" />
       </div>
+      <RecommendedTournaments />
       <section
         className="glass-panel tournament-panel"
         aria-labelledby="tournament-search-title"

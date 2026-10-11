@@ -1,3 +1,4 @@
+import { recommendations } from './tournamentRecommendations.js';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -41,6 +42,12 @@ app.get('/api/sstz/search', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get('/api/sstz/tournaments/recommendations/:id', async (req, res) => {
+  if (!/^\d{1,10}$/.test(req.params.id)) return res.status(400).json({ error: 'Neplatné SSTZ ID hráča.' });
+  try { res.set('Cache-Control', 'no-store'); res.json(await recommendations(req.params.id)); }
+  catch (err) { res.status(502).json({ error: err.message || 'Odporúčania SSTZ sa nepodarilo načítať.' }); }
 });
 
 // Tournament player search uses the separate registration IDs on sstz.sk.
