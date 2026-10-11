@@ -75,13 +75,12 @@ export const ActivityCalendar: React.FC<Props> = ({ events, selectedDate, onSele
           const dayEvents = byDay.get(key) || [];
           const categories = [...new Set(dayEvents.map(event => event.category))];
           return <button type="button" key={key} data-date={key}
-            className={`calendar-day ${date.getMonth() !== month.getMonth() ? 'outside-month' : ''} ${key === today ? 'is-today' : ''} ${key === selectedDate ? 'is-selected' : ''}`}
+            className={`calendar-day ${date.getMonth() !== month.getMonth() ? 'outside-month' : ''} ${key === today ? 'is-today' : ''} ${key === selectedDate ? 'is-selected' : ''} ${dayEvents.length ? 'has-events' : ''}`}
             aria-pressed={key === selectedDate}
             aria-label={`${date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' })}${key === today ? ', dnes' : ''}, ${dayEvents.length} aktivít${dayEvents.length ? ': ' + dayEvents.map(event => event.title).join(', ') : ''}`}
             onClick={() => selectDay(date)}>
             <span className="calendar-day-top"><span className="calendar-day-number">{date.getDate()}</span>{dayEvents.length > 0 && <small>{dayEvents.length}</small>}</span>
             <span className="calendar-event-dots" aria-hidden="true">{categories.map(category => <i key={category} data-category={category} />)}</span>
-            <span className="calendar-cell-events" aria-hidden="true">{dayEvents.slice(0, 2).map(event => <span key={event.id} data-category={event.category}>{event.title}</span>)}{dayEvents.length > 2 && <small>+{dayEvents.length - 2} ďalšie</small>}</span>
           </button>;
         })}
       </div>
