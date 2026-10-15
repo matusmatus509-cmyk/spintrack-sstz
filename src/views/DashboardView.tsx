@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { allInsightMatches, summarizeMatches } from "../utils/matchInsights";
 import { getDiaryEntries, normalizeDiaryDate } from "../utils/diary";
+import { DashboardProgress } from "../components/DashboardProgress";
+import { dashboardAgenda, dayKey } from "../utils/dashboardInsights";
 import "./Overview.css";
 import "./Dashboard.css";
 
@@ -132,17 +134,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         .slice(0, 3),
     [activities, matches, doublesMatches],
   );
-  const today = new Date().toLocaleDateString("sv-SE");
-  const upcomingMatch = [...teamSchedule]
-    .filter(
-      (match) => !match.isPlayed && normalizeDiaryDate(match.dateTime) >= today,
-    )
-    .sort(
-      (a, b) =>
-        normalizeDiaryDate(a.dateTime).localeCompare(
-          normalizeDiaryDate(b.dateTime),
-        ) || a.dateTime.localeCompare(b.dateTime),
-    )[0];
+  const today = dayKey(new Date());
+  const agenda = dashboardAgenda(activities, teamSchedule);
+  const insightMatches = useMemo(
+    () => allInsightMatches(matches, doublesMatches),
+    [matches, doublesMatches],
+  );
   const dateLabel = new Intl.DateTimeFormat("sk", {
     weekday: "long",
     day: "numeric",
@@ -184,10 +181,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </header>
 
+      <section className="home-shortcuts" aria-label="Rýchly prístup">
+        {[
+          {
+            tab: "calendar",
+            Icon: Calendar,
+            title: "Môj kalendár",
+            description: "Tréningy a zápasy",
+          },
+          {
+            tab: "sstz",
+            Icon: Shield,
+            title: "Moja liga",
+            description: "Oficiálne výsledky a ligy",
+          },
+          {
+            tab: "community",
+            Icon: Users,
+            title: "Komunita",
+            description: "Priatelia a spoločné tréningy",
+          },
+        ].map(({ tab, Icon, title, description }) => (
+          <button key={tab} onClick={() => onNavigate(tab as NavTab)}>
+            <span className="shortcut-icon">
+              <Icon size={21} />
+            </span>
+            <span>
+              <strong>{title}</strong>
+              <small>{description}</small>
+            </span>
+            <ChevronRight size={16} />
+          </button>
+        ))}
+      </section>
+
       <section className="home-metrics" aria-label="Tvoje výsledky">
         {[
           {
-            label: "Úspešnosť",
+            label: "Celková úspešnosť",
             value: results.rate === null ? "—" : `${results.rate}%`,
             detail: `${results.wins} výhier · ${results.losses} prehier`,
             Icon: TrendingUp,
@@ -197,7 +228,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {
             label: "Odohrané zápasy",
             value: results.played,
-            detail: "Dvojhry aj štvorhry",
+            detail: "Celá história · dvojhry aj štvorhry",
             Icon: Trophy,
             tone: "blue",
             tab: "matches",
@@ -205,7 +236,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {
             label: "Čas na tréningu",
             value: `${trainingHours.toLocaleString("sk")} h`,
-            detail: "Každý tréning sa počíta",
+            detail: "Celkový čas dokončených tréningov",
             Icon: Clock,
             tone: "amber",
             tab: "diary",
@@ -234,7 +265,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="home-match-top">
             <span className="eyebrow">
               <span className="status-dot" />
-              NAJBLIŽŠIE PRI STOLE
+              TVOJ HERNÝ PLÁN
             </span>
             <button
               className="text-button"
@@ -244,31 +275,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ArrowUpRight size={20} />
             </button>
           </div>
-          {upcomingMatch ? (
+          {agenda.length ? (
             <>
-              <h2 id="home-match-title">Ďalší zápas, ďalšia výzva.</h2>
-              <div className="home-teams">
-                <div>
-                  <span>Domáci</span>
-                  <strong>{upcomingMatch.homeTeam}</strong>
-                </div>
-                <b>vs</b>
-                <div>
-                  <span>Hostia</span>
-                  <strong>{upcomingMatch.awayTeam}</strong>
-                </div>
+              <div className="agenda-heading">
+                <h2 id="home-match-title">Tvoj najbližší program</h2>
+                <span>{agenda.length} v pláne</span>
               </div>
-              <div className="home-fixture-date">
-                <Calendar size={16} />
-                {upcomingMatch.dateTime}
-                {upcomingMatch.round && <span>· {upcomingMatch.round}</span>}
+              <div className="home-agenda">
+                {agenda.map((item) => {
+                  const date = new Date(`${item.date}T12:00:00`);
+                  return (
+                    <button
+                      key={item.id}
+                      className="agenda-row"
+                      onClick={() => onNavigate("calendar")}
+                    >
+                      <span className="agenda-date">
+                        <strong>{date.getDate()}</strong>
+                        <small>
+                          {date.toLocaleDateString("sk", { month: "short" })}
+                        </small>
+                      </span>
+                      <span className="agenda-copy">
+                        <small>
+                          {item.date === today
+                            ? "Dnes"
+                            : date.toLocaleDateString("sk", {
+                                weekday: "long",
+                              })}
+                          {item.time ? ` · ${item.time}` : ""} ·{" "}
+                          {item.category === "priatelsky"
+                            ? "zápas"
+                            : item.category}
+                        </small>
+                        <strong>{item.title}</strong>
+                        <span>{item.detail}</span>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                  );
+                })}
               </div>
               <button
                 className="home-match-cta"
                 onClick={() => onNavigate("calendar")}
               >
-                Pozrieť rozpis
-                <ArrowRight size={17} />
+                Celý kalendár <ArrowRight size={17} />
               </button>
             </>
           ) : (
@@ -362,39 +414,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </section>
       </div>
 
-      <section className="home-shortcuts" aria-label="Rýchly prístup">
-        {[
-          {
-            tab: "diary",
-            Icon: Activity,
-            title: "Tréningový denník",
-            description: "Všetky aktivity na jednom mieste",
-          },
-          {
-            tab: "sstz",
-            Icon: Shield,
-            title: "Moja kariéra SSTZ",
-            description: "Oficiálne výsledky a ligy",
-          },
-          {
-            tab: "community",
-            Icon: Users,
-            title: "Hrajme spolu",
-            description: "Priatelia a spoločné tréningy",
-          },
-        ].map(({ tab, Icon, title, description }) => (
-          <button key={tab} onClick={() => onNavigate(tab as NavTab)}>
-            <span className="shortcut-icon">
-              <Icon size={21} />
-            </span>
-            <span>
-              <strong>{title}</strong>
-              <small>{description}</small>
-            </span>
-            <ChevronRight size={16} />
-          </button>
-        ))}
-      </section>
+      <DashboardProgress
+        activities={activities}
+        matches={insightMatches}
+        onPerformance={() => onNavigate("performance")}
+        onTraining={() => onNavigate("diary", "tréning")}
+      />
 
       <section
         className="home-recent glass-panel"

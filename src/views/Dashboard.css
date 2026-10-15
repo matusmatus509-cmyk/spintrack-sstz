@@ -632,3 +632,557 @@
     font-size: 0.54rem;
   }
 }
+
+/* A calm, compact home workspace: actions, plans, then deeper insights. */
+.dashboard-view {
+  --home-radius: 22px;
+}
+.home-heading h1 {
+  font-weight: 750;
+  letter-spacing: -0.065em;
+}
+.home-shortcuts {
+  gap: 10px;
+}
+.home-shortcuts > button {
+  background: var(--surface-tint);
+  padding: 12px 16px;
+  border-radius: 14px;
+}
+.home-shortcuts .shortcut-icon {
+  display: flex;
+  background: var(--bg-card);
+}
+.home-shortcuts small {
+  color: var(--text-muted);
+}
+.home-metric {
+  border-radius: var(--home-radius);
+  overflow: hidden;
+}
+.home-metric::after {
+  content: "";
+  position: absolute;
+  height: 3px;
+  left: 24px;
+  right: 24px;
+  bottom: 0;
+  background: var(--accent-tt-green);
+  opacity: 0.5;
+  border-radius: 4px 4px 0 0;
+}
+.home-metric.metric-blue::after {
+  background: var(--accent-tt-blue);
+}
+.home-metric.metric-amber::after {
+  background: var(--accent-tt-amber);
+}
+.home-match {
+  background:
+    radial-gradient(ellipse at top right, #3b6141, transparent 65%), #1e402e;
+  box-shadow: 0 10px 30px #15332112;
+}
+.agenda-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.agenda-heading h2 {
+  font-size: 1.2rem;
+}
+.agenda-heading > span {
+  white-space: nowrap;
+  font-size: 0.65rem;
+  color: #d2e0c9;
+}
+.home-agenda {
+  margin-block: 16px;
+  flex: 1;
+}
+.agenda-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #ffffff20;
+  padding: 12px 0;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+}
+.agenda-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.agenda-date {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  min-height: 54px;
+  border-radius: 12px;
+  background: #ffffff10;
+  border: 1px solid #ffffff20;
+}
+.agenda-date strong {
+  font-size: 1.3rem;
+  line-height: 1.2;
+  padding-top: 5px;
+}
+.agenda-date small {
+  color: #d2e0c9;
+  font-size: 0.6rem;
+  padding-bottom: 5px;
+}
+.agenda-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  flex: 1;
+}
+.agenda-copy small,
+.agenda-copy > span {
+  font-size: 0.63rem;
+  color: #d2e0c9;
+}
+.agenda-copy strong {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.agenda-row > svg {
+  flex-shrink: 0;
+  color: #d2e0c9;
+}
+.agenda-row:hover .agenda-copy strong {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.progress-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 17px;
+}
+.progress-heading .eyebrow {
+  font-size: 0.56rem;
+  color: var(--text-dim);
+}
+.progress-heading h2 {
+  margin-top: 6px;
+  font-size: 1.25rem;
+  letter-spacing: -0.04em;
+}
+.period-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.period-switch button {
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 650;
+  min-height: 36px;
+}
+.period-switch button[aria-pressed="true"] {
+  color: var(--text-main);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+.progress-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.training-chart,
+.form-chart {
+  padding: 24px;
+  min-width: 0;
+  border-radius: var(--home-radius);
+}
+.progress-grid h3 {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.progress-grid h3 svg {
+  color: var(--text-muted);
+}
+.chart-link {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-radius: 10px;
+}
+.chart-link:hover {
+  background: var(--bg-secondary);
+  color: var(--accent-tt-green);
+}
+.chart-total {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.chart-total strong {
+  font-size: 1.65rem;
+  letter-spacing: -0.055em;
+}
+.chart-total > span {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+.chart-selection {
+  min-height: 30px;
+  margin-top: 7px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.training-plot {
+  position: relative;
+  margin-top: 12px;
+  height: 146px;
+}
+.chart-gridlines {
+  position: absolute;
+  inset: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.chart-gridlines span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 0.57rem;
+  white-space: nowrap;
+}
+.chart-gridlines span::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--border-subtle);
+}
+.chart-columns {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  padding-left: 35px;
+}
+.chart-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 9px;
+  border: 0;
+  background: transparent;
+  padding: 3px 0 0;
+  color: var(--text-dim);
+  border-radius: 7px;
+}
+.bar-track {
+  width: 100%;
+  height: 112px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.training-bar {
+  display: block;
+  width: 100%;
+  max-width: 32px;
+  min-height: 4px;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(
+    0deg,
+    var(--accent-tt-green),
+    color-mix(in srgb, var(--accent-tt-green) 55%, var(--bg-card))
+  );
+  transition:
+    height 0.3s,
+    opacity 0.2s;
+}
+.training-bar.zero {
+  background: var(--border-subtle);
+}
+.chart-column:hover .training-bar,
+.chart-column.selected .training-bar {
+  background: var(--accent-tt-green);
+}
+.chart-column.selected .bar-label {
+  color: var(--text-main);
+  font-weight: 750;
+}
+.bar-label {
+  font-size: 0.55rem;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+}
+.chart-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.chart-note > span:last-child {
+  margin-left: auto;
+}
+.legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-tt-green);
+  flex-shrink: 0;
+}
+.legend-dot.loss {
+  background: var(--accent-tt-red);
+}
+.form-summary {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding-block: 16px;
+}
+.form-ring {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  flex-shrink: 0;
+}
+.form-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.form-ring circle {
+  fill: none;
+  stroke-width: 9;
+}
+.ring-track {
+  stroke: var(--bg-secondary);
+}
+.ring-value {
+  stroke: var(--accent-tt-green);
+  stroke-linecap: round;
+}
+.form-ring > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+}
+.form-ring strong {
+  font-size: 1.65rem;
+  letter-spacing: -0.06em;
+}
+.form-ring span {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+.form-counts {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+}
+.form-counts > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.form-counts strong {
+  margin-left: auto;
+  color: var(--text-main);
+}
+.form-counts small {
+  color: var(--text-dim);
+  line-height: 1.6;
+  font-size: 0.6rem;
+}
+.form-history > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+.form-history small {
+  color: var(--text-dim);
+  font-size: 0.56rem;
+}
+.form-results {
+  display: flex;
+  gap: 6px;
+  margin-block: 10px 16px;
+}
+.form-results > span {
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--accent-tt-green) 12%, transparent);
+  color: var(--accent-tt-green);
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+.form-results > .lost {
+  color: var(--accent-tt-red);
+  background: color-mix(in srgb, var(--accent-tt-red) 10%, transparent);
+}
+.form-chart > .text-button {
+  border-top: 1px solid var(--border-subtle);
+  justify-content: space-between;
+  padding-top: 12px;
+  width: 100%;
+  font-size: 0.68rem;
+}
+.form-empty {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 15px;
+  color: var(--text-dim);
+}
+.form-empty svg {
+  flex-shrink: 0;
+}
+.form-empty p {
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+@media (min-width: 641px) and (max-width: 1100px) {
+  .home-shortcuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .home-shortcuts small {
+    display: none;
+  }
+  .home-shortcuts > button {
+    padding: 12px;
+  }
+  .home-shortcuts .shortcut-icon {
+    width: 30px;
+  }
+  .form-summary {
+    gap: 12px;
+  }
+  .form-ring {
+    width: 105px;
+    height: 105px;
+  }
+}
+@media (max-width: 900px) {
+  .progress-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-summary {
+    justify-content: center;
+  }
+  .form-counts {
+    max-width: 180px;
+  }
+}
+@media (max-width: 640px) {
+  .home-shortcuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .home-shortcuts > button {
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px 5px;
+    text-align: center;
+  }
+  .home-shortcuts strong {
+    font-size: 0.63rem;
+  }
+  .home-shortcuts small,
+  .home-shortcuts > button > svg {
+    display: none;
+  }
+  .home-metric {
+    border-radius: 15px;
+  }
+  .home-metric::after {
+    left: 14px;
+    right: 14px;
+  }
+  .progress-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .progress-heading h2 {
+    font-size: 1.15rem;
+  }
+  .period-switch {
+    width: 100%;
+  }
+  .period-switch button {
+    flex: 1;
+    min-height: 38px;
+  }
+  .training-chart,
+  .form-chart {
+    padding: 18px;
+  }
+  .chart-columns {
+    gap: 8px;
+    padding-left: 30px;
+  }
+  .chart-total strong {
+    font-size: 1.5rem;
+  }
+  .agenda-heading {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .agenda-row {
+    gap: 10px;
+  }
+  .agenda-copy strong {
+    font-size: 0.73rem;
+  }
+  .home-rubbers {
+    gap: 12px;
+  }
+  .home-heading .btn-primary {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-bar {
+    transition: none;
+  }
+}

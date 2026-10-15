@@ -112,3 +112,5 @@ Na aktiváciu treba vytvoriť Supabase projekt, spustiť databázovú migráciu 
 V hornej lište prepínaš svetlý a tmavý režim ikonou slnka alebo mesiaca. V **Nastavenia → Vzhľad aplikácie** môžeš vybrať aj **Podľa systému**. Voľba sa uchováva v danom prehliadači, synchronizuje medzi jeho kartami a aplikuje ešte pred vykreslením aplikácie.
 
 Prehľad obsahuje výsledky, najbližší neodohraný zápas od dnešného dňa, kondíciu poťahov a posledné dokončené aktivity. Na mobile sú ostatné sekcie v menu **Viac**, kde sa dajú vyhľadať aj bez diakritiky. Písmo Plus Jakarta Sans je súčasťou aplikácie vrátane slovenských znakov a licencie v `licenses/PlusJakartaSans-OFL.txt`.
+
+Úvodný prehľad zobrazuje najbližšie tri plánované aktivity a ligové zápasy, stav výstroja a rýchle odkazy. Sekcia **Tvoja hra v číslach** umožňuje prepínať posledných 7, 30 alebo 90 dní: stĺpce zobrazujú čas dokončených tréningov, výber stĺpca odhalí presný čas a počet tréningov. Zápasová forma zahŕňa dvojhry aj štvorhry v zvolenom období. Plánované a budúce tréningy sa do grafu nezapočítavajú.
