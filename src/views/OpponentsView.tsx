@@ -334,7 +334,7 @@ export const OpponentsView: React.FC = () => {
               borderRadius: 'var(--radius-full)',
               border: 'none',
               background: mainMode === 'singles' ? 'var(--accent-tt-green)' : 'transparent',
-              color: mainMode === 'singles' ? '#fff' : 'var(--text-muted)',
+              color: mainMode === 'singles' ? 'var(--on-accent)' : 'var(--text-muted)',
               fontSize: '0.8rem',
               fontWeight: 700,
               cursor: 'pointer',
@@ -350,8 +350,8 @@ export const OpponentsView: React.FC = () => {
               padding: '6px 14px',
               borderRadius: 'var(--radius-full)',
               border: 'none',
-              background: mainMode === 'doubles' ? '#38bdf8' : 'transparent',
-              color: mainMode === 'doubles' ? '#0f172a' : 'var(--text-muted)',
+              background: mainMode === 'doubles' ? 'var(--accent-tt-blue)' : 'transparent',
+              color: mainMode === 'doubles' ? 'var(--on-accent)' : 'var(--text-muted)',
               fontSize: '0.8rem',
               fontWeight: 700,
               cursor: 'pointer',
@@ -364,7 +364,7 @@ export const OpponentsView: React.FC = () => {
             className="btn-secondary"
             onClick={() => setMainMode('history')}
             aria-pressed={mainMode === 'history'}
-            style={{ borderRadius: 'var(--radius-full)', border: 'none', padding: '6px 14px', fontSize: '0.8rem', background: mainMode === 'history' ? 'var(--accent-tt-green)' : 'transparent', color: mainMode === 'history' ? '#fff' : 'var(--text-muted)' }}
+            style={{ borderRadius: 'var(--radius-full)', border: 'none', padding: '6px 14px', fontSize: '0.8rem', background: mainMode === 'history' ? 'var(--accent-tt-green)' : 'transparent', color: mainMode === 'history' ? 'var(--on-accent)' : 'var(--text-muted)' }}
           >
             Všetky zápasy
           </button>
@@ -396,7 +396,7 @@ export const OpponentsView: React.FC = () => {
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Úspešnosť v dvojhre
               </span>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: overallSinglesWinRate >= 50 ? '#34d399' : '#f87171', marginTop: '2px' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: overallSinglesWinRate >= 50 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)', marginTop: '2px' }}>
                 {overallSinglesWinRate}%
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
@@ -408,7 +408,7 @@ export const OpponentsView: React.FC = () => {
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Materiál (Tráva / Sendvič)
               </span>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-tt-amber)', marginTop: '2px' }}>
                 {allOpponentsList.filter(o => o.forehandRubber !== 'soft' || o.backhandRubber !== 'soft').length}
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
@@ -441,6 +441,7 @@ export const OpponentsView: React.FC = () => {
 
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <select
+                  aria-label="Dominantná ruka súpera"
                   value={filterHand}
                   onChange={e => setFilterHand(e.target.value as any)}
                   style={{
@@ -459,6 +460,7 @@ export const OpponentsView: React.FC = () => {
                 </select>
 
                 <select
+                  aria-label="Typ poťahu súpera"
                   value={filterRubber}
                   onChange={e => setFilterRubber(e.target.value as any)}
                   style={{
@@ -600,7 +602,7 @@ export const OpponentsView: React.FC = () => {
                     {/* Head-to-Head Record */}
                     <div style={{
                       padding: '8px 10px',
-                      background: 'rgba(0, 0, 0, 0.25)',
+                      background: 'var(--bg-secondary)',
                       borderRadius: 'var(--radius-md)',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -611,7 +613,7 @@ export const OpponentsView: React.FC = () => {
                           Vzájomná bilancia
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <strong style={{ fontSize: '1.1rem', color: wins >= losses ? '#34d399' : '#f87171' }}>
+                          <strong style={{ fontSize: '1.1rem', color: wins >= losses ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>
                             {wins}V - {losses}P
                           </strong>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -621,7 +623,7 @@ export const OpponentsView: React.FC = () => {
                       </div>
 
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-tt-blue)' }}>
                           {total} {total === 1 ? 'zápas' : total < 5 ? 'zápasy' : 'zápasov'}
                         </span>
                         {seasons.length > 0 && (
@@ -638,7 +640,7 @@ export const OpponentsView: React.FC = () => {
                         fontSize: '0.78rem',
                         color: 'var(--text-muted)',
                         background: 'rgba(56, 189, 248, 0.06)',
-                        borderLeft: '3px solid #38bdf8',
+                        borderLeft: '3px solid var(--accent-tt-blue)',
                         padding: '6px 8px',
                         borderRadius: 'var(--radius-sm)',
                         overflow: 'hidden',
@@ -654,7 +656,7 @@ export const OpponentsView: React.FC = () => {
                     )}
 
                     {/* Footer with action buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-dim)', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-dim)', paddingTop: '4px', borderTop: '1px solid var(--surface-tint)' }}>
                       <span>{lastMatch ? `Naposledy: ${lastMatch.date}` : 'Bez zápasu'}</span>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
@@ -667,7 +669,7 @@ export const OpponentsView: React.FC = () => {
                         >
                           <Edit3 size={11} /> Upraviť
                         </button>
-                        <span style={{ color: '#38bdf8', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--accent-tt-blue)', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
                           Zápasy <ChevronRight size={12} />
                         </span>
                       </div>
@@ -701,7 +703,7 @@ export const OpponentsView: React.FC = () => {
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Odohrané štvorhry
               </span>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '2px', color: '#38bdf8' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, marginTop: '2px', color: 'var(--accent-tt-blue)' }}>
                 {totalDoublesMatches}
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
@@ -713,7 +715,7 @@ export const OpponentsView: React.FC = () => {
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Úspešnosť vo štvorhre
               </span>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: overallDoublesWinRate >= 50 ? '#34d399' : '#f87171', marginTop: '2px' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: overallDoublesWinRate >= 50 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)', marginTop: '2px' }}>
                 {overallDoublesWinRate}%
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
@@ -727,7 +729,7 @@ export const OpponentsView: React.FC = () => {
             <div className="glass-panel" style={{ padding: '16px', borderRadius: 'var(--radius-lg)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <UserCheck size={16} color="#34d399" /> Tvoji spoluhráči & Úspešnosť vo štvorhre
+                  <UserCheck size={16} color="var(--accent-tt-green)" /> Tvoji spoluhráči & Úspešnosť vo štvorhre
                 </h3>
                 {selectedPartnerFilter !== 'all' && (
                   <button
@@ -755,14 +757,14 @@ export const OpponentsView: React.FC = () => {
                       style={{
                         padding: '12px 14px',
                         background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'var(--bg-card)',
-                        border: `1px solid ${isSelected ? '#38bdf8' : 'var(--border-subtle)'}`,
+                        border: `1px solid ${isSelected ? 'var(--accent-tt-blue)' : 'var(--border-subtle)'}`,
                         borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <strong style={{ fontSize: '0.95rem', color: isSelected ? '#38bdf8' : 'var(--text-main)' }}>
+                        <strong style={{ fontSize: '0.95rem', color: isSelected ? 'var(--accent-tt-blue)' : 'var(--text-main)' }}>
                           {p.partnerName}
                         </strong>
                         <span className={`badge-pill ${p.winRate >= 50 ? 'badge-green' : 'badge-red'}`} style={{ fontSize: '0.68rem' }}>
@@ -770,7 +772,7 @@ export const OpponentsView: React.FC = () => {
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        <span>Spoločná úspešnosť: <strong style={{ color: p.winRate >= 50 ? '#34d399' : '#f87171' }}>{p.winRate}%</strong></span>
+                        <span>Spoločná úspešnosť: <strong style={{ color: p.winRate >= 50 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>{p.winRate}%</strong></span>
                         <span>{p.matchesCount} {p.matchesCount === 1 ? 'štvorhra' : p.matchesCount < 5 ? 'štvorhry' : 'štvorhier'}</span>
                       </div>
                     </div>
@@ -797,7 +799,7 @@ export const OpponentsView: React.FC = () => {
                       background: 'var(--bg-card)',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-subtle)',
-                      borderLeft: dm.result === 'WIN' ? '4px solid #10b981' : '4px solid #ef4444'
+                      borderLeft: dm.result === 'WIN' ? '4px solid var(--accent-tt-green)' : '4px solid var(--accent-tt-red)'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
@@ -823,7 +825,7 @@ export const OpponentsView: React.FC = () => {
 
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          Spoluhráč: <strong style={{ color: '#38bdf8' }}>{dm.partnerName || 'SSTZ neuvádza'}</strong>
+                          Spoluhráč: <strong style={{ color: 'var(--accent-tt-blue)' }}>{dm.partnerName || 'SSTZ neuvádza'}</strong>
                         </span>
                       </div>
                     </div>
@@ -957,6 +959,7 @@ export const OpponentsView: React.FC = () => {
                   </button>
                 )}
                 <button
+                  aria-label="Zavrieť detail súpera"
                   onClick={() => {
                     setSelectedOpponent(null);
                     setIsNewOpponentModal(false);
@@ -1011,7 +1014,7 @@ export const OpponentsView: React.FC = () => {
                       Vzájomná bilancia
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                      <strong style={{ fontSize: '1.25rem', color: selectedOpponentWins >= selectedOpponentLosses ? '#34d399' : '#f87171' }}>
+                      <strong style={{ fontSize: '1.25rem', color: selectedOpponentWins >= selectedOpponentLosses ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>
                         {selectedOpponentWins} VÝHIER - {selectedOpponentLosses} PREHIER
                       </strong>
                       <span className="badge-pill badge-green" style={{ fontSize: '0.72rem' }}>
@@ -1050,7 +1053,7 @@ export const OpponentsView: React.FC = () => {
                             background: 'var(--bg-card)',
                             borderRadius: 'var(--radius-md)',
                             border: '1px solid var(--border-subtle)',
-                            borderLeft: m.result === 'WIN' ? '4px solid #10b981' : '4px solid #ef4444'
+                            borderLeft: m.result === 'WIN' ? '4px solid var(--accent-tt-green)' : '4px solid var(--accent-tt-red)'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
@@ -1103,11 +1106,11 @@ export const OpponentsView: React.FC = () => {
 
                           {/* Match Tactics / Notes */}
                           {isEditingThisMatch ? (
-                            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(0, 0, 0, 0.3)', padding: '8px 10px', borderRadius: 'var(--radius-sm)' }}>
-                              <label style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700 }}>
+                            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: 'var(--radius-sm)' }}>
+                              <label htmlFor="opponentsview-co-fungovalo-co-si-vedel-hrat-v-tomto-zapase-1" style={{ fontSize: '0.75rem', color: 'var(--accent-tt-blue)', fontWeight: 700 }}>
                                 🎯 Čo fungovalo / čo si vedel hrať v tomto zápase:
                               </label>
-                              <input
+                              <input id="opponentsview-co-fungovalo-co-si-vedel-hrat-v-tomto-zapase-1"
                                 type="text"
                                 value={matchTacticsText}
                                 onChange={e => setMatchTacticsText(e.target.value)}
@@ -1145,7 +1148,7 @@ export const OpponentsView: React.FC = () => {
                                 marginTop: '6px',
                                 padding: '6px 10px',
                                 background: 'rgba(16, 185, 129, 0.08)',
-                                borderLeft: '3px solid #10b981',
+                                borderLeft: '3px solid var(--accent-tt-green)',
                                 borderRadius: 'var(--radius-sm)',
                                 fontSize: '0.8rem',
                                 color: 'var(--text-main)'
@@ -1175,7 +1178,7 @@ export const OpponentsView: React.FC = () => {
                 border: '1px solid var(--border-subtle)'
               }}>
                 <h4 style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Shield size={15} color="#38bdf8" /> Herné vlastnosti, ruka a poťahy
+                  <Shield size={15} color="var(--accent-tt-blue)" /> Herné vlastnosti, ruka a poťahy
                 </h4>
 
                 {isEditing || isNewOpponentModal ? (
@@ -1183,10 +1186,10 @@ export const OpponentsView: React.FC = () => {
                     {isNewOpponentModal && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                          <label htmlFor="opponentsview-meno-supera-2" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                             Meno súpera *
                           </label>
-                          <input
+                          <input id="opponentsview-meno-supera-2"
                             type="text"
                             value={editForm.name}
                             onChange={e => setEditForm({ ...editForm, name: e.target.value })}
@@ -1203,10 +1206,10 @@ export const OpponentsView: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                          <label htmlFor="opponentsview-klub-3" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                             Klub
                           </label>
-                          <input
+                          <input id="opponentsview-klub-3"
                             type="text"
                             value={editForm.clubName || ''}
                             onChange={e => setEditForm({ ...editForm, clubName: e.target.value })}
@@ -1227,10 +1230,10 @@ export const OpponentsView: React.FC = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                        <label htmlFor="opponentsview-dominantna-ruka-4" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Dominantná ruka
                         </label>
-                        <select
+                        <select id="opponentsview-dominantna-ruka-4"
                           value={editForm.handedness}
                           onChange={e => setEditForm({ ...editForm, handedness: e.target.value as any })}
                           style={{
@@ -1250,10 +1253,10 @@ export const OpponentsView: React.FC = () => {
                       </div>
 
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                        <label htmlFor="opponentsview-herny-styl-5" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Herný štýl
                         </label>
-                        <select
+                        <select id="opponentsview-herny-styl-5"
                           value={editForm.playStyle}
                           onChange={e => setEditForm({ ...editForm, playStyle: e.target.value as any })}
                           style={{
@@ -1277,10 +1280,10 @@ export const OpponentsView: React.FC = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '10px' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                        <label htmlFor="opponentsview-forehand-fh-potah-6" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Forehand (FH) Poťah
                         </label>
-                        <select
+                        <select id="opponentsview-forehand-fh-potah-6"
                           value={editForm.forehandRubber}
                           onChange={e => setEditForm({ ...editForm, forehandRubber: e.target.value as any })}
                           style={{
@@ -1318,10 +1321,10 @@ export const OpponentsView: React.FC = () => {
                       </div>
 
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                        <label htmlFor="opponentsview-backhand-bh-potah-7" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                           Backhand (BH) Poťah
                         </label>
-                        <select
+                        <select id="opponentsview-backhand-bh-potah-7"
                           value={editForm.backhandRubber}
                           onChange={e => setEditForm({ ...editForm, backhandRubber: e.target.value as any })}
                           style={{
@@ -1360,10 +1363,10 @@ export const OpponentsView: React.FC = () => {
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
+                      <label htmlFor="opponentsview-takticke-postrehy-co-na-neho-hrat-skauting-8" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 700 }}>
                         Taktické postrehy & Čo na neho hrať (Skauting)
                       </label>
-                      <textarea
+                      <textarea id="opponentsview-takticke-postrehy-co-na-neho-hrat-skauting-8"
                         rows={3}
                         value={editForm.notes}
                         onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
@@ -1408,13 +1411,13 @@ export const OpponentsView: React.FC = () => {
                       </div>
                       <div>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Forehand poťah</span>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px', color: '#34d399' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px', color: 'var(--accent-tt-green)' }}>
                           {getRubberLabel(selectedOpponent?.forehandRubber || 'soft')} {selectedOpponent?.forehandModel && `(${selectedOpponent.forehandModel})`}
                         </div>
                       </div>
                       <div>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Backhand poťah</span>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px', color: '#38bdf8' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '2px', color: 'var(--accent-tt-blue)' }}>
                           {getRubberLabel(selectedOpponent?.backhandRubber || 'soft')} {selectedOpponent?.backhandModel && `(${selectedOpponent.backhandModel})`}
                         </div>
                       </div>
@@ -1424,11 +1427,11 @@ export const OpponentsView: React.FC = () => {
                       <div style={{
                         padding: '10px 12px',
                         background: 'rgba(56, 189, 248, 0.08)',
-                        borderLeft: '4px solid #38bdf8',
+                        borderLeft: '4px solid var(--accent-tt-blue)',
                         borderRadius: 'var(--radius-sm)',
                         fontSize: '0.85rem'
                       }}>
-                        <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '3px' }}>💡 Taktika na tohto hráča:</strong>
+                        <strong style={{ color: 'var(--accent-tt-blue)', display: 'block', marginBottom: '3px' }}>💡 Taktika na tohto hráča:</strong>
                         {selectedOpponent.notes}
                       </div>
                     ) : (

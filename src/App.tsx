@@ -1,3 +1,4 @@
+import { ThemeProvider } from './context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import type { ActivityCategory } from './types';
 import { AppProvider } from './context/AppContext';
@@ -38,7 +39,7 @@ const AppContent: React.FC = () => {
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Prejsť na obsah</a>
       {/* Sleek Minimal App Top Bar */}
-      <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} onOpenCommunity={() => selectTab('community')} />
+      <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} onOpenCommunity={() => selectTab('community')} currentTab={currentTab} onHome={() => selectTab('dashboard')} />
 
       {/* Main Container */}
       <div className="app-container">
@@ -46,6 +47,7 @@ const AppContent: React.FC = () => {
         <Navigation
           currentTab={currentTab}
           onSelectTab={selectTab}
+          onAddActivity={() => setShowAddActivity(true)}
         />
 
         {/* Dynamic View Content */}
@@ -115,4 +117,4 @@ function AccountWorkspace() {
       <AppContent />
     </AppProvider>;
 }
-export const App: React.FC = () => <CommunityProvider><AccountWorkspace /></CommunityProvider>;
+export const App: React.FC = () => <ThemeProvider><CommunityProvider><AccountWorkspace /></CommunityProvider></ThemeProvider>;

@@ -26,7 +26,7 @@
   flex-shrink: 0;
   border-radius: 14px;
   background: rgba(16, 185, 129, 0.12);
-  color: #6ee7b7;
+  color: var(--accent-tt-green);
   font-weight: 800;
 }
 .community-form {
@@ -71,8 +71,8 @@
 }
 .community-tabs button[aria-pressed="true"] {
   background: rgba(16, 185, 129, 0.14);
-  border-color: #10b981;
-  color: #6ee7b7;
+  border-color: var(--accent-tt-green);
+  color: var(--accent-tt-green);
 }
 .community-tabs.small button {
   flex: 0 1 auto;
@@ -135,7 +135,7 @@
   font-size: 0.82rem;
 }
 .community-kicker {
-  color: #6ee7b7;
+  color: var(--accent-tt-green);
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -182,7 +182,7 @@
   text-align: center;
 }
 .community-error {
-  color: #fca5a5 !important;
+  color: var(--accent-tt-red) !important;
   background: rgba(239, 68, 68, 0.08);
   padding: 12px;
   border-radius: 12px;
@@ -192,7 +192,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6ee7b7 !important;
+  color: var(--accent-tt-green) !important;
   font-size: 0.82rem;
 }
 .community-view button:disabled {

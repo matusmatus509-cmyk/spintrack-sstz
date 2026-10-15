@@ -106,3 +106,9 @@ node scripts/generate-snapshot.mjs <SSTZ_ID_HRÁČA>
 Prihlásenie e-mailom, registrácia, obnova hesla, priateľstvá a pozvánky na spoločné aktivity používajú Supabase. Pri aktivitách si vyberieš **Len ja**, **Iba priatelia** alebo **Verejná**; označený priateľ si pozvánku môže pridať do vlastného kalendára. Súkromné poznámky a fotky zostávajú v osobnom denníku.
 
 Na aktiváciu treba vytvoriť Supabase projekt, spustiť databázovú migráciu a nastaviť dve verejné premenné vo Verceli. Postup je v [docs/COMMUNITY-SETUP.md](docs/COMMUNITY-SETUP.md). Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa nesimulujú.
+
+## Vzhľad aplikácie
+
+V hornej lište prepínaš svetlý a tmavý režim ikonou slnka alebo mesiaca. V **Nastavenia → Vzhľad aplikácie** môžeš vybrať aj **Podľa systému**. Voľba sa uchováva v danom prehliadači, synchronizuje medzi jeho kartami a aplikuje ešte pred vykreslením aplikácie.
+
+Prehľad obsahuje výsledky, najbližší neodohraný zápas od dnešného dňa, kondíciu poťahov a posledné dokončené aktivity. Na mobile sú ostatné sekcie v menu **Viac**, kde sa dajú vyhľadať aj bez diakritiky. Písmo Plus Jakarta Sans je súčasťou aplikácie vrátane slovenských znakov a licencie v `licenses/PlusJakartaSans-OFL.txt`.

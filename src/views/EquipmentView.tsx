@@ -171,18 +171,19 @@ export const EquipmentView: React.FC = () => {
         ].map(tab => (
           <button
             key={tab.id}
+            aria-pressed={activeSubTab === tab.id}
             onClick={() => setActiveSubTab(tab.id as any)}
             style={{
               padding: '10px 18px',
               borderRadius: 'var(--radius-md)',
               border: 'none',
               background: activeSubTab === tab.id ? 'var(--bg-card)' : 'transparent',
-              color: activeSubTab === tab.id ? '#34d399' : 'var(--text-muted)',
+              color: activeSubTab === tab.id ? 'var(--accent-tt-green)' : 'var(--text-muted)',
               fontWeight: activeSubTab === tab.id ? 700 : 500,
               fontSize: '0.9rem',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              borderBottom: activeSubTab === tab.id ? '2px solid #10b981' : '2px solid transparent'
+              borderBottom: activeSubTab === tab.id ? '2px solid var(--accent-tt-green)' : '2px solid transparent'
             }}
           >
             {tab.label}
@@ -233,7 +234,7 @@ export const EquipmentView: React.FC = () => {
                   className="glass-panel"
                   style={{
                     padding: '20px',
-                    border: isActive ? '2px solid #10b981' : '1px solid var(--border-subtle)',
+                    border: isActive ? '2px solid var(--accent-tt-green)' : '1px solid var(--border-subtle)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '14px',
@@ -266,7 +267,7 @@ export const EquipmentView: React.FC = () => {
                           cursor: 'pointer',
                           padding: '4px'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-tt-red)'}
                         onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
                       >
                         <Trash2 size={16} />
@@ -294,7 +295,7 @@ export const EquipmentView: React.FC = () => {
                       <div style={{ textAlign: 'right' }}>
                         <strong>{fh ? `${fh.brand} ${fh.model}` : 'Nezvolený'}</strong>
                         {fhH && (
-                          <div style={{ fontSize: '0.75rem', color: fhH.percent < 40 ? '#f87171' : '#34d399' }}>
+                          <div style={{ fontSize: '0.75rem', color: fhH.percent < 40 ? 'var(--accent-tt-red)' : 'var(--accent-tt-green)' }}>
                             Zdravie {fhH.percent}% ({fh?.hoursPlayed}h)
                           </div>
                         )}
@@ -306,7 +307,7 @@ export const EquipmentView: React.FC = () => {
                       <div style={{ textAlign: 'right' }}>
                         <strong>{bh ? `${bh.brand} ${bh.model}` : 'Nezvolený'}</strong>
                         {bhH && (
-                          <div style={{ fontSize: '0.75rem', color: bhH.percent < 40 ? '#f87171' : '#34d399' }}>
+                          <div style={{ fontSize: '0.75rem', color: bhH.percent < 40 ? 'var(--accent-tt-red)' : 'var(--accent-tt-green)' }}>
                             Zdravie {bhH.percent}% ({bh?.hoursPlayed}h)
                           </div>
                         )}
@@ -317,7 +318,7 @@ export const EquipmentView: React.FC = () => {
                   {/* Stats & Set Active Button */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Bilancia: <strong style={{ color: '#34d399' }}>{racket.winCount}V</strong> - <strong style={{ color: '#f87171' }}>{racket.lossCount}P</strong>
+                      Bilancia: <strong style={{ color: 'var(--accent-tt-green)' }}>{racket.winCount}V</strong> - <strong style={{ color: 'var(--accent-tt-red)' }}>{racket.lossCount}P</strong>
                     </div>
 
                     {!isActive && (
@@ -342,7 +343,7 @@ export const EquipmentView: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Sledovanie Zdravia & Opotrebovania Poťahov</h2>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Kondícia poťahov</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 Poťahy postupne strácajú grip, rotáciu a dynamiku. SpinTrack ti presne ukáže, kedy je čas na výmenu.
               </p>
@@ -382,7 +383,7 @@ export const EquipmentView: React.FC = () => {
                         width: '16px',
                         height: '16px',
                         borderRadius: '50%',
-                        background: rubber.color === 'red' ? '#ef4444' : '#000000',
+                        background: rubber.color === 'red' ? 'var(--accent-tt-red)' : '#000000',
                         border: '2px solid rgba(255,255,255,0.3)',
                         flexShrink: 0
                       }} />
@@ -397,6 +398,7 @@ export const EquipmentView: React.FC = () => {
                     </div>
 
                     <button
+                      aria-label={`Odstrániť poťah ${rubber.brand} ${rubber.model}`}
                       onClick={() => deleteRubber(rubber.id)}
                       style={{
                         background: 'transparent',
@@ -404,7 +406,7 @@ export const EquipmentView: React.FC = () => {
                         color: 'var(--text-dim)',
                         cursor: 'pointer'
                       }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-tt-red)'}
                       onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
                     >
                       <Trash2 size={16} />
@@ -427,7 +429,7 @@ export const EquipmentView: React.FC = () => {
                         fontSize: '0.9rem',
                         fontWeight: 800,
                         fontFamily: 'var(--font-mono)',
-                        color: health.percent < 25 ? '#ef4444' : health.percent < 50 ? '#f59e0b' : '#10b981'
+                        color: health.percent < 25 ? 'var(--accent-tt-red)' : health.percent < 50 ? 'var(--accent-tt-amber)' : 'var(--accent-tt-green)'
                       }}>
                         {health.percent}% ({health.status.toUpperCase()})
                       </span>
@@ -435,7 +437,7 @@ export const EquipmentView: React.FC = () => {
 
                     <div style={{
                       height: '10px',
-                      background: 'rgba(255, 255, 255, 0.08)',
+                      background: 'var(--surface-tint)',
                       borderRadius: 'var(--radius-full)',
                       overflow: 'hidden'
                     }}>
@@ -443,10 +445,10 @@ export const EquipmentView: React.FC = () => {
                         width: `${health.percent}%`,
                         height: '100%',
                         background: health.percent < 25
-                          ? '#ef4444'
+                          ? 'var(--accent-tt-red)'
                           : health.percent < 50
-                            ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                            : 'linear-gradient(90deg, #10b981, #34d399)',
+                            ? 'linear-gradient(90deg, var(--accent-tt-amber), var(--accent-tt-amber))'
+                            : 'linear-gradient(90deg, var(--accent-tt-green), var(--accent-tt-green))',
                         borderRadius: 'var(--radius-full)',
                         transition: 'width 0.4s ease'
                       }} />
@@ -462,7 +464,7 @@ export const EquipmentView: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        color: '#f87171',
+                        color: 'var(--accent-tt-red)',
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         marginTop: '4px'
@@ -493,7 +495,7 @@ export const EquipmentView: React.FC = () => {
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#34d399',
+                        color: 'var(--accent-tt-green)',
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -517,7 +519,7 @@ export const EquipmentView: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="equipment-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Inventár Driev</h2>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Moje drevá</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 Zoznam tvojich herných a záložných driev.
               </p>
@@ -546,6 +548,7 @@ export const EquipmentView: React.FC = () => {
                     </span>
                   </div>
                   <button
+                    aria-label={`Odstrániť drevo ${b.brand} ${b.model}`}
                     onClick={() => deleteBlade(b.id)}
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
                   >
@@ -585,7 +588,7 @@ export const EquipmentView: React.FC = () => {
       {activeSubTab === 'compare' && (
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Porovnávač Vybavenia (Side-by-Side Comparison)</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Porovnanie výbavy</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               Porovnaj dva poťahy vedľa seba podľa rýchlosti, rotácie, kontroly a životnosti.
             </p>
@@ -594,10 +597,10 @@ export const EquipmentView: React.FC = () => {
           <div className="comparison-selectors" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '20px' }}>
             {/* Item A */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
+              <label htmlFor="equipmentview-potah-1-1" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
                 Poťah 1
               </label>
-              <select
+              <select id="equipmentview-potah-1-1"
                 value={compareItemA}
                 onChange={e => setCompareItemA(e.target.value)}
                 style={{
@@ -618,10 +621,10 @@ export const EquipmentView: React.FC = () => {
 
             {/* Item B */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
+              <label htmlFor="equipmentview-potah-2-2" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
                 Poťah 2
               </label>
-              <select
+              <select id="equipmentview-potah-2-2"
                 value={compareItemB}
                 onChange={e => setCompareItemB(e.target.value)}
                 style={{
@@ -664,13 +667,13 @@ export const EquipmentView: React.FC = () => {
                   display: 'grid',
                   gridTemplateColumns: '2fr 1fr 1fr',
                   padding: '12px 16px',
-                  background: 'rgba(10, 13, 20, 0.6)',
+                  background: 'var(--bg-secondary)',
                   fontWeight: 700,
                   fontSize: '0.85rem'
                 }}>
                   <span>Parameter</span>
-                  <span style={{ textAlign: 'center', color: '#10b981' }}>{rubA.model}</span>
-                  <span style={{ textAlign: 'center', color: '#38bdf8' }}>{rubB.model}</span>
+                  <span style={{ textAlign: 'center', color: 'var(--accent-tt-green)' }}>{rubA.model}</span>
+                  <span style={{ textAlign: 'center', color: 'var(--accent-tt-blue)' }}>{rubB.model}</span>
                 </div>
 
                 {metrics.map((m, i) => (
@@ -681,7 +684,7 @@ export const EquipmentView: React.FC = () => {
                       display: 'grid',
                       gridTemplateColumns: '2fr 1fr 1fr',
                       padding: '14px 16px',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderBottom: '1px solid var(--surface-tint)',
                       fontSize: '0.9rem'
                     }}
                   >
@@ -690,7 +693,7 @@ export const EquipmentView: React.FC = () => {
                       textAlign: 'center',
                       fontWeight: 800,
                       fontFamily: 'var(--font-mono)',
-                      color: m.a > m.b ? '#34d399' : 'var(--text-main)'
+                      color: m.a > m.b ? 'var(--accent-tt-green)' : 'var(--text-main)'
                     }}>
                       {m.a} {m.a > m.b && '★'}
                     </span>
@@ -698,7 +701,7 @@ export const EquipmentView: React.FC = () => {
                       textAlign: 'center',
                       fontWeight: 800,
                       fontFamily: 'var(--font-mono)',
-                      color: m.b > m.a ? '#38bdf8' : 'var(--text-main)'
+                      color: m.b > m.a ? 'var(--accent-tt-blue)' : 'var(--text-main)'
                     }}>
                       {m.b} {m.b > m.a && '★'}
                     </span>
@@ -754,10 +757,10 @@ export const EquipmentView: React.FC = () => {
 
             <form onSubmit={handleCreateRacket} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label htmlFor="equipmentview-nazov-zostavy-3" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Názov zostavy
                 </label>
-                <input
+                <input id="equipmentview-nazov-zostavy-3"
                   type="text"
                   required
                   placeholder="napr. Hlavná ligová pálka"
@@ -769,16 +772,16 @@ export const EquipmentView: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-subtle)',
-                    color: '#fff'
+                    color: 'var(--text-main)'
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label htmlFor="equipmentview-drevo-4" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Drevo
                 </label>
-                <select
+                <select id="equipmentview-drevo-4"
                   value={selectedBladeId}
                   onChange={e => setSelectedBladeId(e.target.value)}
                   style={{
@@ -787,7 +790,7 @@ export const EquipmentView: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-subtle)',
-                    color: '#fff'
+                    color: 'var(--text-main)'
                   }}
                 >
                   {blades.map(b => (
@@ -797,10 +800,10 @@ export const EquipmentView: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label htmlFor="equipmentview-forehand-potah-fh-5" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Forehand Poťah (FH)
                 </label>
-                <select
+                <select id="equipmentview-forehand-potah-fh-5"
                   value={selectedFhId}
                   onChange={e => setSelectedFhId(e.target.value)}
                   style={{
@@ -809,7 +812,7 @@ export const EquipmentView: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-subtle)',
-                    color: '#fff'
+                    color: 'var(--text-main)'
                   }}
                 >
                   {rubbers.map(r => (
@@ -819,10 +822,10 @@ export const EquipmentView: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <label htmlFor="equipmentview-backhand-potah-bh-6" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   Backhand Poťah (BH)
                 </label>
-                <select
+                <select id="equipmentview-backhand-potah-bh-6"
                   value={selectedBhId}
                   onChange={e => setSelectedBhId(e.target.value)}
                   style={{
@@ -831,7 +834,7 @@ export const EquipmentView: React.FC = () => {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border-subtle)',
-                    color: '#fff'
+                    color: 'var(--text-main)'
                   }}
                 >
                   {rubbers.map(r => (
@@ -923,35 +926,35 @@ export const EquipmentView: React.FC = () => {
             <form onSubmit={handleCreateRubber} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Značka</label>
-                  <input
+                  <label htmlFor="equipmentview-znacka-7" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Značka</label>
+                  <input id="equipmentview-znacka-7"
                     type="text"
                     required
                     value={rubberForm.brand}
                     onChange={e => setRubberForm({ ...rubberForm, brand: e.target.value })}
-                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model</label>
-                  <input
+                  <label htmlFor="equipmentview-model-8" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model</label>
+                  <input id="equipmentview-model-8"
                     type="text"
                     required
                     placeholder="napr. Dignics 09C"
                     value={rubberForm.model}
                     onChange={e => setRubberForm({ ...rubberForm, model: e.target.value })}
-                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Farba</label>
-                  <select
+                  <label htmlFor="equipmentview-farba-9" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Farba</label>
+                  <select id="equipmentview-farba-9"
                     value={rubberForm.color}
                     onChange={e => setRubberForm({ ...rubberForm, color: e.target.value as any })}
-                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                   >
                     <option value="black">Čierna</option>
                     <option value="red">Červená</option>
@@ -962,12 +965,12 @@ export const EquipmentView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hrúbka huby</label>
-                  <input
+                  <label htmlFor="equipmentview-hrubka-huby-10" style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hrúbka huby</label>
+                  <input id="equipmentview-hrubka-huby-10"
                     type="text"
                     value={rubberForm.spongeThickness}
                     onChange={e => setRubberForm({ ...rubberForm, spongeThickness: e.target.value })}
-                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                   />
                 </div>
               </div>

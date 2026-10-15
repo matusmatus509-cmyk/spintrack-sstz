@@ -1,0 +1,78 @@
+/* Shared semantic colors: every screen and portal uses the same appearance. */
+:root {
+  color-scheme: light;
+  --bg-primary: #f4f6f2;
+  --bg-main: #ffffff;
+  --bg-secondary: #eef2ed;
+  --bg-card: #ffffff;
+  --bg-card-hover: #eaf1e9;
+  --bg-glass: #ffffff;
+  --surface-tint: rgba(32, 59, 43, 0.045);
+  --border-subtle: #e0e7df;
+  --border-focus: #17764e;
+  --text-main: #202e26;
+  --text-muted: #536459;
+  --text-dim: #5f7064;
+  --text-primary: var(--text-main);
+  --text-secondary: var(--text-muted);
+  --accent-tt-green: #14734c;
+  --accent-tt-green-glow: rgba(20, 115, 76, 0.1);
+  --accent-tt-red: #bf3548;
+  --accent-tt-blue: #20669d;
+  --accent-tt-amber: #88590e;
+  --accent-tt-purple: #7951b0;
+  --accent-tt-pink: #a3306e;
+  --on-accent: #ffffff;
+  --action-primary: #226440;
+  --action-hover: #194f31;
+  --on-primary: #ffffff;
+  --selection: #e5efdf;
+  --chrome: rgba(255, 255, 255, 0.92);
+  --shadow-sm: 0 2px 5px #20352103, 0 8px 28px #20352104;
+  --shadow-md: 0 18px 60px #20352114;
+  --shadow-glow: 0 4px 16px #2035210a;
+  --font-sans:
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-main: var(--font-sans);
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --court-fill: #294e38;
+  --court-paddle: #dba85e;
+  --court-ball: #f8f7dc;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary: #101917;
+  --bg-main: #192420;
+  --bg-secondary: #121d18;
+  --bg-card: #1b2822;
+  --bg-card-hover: #25382d;
+  --bg-glass: #1b2822;
+  --surface-tint: rgba(221, 237, 218, 0.045);
+  --border-subtle: #304036;
+  --border-focus: #b4d991;
+  --text-main: #edf3e9;
+  --text-muted: #b1bfb0;
+  --text-dim: #99ab9a;
+  --accent-tt-green: #a7d98c;
+  --accent-tt-green-glow: rgba(167, 217, 140, 0.12);
+  --accent-tt-red: #f6959f;
+  --accent-tt-blue: #87bff0;
+  --accent-tt-amber: #e8c078;
+  --accent-tt-purple: #c3a5eb;
+  --accent-tt-pink: #eda5cf;
+  --on-accent: #14251a;
+  --action-primary: #b8df91;
+  --action-hover: #c9eaa9;
+  --on-primary: #19321f;
+  --selection: #2d432e;
+  --chrome: rgba(16, 25, 23, 0.94);
+  --shadow-sm: 0 4px 24px #0000000c;
+  --shadow-md: 0 18px 60px #00000040;
+  --shadow-glow: 0 4px 16px #00000018;
+}

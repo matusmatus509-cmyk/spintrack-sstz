@@ -100,7 +100,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({ compact = fa
         style={{
           padding: '6px 12px',
           fontSize: '0.75rem',
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+          background: 'var(--action-primary)',
           boxShadow: '0 2px 10px rgba(14, 165, 233, 0.35)',
           whiteSpace: 'nowrap'
         }}
@@ -124,7 +124,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({ compact = fa
         style={{
           margin: '10px 16px 0 16px',
           padding: '14px 18px',
-          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(18, 24, 36, 0.98) 100%)',
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, var(--bg-card) 100%)',
           border: '1px solid rgba(14, 165, 233, 0.35)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
@@ -141,11 +141,11 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({ compact = fa
             width: '42px',
             height: '42px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #10b981 0%, #0ea5e9 100%)',
+            background: 'var(--action-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: 'var(--on-primary)',
             flexShrink: 0,
             boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)'
           }}>
@@ -173,7 +173,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({ compact = fa
             style={{
               padding: '8px 16px',
               fontSize: '0.82rem',
-              background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)'
+              background: 'var(--action-primary)'
             }}
           >
             <Download size={14} />
@@ -229,7 +229,7 @@ export const PwaInstallPrompt: React.FC<PwaInstallPromptProps> = ({ compact = fa
               height: '56px',
               borderRadius: '16px',
               background: 'rgba(56, 189, 248, 0.15)',
-              color: '#38bdf8',
+              color: 'var(--accent-tt-blue)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

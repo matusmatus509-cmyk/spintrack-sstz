@@ -140,7 +140,7 @@ export const SstzMatchHistory: React.FC = () => {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Target size={18} color="#10b981" />
+            <Target size={18} color="var(--accent-tt-green)" />
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
               Všetky reálne ligové zápasy ({filteredMatches.length} z{' '}
               {allAuthenticMatches.length})
@@ -160,7 +160,7 @@ export const SstzMatchHistory: React.FC = () => {
             'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
           gap: '10px',
           marginBottom: '16px',
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: 'var(--surface-tint)',
           padding: '12px',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--border-subtle)',
@@ -338,7 +338,7 @@ export const SstzMatchHistory: React.FC = () => {
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  borderLeft: `4px solid ${isWin ? '#10b981' : '#ef4444'}`,
+                  borderLeft: `4px solid ${isWin ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)'}`,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px',
@@ -370,7 +370,7 @@ export const SstzMatchHistory: React.FC = () => {
                     <span
                       style={{
                         fontSize: '0.78rem',
-                        color: '#38bdf8',
+                        color: 'var(--accent-tt-blue)',
                         fontWeight: 700,
                       }}
                     >
@@ -429,7 +429,7 @@ export const SstzMatchHistory: React.FC = () => {
                         background: isWin
                           ? 'rgba(16, 185, 129, 0.2)'
                           : 'rgba(239, 68, 68, 0.2)',
-                        color: isWin ? '#34d399' : '#f87171',
+                        color: isWin ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)',
                         fontWeight: 800,
                         fontSize: '0.9rem',
                         fontFamily: 'var(--font-mono)',
@@ -478,7 +478,7 @@ export const SstzMatchHistory: React.FC = () => {
                           Súperi:{' '}
                         </span>
                         <strong
-                          style={{ color: isWin ? '#34d399' : '#f87171' }}
+                          style={{ color: isWin ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}
                         >
                           {m.opponentName}
                         </strong>
@@ -494,7 +494,7 @@ export const SstzMatchHistory: React.FC = () => {
                           Súper:{' '}
                         </span>
                         <strong
-                          style={{ color: isWin ? '#34d399' : '#f87171' }}
+                          style={{ color: isWin ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}
                         >
                           {m.opponentName}
                         </strong>

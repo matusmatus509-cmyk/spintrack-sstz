@@ -179,7 +179,7 @@ export const SstzHubView: React.FC = () => {
             <button
               onClick={disconnectSstz}
               className="btn-secondary"
-              style={{ padding: '6px 10px', fontSize: '0.74rem', color: '#f87171' }}
+              style={{ padding: '6px 10px', fontSize: '0.74rem', color: 'var(--accent-tt-red)' }}
             >
               Odpojiť
             </button>
@@ -193,7 +193,7 @@ export const SstzHubView: React.FC = () => {
           background: 'rgba(239, 68, 68, 0.15)',
           border: '1px solid rgba(239, 68, 68, 0.3)',
           borderRadius: 'var(--radius-md)',
-          color: '#f87171',
+          color: 'var(--accent-tt-red)',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
@@ -213,11 +213,11 @@ export const SstzHubView: React.FC = () => {
                 width: '56px',
                 height: '56px',
                 borderRadius: '16px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: 'var(--action-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff',
+                color: 'var(--on-primary)',
                 fontSize: '1.5rem',
                 fontWeight: 800,
                 boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
@@ -249,7 +249,7 @@ export const SstzHubView: React.FC = () => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
                 Kariérne Dvojhry (1v1)
               </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: sstzProfile.singlesStats.winRate >= 50 ? '#34d399' : '#f87171' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: sstzProfile.singlesStats.winRate >= 50 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>
                 {sstzProfile.singlesStats.winRate}%
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
@@ -273,7 +273,7 @@ export const SstzHubView: React.FC = () => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
                 Všetky Oficiálne Duely
               </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-tt-blue)' }}>
                 {authenticMatchCount}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
@@ -285,7 +285,7 @@ export const SstzHubView: React.FC = () => {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '4px' }}>
                 Počet Sezón
               </div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f59e0b' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-tt-amber)' }}>
                 {sstzProfile.syncedSeasonsCount || availableSeasons.length}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
@@ -364,7 +364,7 @@ export const SstzHubView: React.FC = () => {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       cursor: 'pointer',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderBottom: '1px solid var(--surface-tint)',
                       borderRadius: 'var(--radius-sm)',
                       background: 'var(--bg-card)',
                       transition: 'background 0.15s'
@@ -373,7 +373,7 @@ export const SstzHubView: React.FC = () => {
                     onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card)'}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Users size={16} color="#34d399" />
+                      <Users size={16} color="var(--accent-tt-green)" />
                       <strong style={{ fontSize: '0.95rem' }}>{p.name}</strong>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>SSTZ ID: #{p.id}</span>
                     </div>
@@ -398,7 +398,7 @@ export const SstzHubView: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={18} color="#38bdf8" />
+                <Layers size={18} color="var(--accent-tt-blue)" />
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
                   Prehľad po sezónach a ligách
                 </h3>
@@ -428,34 +428,34 @@ export const SstzHubView: React.FC = () => {
               <tbody>
                 {sstzProfile.seasonsBreakdown.map(sb => {
                   return (
-                    <tr key={sb.season} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                      <td data-label="Sezóna" style={{ padding: '12px', fontWeight: 800, color: '#38bdf8' }}>
+                    <tr key={sb.season} style={{ borderBottom: '1px solid var(--surface-tint)' }}>
+                      <td data-label="Sezóna" style={{ padding: '12px', fontWeight: 800, color: 'var(--accent-tt-blue)' }}>
                         {sb.season}
                       </td>
                       <td data-label="Ligy a súťaže" style={{ padding: '12px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                           {sb.leagues.map(l => (
-                            <span key={l} className="badge-pill" style={{ fontSize: '0.68rem', background: 'rgba(255, 255, 255, 0.06)' }}>
+                            <span key={l} className="badge-pill" style={{ fontSize: '0.68rem', background: 'var(--surface-tint)' }}>
                               {l}
                             </span>
                           ))}
                         </div>
                       </td>
                       <td data-label="Dvojhry · výhry / prehry" style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
-                        <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.singlesWon}</span> /{' '}
-                        <span style={{ color: '#f87171' }}>{sb.singlesLost}</span>
+                        <span style={{ color: 'var(--accent-tt-green)', fontWeight: 700 }}>{sb.singlesWon}</span> /{' '}
+                        <span style={{ color: 'var(--accent-tt-red)' }}>{sb.singlesLost}</span>
                       </td>
-                      <td data-label="Úspešnosť dvojhier" style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.singlesWinRate >= 50 ? '#34d399' : '#f87171' }}>
+                      <td data-label="Úspešnosť dvojhier" style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.singlesWinRate >= 50 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>
                         {sb.singlesWinRate}%
                       </td>
                       <td data-label="Štvorhry · výhry / prehry" style={{ padding: '12px 10px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
-                        <span style={{ color: '#34d399', fontWeight: 700 }}>{sb.doublesWon}</span> /{' '}
-                        <span style={{ color: '#f87171' }}>{sb.doublesLost}</span>
+                        <span style={{ color: 'var(--accent-tt-green)', fontWeight: 700 }}>{sb.doublesWon}</span> /{' '}
+                        <span style={{ color: 'var(--accent-tt-red)' }}>{sb.doublesLost}</span>
                       </td>
                       <td data-label="Úspešnosť štvorhier" style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: sb.doublesWinRate >= 50 ? '#a855f7' : 'var(--text-muted)' }}>
                         {sb.doublesWinRate}%
                       </td>
-                      <td data-label="Zápasy spolu" style={{ padding: '12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
+                      <td data-label="Zápasy spolu" style={{ padding: '12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
                         {sb.total}
                       </td>
                     </tr>
@@ -492,6 +492,7 @@ export const SstzHubView: React.FC = () => {
               1. Zväz / Región ({allLeagues.length})
             </label>
             <select
+              aria-label="Zväz alebo región"
               value={activeCategory}
               onChange={e => {
                 const newCat = e.target.value;
@@ -528,6 +529,7 @@ export const SstzHubView: React.FC = () => {
               </label>
             </div>
             <select
+              aria-label="Liga alebo súťaž"
               value={currLeagueSlug}
               onChange={e => setCurrLeagueSlug(e.target.value)}
               style={{
@@ -555,6 +557,7 @@ export const SstzHubView: React.FC = () => {
               3. Tvoj Tím / Klub {isLoadingLeague && '(Načítavam...)'}
             </label>
             <select
+              aria-label="Tím alebo klub"
               value={currClubId}
               onChange={e => setCurrClubId(e.target.value)}
               disabled={isLoadingLeague || !leagueData?.clubs || leagueData.clubs.length === 0}
@@ -603,7 +606,7 @@ export const SstzHubView: React.FC = () => {
           </div>
 
           {teamSchedule.length > 0 && (
-            <span style={{ fontSize: '0.85rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--accent-tt-green)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
               <CheckCircle2 size={16} /> Aktuálne v kalendári: {teamSchedule.length} zápasov
             </span>
           )}
@@ -616,7 +619,7 @@ export const SstzHubView: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Trophy size={18} color="#f59e0b" />
+                <Trophy size={18} color="var(--accent-tt-amber)" />
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
                   {leagueData.title}
                 </h3>
@@ -670,7 +673,7 @@ export const SstzHubView: React.FC = () => {
                           key={row.clubId}
                           onClick={() => setCurrClubId(row.clubId)}
                           style={{
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                            borderBottom: '1px solid var(--surface-tint)',
                             background: isSelected ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
                             cursor: 'pointer',
                             transition: 'background 0.15s'
@@ -682,10 +685,10 @@ export const SstzHubView: React.FC = () => {
                             if (!isSelected) e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <td style={{ padding: '12px 8px', fontWeight: 700, color: row.position <= 2 ? '#34d399' : 'var(--text-dim)' }}>
+                          <td style={{ padding: '12px 8px', fontWeight: 700, color: row.position <= 2 ? 'var(--accent-tt-green)' : 'var(--text-dim)' }}>
                             {row.position}.
                           </td>
-                          <td style={{ padding: '12px 12px', fontWeight: 600, color: isSelected ? '#38bdf8' : 'var(--text-main)' }}>
+                          <td style={{ padding: '12px 12px', fontWeight: 600, color: isSelected ? 'var(--accent-tt-blue)' : 'var(--text-main)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               {row.clubName}
                               {isSelected && (
@@ -696,11 +699,11 @@ export const SstzHubView: React.FC = () => {
                             </div>
                           </td>
                           <td style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>{row.played}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#34d399', fontWeight: 700 }}>{row.wins}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--accent-tt-green)', fontWeight: 700 }}>{row.wins}</td>
                           <td style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>{row.draws}</td>
-                          <td style={{ padding: '12px 8px', textAlign: 'center', color: '#f87171' }}>{row.losts}</td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--accent-tt-red)' }}>{row.losts}</td>
                           <td style={{ padding: '12px 12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>{row.score}</td>
-                          <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{row.points}</td>
+                          <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>{row.points}</td>
                         </tr>
                       );
                     })}
@@ -743,11 +746,11 @@ export const SstzHubView: React.FC = () => {
                       alignItems: 'center',
                       flexWrap: 'wrap',
                       gap: '12px',
-                      borderLeft: m.isPlayed ? '3px solid #10b981' : '3px solid #3b82f6'
+                      borderLeft: m.isPlayed ? '3px solid var(--accent-tt-green)' : '3px solid #3b82f6'
                     }}
                   >
                     <div style={{ minWidth: '140px' }}>
-                      <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700 }}>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--accent-tt-blue)', fontWeight: 700 }}>
                         {m.round}
                       </span>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
@@ -760,8 +763,8 @@ export const SstzHubView: React.FC = () => {
                       <span style={{
                         padding: '4px 10px',
                         borderRadius: 'var(--radius-sm)',
-                        background: m.isPlayed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        color: m.isPlayed ? '#34d399' : 'var(--text-dim)',
+                        background: m.isPlayed ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-tint)',
+                        color: m.isPlayed ? 'var(--accent-tt-green)' : 'var(--text-dim)',
                         fontWeight: 800,
                         fontSize: '0.95rem',
                         fontFamily: 'var(--font-mono)'

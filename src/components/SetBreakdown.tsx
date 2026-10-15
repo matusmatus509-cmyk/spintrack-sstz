@@ -90,7 +90,7 @@ export const SetBreakdown: React.FC<SetBreakdownProps> = ({
             <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 500 }}>
               S{set.setNumber}:
             </span>
-            <span style={{ color: set.won ? '#34d399' : '#f87171' }}>
+            <span style={{ color: set.won ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)' }}>
               {set.display}
             </span>
           </div>
@@ -102,7 +102,7 @@ export const SetBreakdown: React.FC<SetBreakdownProps> = ({
             style={{
               padding: compact ? '2px 6px' : '3px 8px',
               borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'var(--surface-tint)',
               border: '1px solid var(--border-subtle)',
               fontSize: compact ? '0.7rem' : '0.75rem',
               fontFamily: 'var(--font-mono)',
@@ -110,7 +110,7 @@ export const SetBreakdown: React.FC<SetBreakdownProps> = ({
             }}
           >
             Body: <strong>{ptsWon}:{ptsLost}</strong>{' '}
-            <span style={{ color: ptDiff >= 0 ? '#34d399' : '#f87171', fontWeight: 700 }}>
+            <span style={{ color: ptDiff >= 0 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)', fontWeight: 700 }}>
               ({ptDiff >= 0 ? `+${ptDiff}` : ptDiff})
             </span>
           </div>
