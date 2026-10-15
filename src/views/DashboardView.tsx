@@ -11,14 +11,94 @@ import {
   ChevronRight,
   ArrowUpRight,
   Plus,
+  Layers,
+  Activity,
+  Users,
+  Shield,
+  ArrowRight,
 } from "lucide-react";
 import { allInsightMatches, summarizeMatches } from "../utils/matchInsights";
+import { getDiaryEntries, normalizeDiaryDate } from "../utils/diary";
 import "./Overview.css";
+import "./Dashboard.css";
+
 interface DashboardViewProps {
   onNavigate: (tab: NavTab, category?: "all" | ActivityCategory) => void;
   onOpenQuickLog?: () => void;
   onOpenMatchModal?: () => void;
 }
+
+function CourtIllustration() {
+  return (
+    <svg
+      className="court-illustration"
+      viewBox="0 0 320 240"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="176" cy="116" r="109" fill="currentColor" opacity=".06" />
+      <circle
+        cx="176"
+        cy="116"
+        r="86"
+        stroke="currentColor"
+        strokeDasharray="3 7"
+        opacity=".2"
+      />
+      <g transform="translate(35 55) rotate(-14 130 80)">
+        <path
+          d="M15 32 176 12 267 118 100 147Z"
+          fill="var(--court-fill)"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          d="m24 36 148 98 109 15M98 22l82 110M142 16v-24l-1 24 0 64v24M61 87l168-20"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          opacity=".55"
+        />
+        <path
+          d="m61 87 168-20v-27L61 60Z"
+          fill="var(--court-fill)"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          d="m61 69 168-20M61 78l168-20m-147 0v27m21-30v27m21-30v27m21-30v27m21-30v27m21-30v27m21-30v27"
+          stroke="currentColor"
+          opacity=".25"
+        />
+        <path
+          d="M100 147v24m167-53v24M15 32v24"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </g>
+      <g transform="translate(234 152) rotate(32)">
+        <rect x="-5" y="17" width="10" height="32" rx="4" fill="#d9b78a" />
+        <ellipse rx="24" ry="29" fill="var(--court-paddle)" />
+        <path
+          d="M-16-15c5-9 16-11 23-5"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity=".45"
+        />
+      </g>
+      <circle cx="119" cy="51" r="8" fill="var(--court-ball)" />
+      <path
+        d="m104 39-12-10m9 18-18-6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity=".4"
+      />
+    </svg>
+  );
+}
+
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onOpenQuickLog,
@@ -34,179 +114,367 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     getRubberHealth,
   } = useApp();
   const account = useCommunity();
-  const welcomeName = sstzProfile?.name || account.profile?.display_name;
-  const welcomeClub = sstzProfile?.clubName || account.profile?.club;
+  const name = sstzProfile?.name || account.profile?.display_name;
   const results = useMemo(
     () => summarizeMatches(allInsightMatches(matches, doublesMatches)),
     [matches, doublesMatches],
   );
   const trainingHours =
     Math.round(
-      (activities
+      activities
         .filter((item) => item.category === "tréning" && !item.planned)
-        .reduce((sum, item) => sum + (item.durationMinutes || 0), 0) /
-        60) *
-        10,
+        .reduce((sum, item) => sum + (item.durationMinutes || 0), 0) / 6,
     ) / 10;
-  const forehand = rubbers.find(
-    (rubber) => rubber.id === activeRacket?.forehandRubberId,
+  const recent = useMemo(
+    () =>
+      getDiaryEntries(activities, matches, doublesMatches)
+        .filter((entry) => !entry.activity?.planned)
+        .slice(0, 3),
+    [activities, matches, doublesMatches],
   );
-  const backhand = rubbers.find(
-    (rubber) => rubber.id === activeRacket?.backhandRubberId,
-  );
-  const forehandWear = forehand
-    ? 100 - getRubberHealth(forehand).percent
-    : null;
-  const backhandWear = backhand
-    ? 100 - getRubberHealth(backhand).percent
-    : null;
-  const wearText = `FH ${forehandWear === null ? "—" : `${forehandWear}%`} · BH ${backhandWear === null ? "—" : `${backhandWear}%`}`;
-  const upcomingMatch = teamSchedule.find((match) => !match.isPlayed);
+  const today = new Date().toLocaleDateString("sv-SE");
+  const upcomingMatch = [...teamSchedule]
+    .filter(
+      (match) => !match.isPlayed && normalizeDiaryDate(match.dateTime) >= today,
+    )
+    .sort(
+      (a, b) =>
+        normalizeDiaryDate(a.dateTime).localeCompare(
+          normalizeDiaryDate(b.dateTime),
+        ) || a.dateTime.localeCompare(b.dateTime),
+    )[0];
+  const dateLabel = new Intl.DateTimeFormat("sk", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+  const equipment = [
+    {
+      label: "Forhend",
+      short: "FH",
+      rubber: rubbers.find(
+        (item) => item.id === activeRacket?.forehandRubberId,
+      ),
+    },
+    {
+      label: "Bekhend",
+      short: "BH",
+      rubber: rubbers.find(
+        (item) => item.id === activeRacket?.backhandRubberId,
+      ),
+    },
+  ];
   return (
-    <div className="page-view dashboard-view practical-dashboard animate-fade-in">
-      <section
-        className="dashboard-at-glance"
-        aria-label="Najbližší zápas a tvoje výsledky"
-      >
-        <header className="dashboard-heading">
-          <div className="dashboard-welcome">
-            <h1 title={welcomeName ? `Vitaj, ${welcomeName}` : undefined}>
-              {welcomeName ? `Vitaj, ${welcomeName}` : "Vitaj v SpinTracku"}
-            </h1>
-            <p title={welcomeClub}>
-              {welcomeClub || "Tvoj stolnotenisový prehľad"}
-            </p>
-          </div>
-          <button className="btn-primary" onClick={onOpenQuickLog}>
-            <Plus size={18} aria-hidden="true" />
-            <span>Pridať aktivitu</span>
+    <div className="page-view dashboard-view animate-fade-in">
+      <header className="home-heading">
+        <div>
+          <span className="eyebrow home-date">{dateLabel}</span>
+          <h1>
+            {name ? `Ahoj, ${name.split(" ")[0]}.` : "Tvoja hra. Tvoj prehľad."}
+          </h1>
+          <p>
+            {sstzProfile?.clubName ||
+              account.profile?.club ||
+              "Malé kroky pri stole. Veľký posun v tvojej hre."}
+          </p>
+        </div>
+        <button className="btn-primary" onClick={onOpenQuickLog}>
+          <Plus size={18} />
+          Pridať aktivitu
+        </button>
+      </header>
+
+      <section className="home-metrics" aria-label="Tvoje výsledky">
+        {[
+          {
+            label: "Úspešnosť",
+            value: results.rate === null ? "—" : `${results.rate}%`,
+            detail: `${results.wins} výhier · ${results.losses} prehier`,
+            Icon: TrendingUp,
+            tone: "green",
+            tab: "performance",
+          },
+          {
+            label: "Odohrané zápasy",
+            value: results.played,
+            detail: "Dvojhry aj štvorhry",
+            Icon: Trophy,
+            tone: "blue",
+            tab: "matches",
+          },
+          {
+            label: "Čas na tréningu",
+            value: `${trainingHours.toLocaleString("sk")} h`,
+            detail: "Každý tréning sa počíta",
+            Icon: Clock,
+            tone: "amber",
+            tab: "diary",
+          },
+        ].map(({ label, value, detail, Icon, tone, tab }) => (
+          <button
+            key={tab}
+            className={`home-metric metric-${tone}`}
+            onClick={() =>
+              onNavigate(tab as NavTab, tab === "diary" ? "tréning" : "all")
+            }
+          >
+            <span className="metric-icon">
+              <Icon size={21} />
+            </span>
+            <ArrowUpRight className="metric-arrow" size={17} />
+            <span className="metric-label">{label}</span>
+            <strong className="metric-value">{value}</strong>
+            <span className="metric-detail">{detail}</span>
           </button>
-        </header>
-        <section className="next-match-card" aria-labelledby="next-match-title">
-          <div className="next-match-top">
-            <span className="eyebrow" id="next-match-title">
-              <span className="status-dot" /> NAJBLIŽŠÍ ZÁPAS
+        ))}
+      </section>
+
+      <div className="home-main-grid">
+        <section className="home-match" aria-labelledby="home-match-title">
+          <div className="home-match-top">
+            <span className="eyebrow">
+              <span className="status-dot" />
+              NAJBLIŽŠIE PRI STOLE
             </span>
             <button
               className="text-button"
               onClick={() => onNavigate("calendar")}
+              aria-label="Otvoriť kalendár"
             >
-              Kalendár <ArrowUpRight size={17} />
+              <ArrowUpRight size={20} />
             </button>
           </div>
           {upcomingMatch ? (
             <>
-              <div className="match-teams">
+              <h2 id="home-match-title">Ďalší zápas, ďalšia výzva.</h2>
+              <div className="home-teams">
                 <div>
-                  <span className="team-caption">Domáci</span>
-                  <h2 title={upcomingMatch.homeTeam}>
-                    {upcomingMatch.homeTeam}
-                  </h2>
+                  <span>Domáci</span>
+                  <strong>{upcomingMatch.homeTeam}</strong>
                 </div>
-                <span className="match-vs">VS</span>
+                <b>vs</b>
                 <div>
-                  <span className="team-caption">Hostia</span>
-                  <h2 title={upcomingMatch.awayTeam}>
-                    {upcomingMatch.awayTeam}
-                  </h2>
+                  <span>Hostia</span>
+                  <strong>{upcomingMatch.awayTeam}</strong>
                 </div>
               </div>
-              <div className="match-footer">
-                <span>
-                  <Calendar size={16} /> {upcomingMatch.dateTime}
-                </span>
-                {upcomingMatch.round && <span>{upcomingMatch.round}</span>}
-              </div>
-            </>
-          ) : (
-            <div className="next-match-empty">
-              <span className="empty-icon">
-                <Calendar size={29} />
-              </span>
-              <div>
-                <h2>Ďalší zápas na dosah</h2>
-                <p>
-                  {sstzProfile
-                    ? "V uloženom rozpise nie je ďalšie neodohrané stretnutie."
-                    : "Pripoj svoju ligu a maj rozpis vždy po ruke."}
-                </p>
+              <div className="home-fixture-date">
+                <Calendar size={16} />
+                {upcomingMatch.dateTime}
+                {upcomingMatch.round && <span>· {upcomingMatch.round}</span>}
               </div>
               <button
-                className="btn-secondary"
+                className="home-match-cta"
+                onClick={() => onNavigate("calendar")}
+              >
+                Pozrieť rozpis
+                <ArrowRight size={17} />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="home-match-content">
+                <div>
+                  <h2 id="home-match-title">
+                    Pripravený na
+                    <br />
+                    ďalšiu výmenu?
+                  </h2>
+                  <p>
+                    {sstzProfile
+                      ? "Naplánuj si tréning alebo si pozri svoj kalendár."
+                      : "Pripoj svoju ligu a maj zápasy, výsledky aj celú kariéru po ruke."}
+                  </p>
+                </div>
+                <CourtIllustration />
+              </div>
+              <button
+                className="home-match-cta"
                 onClick={() => onNavigate(sstzProfile ? "calendar" : "sstz")}
               >
                 {sstzProfile ? "Otvoriť kalendár" : "Nájsť moju ligu"}
-                <ChevronRight size={17} />
+                <ArrowRight size={17} />
               </button>
-            </div>
+            </>
           )}
         </section>
         <section
-          className="dashboard-metrics"
-          aria-label="Otvor prehľad svojich výsledkov"
+          className="home-equipment glass-panel"
+          aria-labelledby="home-equipment-title"
         >
-          {[
-            {
-              label: "Úspešnosť",
-              value: results.rate === null ? "—" : `${results.rate}%`,
-              detail: `${results.wins} výhier · ${results.losses} prehier`,
-              icon: TrendingUp,
-              tone: "green",
-              tab: "performance" as NavTab,
-            },
-            {
-              label: "Všetky zápasy",
-              value: results.played,
-              detail: "Dvojhry aj štvorhry",
-              icon: Trophy,
-              tone: "blue",
-              tab: "matches" as NavTab,
-            },
-            {
-              label: "Tréningy",
-              value: `${trainingHours} h`,
-              detail: "Čas zo zapísaných tréningov",
-              icon: Clock,
-              tone: "amber",
-              tab: "diary" as NavTab,
-            },
-          ].map(({ label, value, detail, icon: Icon, tone, tab }) => (
-            <button
-              className={`metric-card metric-${tone} overview-metric`}
-              key={label}
-              onClick={() =>
-                onNavigate(tab, tab === "diary" ? "tréning" : "all")
-              }
-            >
-              <span className="metric-icon">
-                <Icon size={21} />
-              </span>
-              <ArrowUpRight className="metric-arrow" size={18} />
-              <span className="metric-label">{label}</span>
-              <strong className="metric-value">
-                {tab === "diary" ? (
-                  <>{trainingHours}<span className="metric-unit">h</span></>
-                ) : value}
-              </strong>
-              {tab === "diary" ? (
-                <span
-                  className="training-wear"
-                  title={
-                    activeRacket
-                      ? `Opotrebovanie poťahov rakety ${activeRacket.name}: forhend ${forehandWear === null ? "neuvedené" : `${forehandWear}%`}, bekhend ${backhandWear === null ? "neuvedené" : `${backhandWear}%`}`
-                      : "Najprv si pridaj raketu vo výbave"
-                  }
-                >
-                  <span>Opotrebovanie</span>
-                  <strong>{activeRacket ? wearText : "Bez rakety"}</strong>
-                </span>
-              ) : (
-                <span className="metric-detail">{detail}</span>
-              )}
-            </button>
-          ))}
+          <div className="home-section-heading">
+            <span className="eyebrow">PRIPRAVENÉ NA HRU</span>
+            <Layers size={19} />
+          </div>
+          <h2 id="home-equipment-title">
+            {activeRacket?.name || "Tvoja výstroj"}
+          </h2>
+          <p>Kondícia poťahov</p>
+          {activeRacket ? (
+            <div className="home-rubbers">
+              {equipment.map(({ label, short, rubber }) => {
+                const health = rubber ? getRubberHealth(rubber).percent : null;
+                return (
+                  <div
+                    className={`home-rubber ${health !== null && health < 30 ? "needs-care" : ""}`}
+                    key={short}
+                  >
+                    <div>
+                      <span>{label}</span>
+                      <strong>{health === null ? "—" : `${health}%`}</strong>
+                    </div>
+                    <div
+                      className="rubber-meter"
+                      role="meter"
+                      aria-label={`${label} – kondícia poťahu`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={health ?? undefined}
+                      aria-valuetext={
+                        health === null
+                          ? "Poťah nie je priradený"
+                          : `${health}%`
+                      }
+                    >
+                      <span style={{ width: `${health ?? 0}%` }} />
+                    </div>
+                    <small>
+                      {rubber
+                        ? `${rubber.brand} ${rubber.model}`
+                        : "Poťah ešte nie je priradený"}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="home-equipment-empty">
+              Pridaj svoju raketu a sleduj, kedy si poťahy zaslúžia výmenu.
+            </p>
+          )}
+          <button
+            className="text-button"
+            onClick={() => onNavigate("equipment")}
+          >
+            Moja výstroj
+            <ArrowRight size={16} />
+          </button>
         </section>
+      </div>
+
+      <section className="home-shortcuts" aria-label="Rýchly prístup">
+        {[
+          {
+            tab: "diary",
+            Icon: Activity,
+            title: "Tréningový denník",
+            description: "Všetky aktivity na jednom mieste",
+          },
+          {
+            tab: "sstz",
+            Icon: Shield,
+            title: "Moja kariéra SSTZ",
+            description: "Oficiálne výsledky a ligy",
+          },
+          {
+            tab: "community",
+            Icon: Users,
+            title: "Hrajme spolu",
+            description: "Priatelia a spoločné tréningy",
+          },
+        ].map(({ tab, Icon, title, description }) => (
+          <button key={tab} onClick={() => onNavigate(tab as NavTab)}>
+            <span className="shortcut-icon">
+              <Icon size={21} />
+            </span>
+            <span>
+              <strong>{title}</strong>
+              <small>{description}</small>
+            </span>
+            <ChevronRight size={16} />
+          </button>
+        ))}
       </section>
+
+      <section
+        className="home-recent glass-panel"
+        aria-labelledby="recent-title"
+      >
+        <div className="home-section-heading">
+          <div>
+            <h2 id="recent-title">Posledné aktivity</h2>
+            <p>Tvoja cesta za lepšou hrou.</p>
+          </div>
+          <button className="text-button" onClick={() => onNavigate("diary")}>
+            Všetky aktivity
+            <ArrowRight size={16} />
+          </button>
+        </div>
+        {recent.length ? (
+          <div className="recent-list">
+            {recent.map((entry) => (
+              <button
+                className="recent-row"
+                key={entry.id}
+                onClick={() => onNavigate("diary", entry.category)}
+              >
+                <span className="recent-icon" data-category={entry.category}>
+                  {entry.category === "tréning" ? (
+                    <Activity size={20} />
+                  ) : (
+                    <Trophy size={20} />
+                  )}
+                </span>
+                <span className="recent-copy">
+                  <strong>{entry.title}</strong>
+                  <small>
+                    {entry.date
+                      ? new Date(`${entry.date}T12:00:00`).toLocaleDateString(
+                          "sk",
+                          { day: "numeric", month: "long" },
+                        )
+                      : entry.originalDate}
+                    {entry.subtitle ? ` · ${entry.subtitle}` : ""}
+                  </small>
+                </span>
+                <span
+                  className={`recent-result ${entry.result === "WIN" ? "is-win" : entry.result === "LOSS" ? "is-loss" : ""}`}
+                >
+                  {entry.score ||
+                    (entry.activity?.durationMinutes
+                      ? `${entry.activity.durationMinutes} min`
+                      : "")}
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="home-empty">
+            <span className="recent-icon">
+              <Activity size={24} />
+            </span>
+            <div>
+              <h3>Tu začína tvoj progres</h3>
+              <p>
+                Zapíš prvý tréning alebo zápas. O všetko ostatné sa postará tvoj
+                denník.
+              </p>
+            </div>
+            <button className="btn-secondary" onClick={onOpenQuickLog}>
+              <Plus size={16} />
+              Prvá aktivita
+            </button>
+          </div>
+        )}
+      </section>
+      <footer className="home-footer">
+        <CircleMark />
+        Vytvorené pre tvoju hru.<span>SpinTrack · SSTZ</span>
+      </footer>
     </div>
   );
 };
+function CircleMark() {
+  return <span className="footer-ball" aria-hidden="true" />;
+}

@@ -144,7 +144,7 @@ export const CalendarView: React.FC = () => {
       {/* Highlight: Next Upcoming Fixture */}
       {nextMatch && (
         <div className="glass-panel" style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, var(--bg-card) 100%)',
           borderRadius: 'var(--radius-lg)',
           padding: '16px',
           border: '1px solid var(--border-subtle)',
@@ -157,7 +157,7 @@ export const CalendarView: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{
                 background: 'rgba(16, 185, 129, 0.15)',
-                color: '#10b981',
+                color: 'var(--accent-tt-green)',
                 padding: '10px',
                 borderRadius: '12px'
               }}>
@@ -168,7 +168,7 @@ export const CalendarView: React.FC = () => {
                   Najbližší ligový duel ({nextMatch.round})
                 </span>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>
-                  {nextMatch.homeTeam} <span style={{ color: '#38bdf8' }}>vs</span> {nextMatch.awayTeam}
+                  {nextMatch.homeTeam} <span style={{ color: 'var(--accent-tt-blue)' }}>vs</span> {nextMatch.awayTeam}
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ export const CalendarView: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ textAlign: 'right', fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 Termín:<br />
-                <strong style={{ color: '#34d399', fontSize: '0.95rem' }}>{nextMatch.dateTime}</strong>
+                <strong style={{ color: 'var(--accent-tt-green)', fontSize: '0.95rem' }}>{nextMatch.dateTime}</strong>
               </div>
 
               <button
@@ -227,7 +227,7 @@ export const CalendarView: React.FC = () => {
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: '16px',
-                  borderLeft: m.isPlayed ? '4px solid #10b981' : '4px solid #3b82f6'
+                  borderLeft: m.isPlayed ? '4px solid var(--accent-tt-green)' : '4px solid #3b82f6'
                 }}
               >
                 {/* Left: Round & Date */}
@@ -265,12 +265,12 @@ export const CalendarView: React.FC = () => {
                   <div style={{
                     padding: '6px 14px',
                     borderRadius: 'var(--radius-sm)',
-                    background: m.isPlayed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    background: m.isPlayed ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-tint)',
                     border: `1px solid ${m.isPlayed ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}`,
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 800,
                     fontSize: '1.2rem',
-                    color: m.isPlayed ? '#34d399' : 'var(--text-dim)',
+                    color: m.isPlayed ? 'var(--accent-tt-green)' : 'var(--text-dim)',
                     minWidth: '70px',
                     textAlign: 'center'
                   }}>
@@ -377,7 +377,7 @@ export const CalendarView: React.FC = () => {
                 <select
                   value={matchOutcome}
                   onChange={e => setMatchOutcome(e.target.value as any)}
-                  style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                 >
                   <option value="WIN">VÝHRA (Win)</option>
                   <option value="LOSS">PREHRA (Loss)</option>
@@ -392,11 +392,11 @@ export const CalendarView: React.FC = () => {
                   type="text"
                   value={matchScore}
                   onChange={e => setMatchScore(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: '#fff' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}
                 />
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', background: 'rgba(10, 13, 20, 0.4)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', background: 'var(--bg-secondary)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
                 Zápas bude zapísaný pod aktívnu raketu: <strong>{activeRacket?.name}</strong>. Poťahy na rakete dostanú +30 minút herného času do výpočtu opotrebovania.
               </div>
 

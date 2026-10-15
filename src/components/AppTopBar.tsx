@@ -1,17 +1,36 @@
-import React from 'react';
-import { useCommunity } from '../context/CommunityContext';
-import { useApp } from '../context/AppContext';
-import { Settings, ShieldCheck, CircleDot, UserRound } from 'lucide-react';
+import React from "react";
+import { useCommunity } from "../context/CommunityContext";
+import { useTheme } from "../context/ThemeContext";
+import {
+  Settings,
+  CircleDot,
+  UserRound,
+  Sun,
+  Moon,
+  ChevronRight,
+} from "lucide-react";
+import { NAV_TABS, type NavTab } from "./Navigation";
+
 interface AppTopBarProps {
   onOpenSettings: () => void;
   onOpenCommunity: () => void;
+  onHome: () => void;
+  currentTab: NavTab;
 }
-export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings, onOpenCommunity }) => {
-  const { sstzProfile } = useApp();
+export const AppTopBar: React.FC<AppTopBarProps> = ({
+  onOpenSettings,
+  onOpenCommunity,
+  onHome,
+  currentTab,
+}) => {
   const account = useCommunity();
+  const { theme, setPreference } = useTheme();
+  const nextTheme = theme === "dark" ? "light" : "dark";
+  const themeLabel =
+    theme === "dark" ? "Zapnúť svetlý režim" : "Zapnúť tmavý režim";
   return (
     <header className="app-topbar">
-      <div className="brand">
+      <button className="brand" onClick={onHome} aria-label="SpinTrack – domov">
         <span className="brand-mark">
           <CircleDot size={25} strokeWidth={2.2} />
         </span>
@@ -19,27 +38,43 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({ onOpenSettings, onOpenComm
           SpinTrack
           <span className="brand-caption">TVOJA HRA. TVOJ PROGRES.</span>
         </span>
-        <span className="brand-sstz">SSTZ</span>
+      </button>
+      <div className="topbar-location" aria-label="Aktuálna sekcia">
+        <span>Môj priestor</span>
+        <ChevronRight size={14} />
+        <strong>{NAV_TABS.find((tab) => tab.id === currentTab)?.label}</strong>
       </div>
       <div className="topbar-actions">
-        <button className="icon-button" onClick={onOpenCommunity}
-          aria-label={account.user ? "Môj účet a komunita" : "Prihlásiť sa"}
-          title={account.profile?.display_name || "Prihlásiť sa"}>
-          <UserRound size={21} />
+        <button
+          className="icon-button theme-toggle"
+          onClick={() => setPreference(nextTheme)}
+          aria-label={themeLabel}
+          title={themeLabel}
+        >
+          {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
         </button>
-        {sstzProfile && (
-          <span className="topbar-profile">
-            <ShieldCheck size={16} />
-            <span>{sstzProfile.name}</span>
-          </span>
-        )}
         <button
           className="icon-button"
           onClick={onOpenSettings}
           aria-label="Nastavenia"
           title="Nastavenia"
         >
-          <Settings size={21} strokeWidth={1.8} />
+          <Settings size={20} strokeWidth={1.8} />
+        </button>
+        <button
+          className="account-button"
+          onClick={onOpenCommunity}
+          aria-label={account.user ? "Môj účet a komunita" : "Prihlásiť sa"}
+        >
+          <span className="account-avatar">
+            {account.profile?.display_name
+              ?.slice(0, 1)
+              .toLocaleUpperCase("sk") || <UserRound size={19} />}
+          </span>
+          <span className="account-label">
+            {account.profile?.display_name || "Môj účet"}
+            <small>{account.user ? "Hráčsky profil" : "Prihlásiť sa"}</small>
+          </span>
         </button>
       </div>
     </header>

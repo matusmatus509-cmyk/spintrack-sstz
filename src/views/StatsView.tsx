@@ -65,7 +65,7 @@ export const StatsView: React.FC = () => {
       {/* Top XP & Level Banner */}
       <div className="glass-panel" style={{
         padding: '24px',
-        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
+        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, var(--bg-card) 100%)',
         border: '1px solid var(--border-subtle)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -78,11 +78,11 @@ export const StatsView: React.FC = () => {
             width: '64px',
             height: '64px',
             borderRadius: '20px',
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            background: 'var(--accent-tt-amber)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: 'var(--on-accent)',
             fontWeight: 800,
             fontSize: '1.8rem',
             boxShadow: '0 4px 16px rgba(245, 158, 11, 0.35)'
@@ -113,7 +113,7 @@ export const StatsView: React.FC = () => {
               <div style={{
                 width: `${currentLevelXp}%`,
                 height: '100%',
-                background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+                background: 'linear-gradient(90deg, var(--accent-tt-amber), var(--accent-tt-amber))',
                 borderRadius: 'var(--radius-full)'
               }} />
             </div>
@@ -123,7 +123,7 @@ export const StatsView: React.FC = () => {
         <div style={{ display: 'flex', gap: '16px' }}>
           <div style={{ textAlign: 'center' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Odomknuté odznaky</span>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-tt-amber)', fontFamily: 'var(--font-mono)' }}>
               {badges.filter(b => b.unlockedAt).length} / {badges.length}
             </div>
           </div>
@@ -166,8 +166,8 @@ export const StatsView: React.FC = () => {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: idx === 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    color: idx === 0 ? '#10b981' : 'var(--text-dim)',
+                    background: idx === 0 ? 'rgba(16, 185, 129, 0.2)' : 'var(--surface-tint)',
+                    color: idx === 0 ? 'var(--accent-tt-green)' : 'var(--text-dim)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -188,14 +188,14 @@ export const StatsView: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Úspešnosť</span>
-                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: rate >= 60 ? '#34d399' : '#f87171', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: rate >= 60 ? 'var(--accent-tt-green)' : 'var(--accent-tt-red)', fontFamily: 'var(--font-mono)' }}>
                       {rate}%
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>GPI Skóre</span>
-                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#10b981', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--accent-tt-green)', fontFamily: 'var(--font-mono)' }}>
                       {racket.gpiScore}
                     </div>
                   </div>
@@ -209,7 +209,7 @@ export const StatsView: React.FC = () => {
       {/* Badges & Achievements Grid */}
       <div className="glass-panel" style={{ padding: '24px' }}>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '6px' }}>
-          Odznaky & Úspechy (Badges & Milestones)
+          Odznaky a úspechy
         </h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
           Odomykaj odznaky za pravidelný tréning, starostlivosť o poťahy a zápasové víťazstvá.
@@ -236,7 +236,7 @@ export const StatsView: React.FC = () => {
                   alignItems: 'flex-start',
                   gap: '14px',
                   cursor: isUnlocked ? 'pointer' : 'default',
-                  opacity: isUnlocked ? 1 : 0.65,
+                  opacity: 1,
                   transition: 'all 0.2s ease'
                 }}
               >
@@ -244,8 +244,8 @@ export const StatsView: React.FC = () => {
                   width: '46px',
                   height: '46px',
                   borderRadius: '12px',
-                  background: isUnlocked ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255, 255, 255, 0.05)',
-                  color: isUnlocked ? '#ffffff' : 'var(--text-dim)',
+                  background: isUnlocked ? 'linear-gradient(135deg, var(--accent-tt-green), var(--accent-tt-green))' : 'var(--surface-tint)',
+                  color: isUnlocked ? 'var(--text-main)' : 'var(--text-dim)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -275,7 +275,7 @@ export const StatsView: React.FC = () => {
                       </div>
                       <div style={{
                         height: '5px',
-                        background: 'rgba(255, 255, 255, 0.08)',
+                        background: 'var(--surface-tint)',
                         borderRadius: 'var(--radius-full)',
                         overflow: 'hidden',
                         marginTop: '4px'
@@ -283,7 +283,7 @@ export const StatsView: React.FC = () => {
                         <div style={{
                           width: `${Math.min(100, (b.progress / b.maxProgress) * 100)}%`,
                           height: '100%',
-                          background: '#38bdf8'
+                          background: 'var(--accent-tt-blue)'
                         }} />
                       </div>
                     </div>

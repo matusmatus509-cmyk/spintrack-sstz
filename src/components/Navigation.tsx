@@ -14,6 +14,8 @@ import {
   MoreHorizontal,
   ChevronRight,
   X,
+  Plus,
+  Search,
 } from 'lucide-react';
 import { useDialog } from '../hooks/useDialog';
 
@@ -32,6 +34,7 @@ export type NavTab =
 interface NavigationProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
+  onAddActivity: () => void;
 }
 export const NAV_TABS = [
   {
@@ -90,11 +93,20 @@ export const NAV_TABS = [
 export const Navigation: React.FC<NavigationProps> = ({
   currentTab,
   onSelectTab,
+  onAddActivity,
 }) => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const dialogRef = useDialog(isMoreOpen, () => setIsMoreOpen(false));
-  const primaryTabs = NAV_TABS.slice(0, 4);
-  const moreTabs = NAV_TABS.slice(4);
+  const primaryTabs = ['dashboard', 'diary', 'calendar', 'sstz'].map(id => NAV_TABS.find(tab => tab.id === id)!);
+  const moreTabs = NAV_TABS.filter(tab => !primaryTabs.includes(tab));
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('sk');
+  const visibleTabs = moreTabs.filter(tab => normalize(`${tab.label} ${tab.description}`).includes(normalize(query)));
+  const groups = [
+    { label: 'Môj priestor', ids: ['dashboard', 'diary', 'calendar', 'equipment'] },
+    { label: 'Moja hra', ids: ['performance', 'matches', 'opponents', 'stats'] },
+    { label: 'Objavovať', ids: ['sstz', 'tournaments', 'community'] },
+  ];
   const select = (tab: NavTab) => {
     setIsMoreOpen(false);
     onSelectTab(tab);
@@ -103,21 +115,20 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       <aside className="desktop-sidebar">
-        <span className="nav-eyebrow">TVOJ HERNÝ PRIESTOR</span>
         <nav aria-label="Hlavná navigácia" className="sidebar-links">
-          {NAV_TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              className={`sidebar-link ${currentTab === id ? 'is-active' : ''}`}
-              aria-current={currentTab === id ? 'page' : undefined}
-              onClick={() => select(id)}
-            >
-              <Icon size={20} strokeWidth={1.8} />
-              <span>{label}</span>
-              {currentTab === id && <span className="nav-active-dot" />}
-            </button>
-          ))}
+          {groups.map(group => <div className="nav-group" key={group.label}>
+            <span className="nav-eyebrow">{group.label}</span>
+            {group.ids.map(id => {
+              const { label, icon: Icon } = NAV_TABS.find(tab => tab.id === id)!;
+              return <button key={id} className={`sidebar-link ${currentTab === id ? 'is-active' : ''}`}
+                aria-current={currentTab === id ? 'page' : undefined} onClick={() => select(id as NavTab)}>
+                <Icon size={19} strokeWidth={1.8} /><span>{label}</span>
+                {currentTab === id && <span className="nav-active-dot" />}
+              </button>;
+            })}
+          </div>)}
         </nav>
+        <button className="btn-primary sidebar-add" onClick={onAddActivity}><Plus size={18} />Pridať aktivitu</button>
         <div className="sidebar-note">
           <span className="status-dot" />
           <div>
@@ -145,7 +156,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           aria-label="Viac sekcií"
           aria-expanded={isMoreOpen}
           aria-haspopup="dialog"
-          onClick={() => setIsMoreOpen(true)}
+          onClick={() => { setQuery(''); setIsMoreOpen(true); }}
         >
           <span className="mobile-nav-icon">
             <MoreHorizontal size={23} />
@@ -181,10 +192,13 @@ export const Navigation: React.FC<NavigationProps> = ({
                   <X size={21} />
                 </button>
               </div>
-              {moreTabs.map(({ id, label, icon: Icon, description }) => (
+              <label className="nav-search"><Search size={18} /><span className="sr-only">Hľadať sekciu</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Nájsť sekciu…" /></label>
+              {visibleTabs.length === 0 && <p className="nav-search-empty">Žiadna sekcia sa nenašla.</p>}
+              {visibleTabs.map(({ id, label, icon: Icon, description }) => (
                 <button
                   key={id}
                   className={`more-menu-link ${currentTab === id ? 'is-active' : ''}`}
+                  aria-current={currentTab === id ? 'page' : undefined}
                   onClick={() => select(id)}
                 >
                   <span className="more-menu-icon">

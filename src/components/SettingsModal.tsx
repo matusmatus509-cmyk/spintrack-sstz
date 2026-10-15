@@ -1,3 +1,4 @@
+import { ThemePicker } from './ThemePicker';
 import { useDialog } from '../hooks/useDialog';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -146,9 +147,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           </button>
         </div>
 
+        <ThemePicker />
+
         {/* PWA Mobile App Section */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, var(--bg-card) 100%)',
           borderRadius: 'var(--radius-md)',
           padding: '16px',
           border: '1px solid rgba(14, 165, 233, 0.3)',
@@ -156,8 +159,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           flexDirection: 'column',
           gap: '10px'
         }}>
-          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8' }}>
-            <Smartphone size={16} /> Mobilná webová aplikácia (PWA)
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-tt-blue)' }}>
+            <Smartphone size={16} /> SpinTrack vo vrecku
           </h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Nainštaluj si SpinTrack priamo na plochu smartfónu. Aplikácia sa otvorí bez líšt prehliadača v samostatnom okne a funguje aj bez internetového pripojenia.
@@ -168,7 +171,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           {mobileUrl && (
             <div style={{
               fontSize: '0.8rem',
-              background: 'rgba(0, 0, 0, 0.35)',
+              background: 'var(--bg-secondary)',
               padding: '8px 12px',
               borderRadius: 'var(--radius-sm)',
               display: 'flex',
@@ -177,7 +180,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               gap: '8px',
               flexWrap: 'wrap'
             }}>
-              <span>Wi-Fi adresa pre mobil: <strong style={{ color: '#38bdf8' }}>{mobileUrl}</strong></span>
+              <span>Wi-Fi adresa pre mobil: <strong style={{ color: 'var(--accent-tt-blue)' }}>{mobileUrl}</strong></span>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(mobileUrl);
@@ -203,7 +206,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           gap: '10px'
         }}>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Download size={16} color="#10b981" /> Zálohovanie údajov (Export)
+            <Download size={16} color="var(--accent-tt-green)" /> Záloha tvojich údajov
           </h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Stiahni si kompletnú zálohu svojich rakiet, poťahov, tréningov a SSTZ zápasov do JSON súboru.
@@ -222,7 +225,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               className="btn-secondary"
               style={{ fontSize: '0.82rem', padding: '8px 14px' }}
             >
-              {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+              {copied ? <Check size={14} color="var(--accent-tt-green)" /> : <Copy size={14} />}
               {copied ? 'Skopírované!' : 'Kopírovať do schránky'}
             </button>
           </div>
@@ -239,7 +242,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           gap: '10px'
         }}>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Upload size={16} color="#38bdf8" /> Obnovenie údajov (Import)
+            <Upload size={16} color="var(--accent-tt-blue)" /> Obnoviť zo zálohy
           </h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Vlož text JSON zálohy a obnov svoje predchádzajúce záznamy.
@@ -247,16 +250,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
           <textarea
             rows={3}
-            placeholder="Vlož JSON sem..."
+            aria-label="Obsah JSON zálohy"
+            placeholder="Vlož JSON sem…"
             value={importText}
             onChange={e => setImportText(e.target.value)}
             style={{
               width: '100%',
               padding: '8px',
               borderRadius: 'var(--radius-sm)',
-              background: 'rgba(10, 13, 20, 0.6)',
+              background: 'var(--bg-secondary)',
               border: '1px solid var(--border-subtle)',
-              color: '#fff',
+              color: 'var(--text-main)',
               fontSize: '0.78rem',
               fontFamily: 'var(--font-mono)'
             }}
@@ -265,7 +269,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           {importStatus && (
             <div style={{
               fontSize: '0.8rem',
-              color: importStatus.includes('Chyba') ? '#f87171' : '#34d399',
+              color: importStatus.includes('Chyba') ? 'var(--accent-tt-red)' : 'var(--accent-tt-green)',
               fontWeight: 600
             }}>
               {importStatus}
@@ -292,7 +296,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           alignItems: 'center'
         }}>
           <div>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f87171' }}>Vynulovanie aplikácie</h4>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-tt-red)' }}>Vynulovanie aplikácie</h4>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               Vymaže lokálne úložisko a nastaví predvolené vzorové dáta.
             </span>
