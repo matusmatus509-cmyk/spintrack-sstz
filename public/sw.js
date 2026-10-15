@@ -1,5 +1,5 @@
 // SpinTrack SSTZ PWA Service Worker
-const CACHE_NAME = 'spintrack-sstz-v8';
+const CACHE_NAME = 'spintrack-sstz-v9';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
