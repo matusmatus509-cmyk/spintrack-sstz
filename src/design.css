@@ -627,7 +627,7 @@ table tbody tr:last-child {
     background: var(--selection);
   }
 }
-@media (max-width: 1100px) {
+@media all {
   .desktop-sidebar {
     width: 206px;
     padding-inline: 12px;
@@ -642,7 +642,7 @@ table tbody tr:last-child {
     display: none;
   }
 }
-@media (max-width: 767px) {
+@media all {
   .desktop-sidebar {
     display: none;
   }
@@ -668,7 +668,7 @@ table tbody tr:last-child {
     margin-left: 0;
   }
 }
-@media (max-width: 640px) {
+@media all {
   .app-topbar {
     height: calc(68px + env(safe-area-inset-top, 0px));
     padding-inline: 16px;
@@ -778,7 +778,7 @@ table tbody tr:last-child {
     scroll-behavior: auto !important;
   }
 }
-@media (max-width: 767px) and (pointer: coarse) {
+@media (pointer: coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
       [type="file"]
     ),

@@ -253,12 +253,12 @@
   outline: 2px solid var(--accent-tt-green);
   outline-offset: 3px;
 }
-@media (max-width: 1000px) {
+@media all {
   .insights-charts {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 640px) {
+@media all {
   .insights-summary {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
@@ -361,7 +361,7 @@
   padding: 12px;
   gap: 4px;
 }
-@media (max-width: 640px) {
+@media all {
   .insights-summary {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
@@ -402,7 +402,7 @@
     min-height: 42px;
   }
 }
-@media (max-width: 640px) {
+@media all {
   .main-content:has(.insights-view) {
     padding-top: 12px;
   }
@@ -432,7 +432,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media all {
   .insights-chart {
     padding: 14px;
   }

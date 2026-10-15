@@ -29,4 +29,4 @@
 .recommendations-empty p { margin:0 0 12px; }
 .recommendations-footnote { font-size:.68rem; margin:16px 0 0; }
 .recommendations-notice { display:flex; align-items:center; gap:8px; font-size:.78rem; line-height:1.6; color:var(--accent-tt-green); }
-@media(max-width:640px) { .recommendations-panel { padding:16px; } .recommendations-title h2 { font-size:1.1rem; } .recommended-tournament { padding:14px; gap:10px; } .recommended-date { min-width:48px; } .recommended-actions button { width:100%; } }
+@media all { .recommendations-panel { padding:16px; } .recommendations-title h2 { font-size:1.1rem; } .recommended-tournament { padding:14px; gap:10px; } .recommended-date { min-width:48px; } .recommended-actions button { width:100%; } }

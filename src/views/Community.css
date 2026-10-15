@@ -228,7 +228,7 @@
   display: grid;
   gap: 8px;
 }
-@media (max-width: 640px) {
+@media all {
   .community-auth {
     padding: 18px;
   }
@@ -280,7 +280,7 @@
   gap: 14px;
   padding-top: 16px;
 }
-@media (max-width: 640px) {
+@media all {
   .community-view .page-header {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

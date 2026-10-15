@@ -818,42 +818,7 @@ table td {
     background: var(--bg-card-hover);
   }
 }
-@media (min-width: 768px) {
-  .d-md-none {
-    display: none !important;
-  }
-  .d-md-flex {
-    display: flex !important;
-  }
-  .d-md-block {
-    display: block !important;
-  }
-}
-@media (max-width: 1023px) and (min-width: 768px) {
-  .desktop-sidebar {
-    width: 182px;
-    padding-inline: 10px;
-  }
-  .nav-eyebrow {
-    font-size: 0.52rem;
-  }
-  .main-content {
-    padding-inline: 24px;
-  }
-  .next-match-empty {
-    flex-wrap: wrap;
-  }
-  .next-match-empty .btn-secondary {
-    margin-left: 82px;
-  }
-  .dashboard-metrics {
-    gap: 10px;
-  }
-  .metric-card {
-    padding: 16px;
-  }
-}
-@media (max-width: 767px) {
+@media all {
   .d-none-mobile {
     display: none !important;
   }
@@ -1106,7 +1071,7 @@ table td {
     overflow-wrap: anywhere;
   }
 }
-@media (max-width: 640px) {
+@media all {
   .mobile-sheet-container {
     align-items: flex-end !important;
     padding: 0 !important;
@@ -1204,7 +1169,7 @@ table td {
     font-size: 0.58rem;
   }
 }
-@media (max-width: 520px) {
+@media all {
   .d-none-xs {
     display: none !important;
   }
@@ -1255,7 +1220,7 @@ table td {
 .mobile-sheet-content {
   overflow-y: auto;
 }
-@media (max-width: 767px) {
+@media all {
   button {
     min-width: 44px;
   }
@@ -1339,7 +1304,7 @@ table td {
 .tournament-loss { color: var(--accent-tt-red); }
 .tournament-empty { text-align: center; padding: 32px 20px; }
 .tournament-empty > svg { margin: 0 auto 12px; color: var(--accent-tt-green); }
-@media(max-width: 480px) {
+@media all {
   .tournament-panel { padding: 16px; }
   .tournament-player .btn-primary { width: 100%; }
   .tournament-field input, .tournament-field select { font-size: 16px; }
@@ -1394,7 +1359,7 @@ table td {
 .activity-error { color: var(--accent-tt-red); font-size: .88rem; margin: 0; }
 .activity-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg-main); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
 .activity-footer button { min-height: 46px; }
-@media (max-width: 600px) {
+@media all {
   .activity-overlay { padding: 0; align-items: flex-end; }
   .activity-dialog { max-height: 100dvh; border-radius: 20px 20px 0 0; border-bottom: 0; }
   .activity-header { padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 14px; }
@@ -1425,7 +1390,7 @@ table td {
 .sync-progress span { display: block; width: 35%; height: 100%; background: var(--accent-tt-green); border-radius: 8px; animation: sync-slide 1.8s ease-in-out infinite alternate; }
 @keyframes sync-rotate { to { transform: rotate(360deg); } }
 @keyframes sync-slide { from { transform: translateX(-100%); } to { transform: translateX(285%); } }
-@media (max-width: 600px) { .sync-status { top: auto; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: 16px; } .sync-status-card { padding: 12px; } }
+@media all { .sync-status { top: auto; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: 16px; } .sync-status-card { padding: 12px; } }
 @media (prefers-reduced-motion: reduce) { .sync-spinner, .sync-progress span { animation: none; } }
 
 .diary-view { display: flex; flex-direction: column; gap: 20px; }
@@ -1505,7 +1470,7 @@ table td {
 .diary-photo-overlay > div { position: relative; max-width: 100%; }
 .diary-photo-overlay img { max-width: 90vw; max-height: 85dvh; object-fit: contain; border-radius: 12px; }
 .diary-photo-overlay button { position: absolute; right: 5px; top: 5px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #000b; color: white; cursor: pointer; }
-@media(max-width: 700px) {
+@media all {
   .diary-header h1 { font-size: 1.5rem; }
   .diary-header .btn-primary { width: 100%; justify-content: center; }
   .diary-controls { padding: 12px; }
@@ -1522,4 +1487,4 @@ table td {
   .diary-card-result strong { font-size: 1.2rem; }
   .diary-card-detail { margin-inline: 12px; }
 }
-@media(max-width: 360px) { .diary-card-icon { display: none; } .diary-filter-fields { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 360px) { .diary-card-icon { display: none; } .diary-filter-fields { grid-template-columns: minmax(0,1fr); } }

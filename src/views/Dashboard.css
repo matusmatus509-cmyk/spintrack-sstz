@@ -461,7 +461,7 @@
     background: var(--surface-tint);
   }
 }
-@media (max-width: 1100px) {
+@media all {
   .home-main-grid {
     grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
     gap: 16px;
@@ -489,7 +489,7 @@
     max-width: calc(100% - 15px);
   }
 }
-@media (max-width: 640px) {
+@media all {
   .home-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1082,28 +1082,7 @@
   font-size: 0.68rem;
   line-height: 1.6;
 }
-@media (min-width: 641px) and (max-width: 1100px) {
-  .home-shortcuts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .home-shortcuts small {
-    display: none;
-  }
-  .home-shortcuts > button {
-    padding: 12px;
-  }
-  .home-shortcuts .shortcut-icon {
-    width: 30px;
-  }
-  .form-summary {
-    gap: 12px;
-  }
-  .form-ring {
-    width: 105px;
-    height: 105px;
-  }
-}
-@media (max-width: 900px) {
+@media all {
   .progress-grid {
     grid-template-columns: 1fr;
   }
@@ -1114,7 +1093,7 @@
     max-width: 180px;
   }
 }
-@media (max-width: 640px) {
+@media all {
   .home-shortcuts {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;

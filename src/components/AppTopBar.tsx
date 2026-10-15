@@ -7,9 +7,8 @@ import {
   UserRound,
   Sun,
   Moon,
-  ChevronRight,
 } from "lucide-react";
-import { NAV_TABS, type NavTab } from "./Navigation";
+import { type NavTab } from "./Navigation";
 
 interface AppTopBarProps {
   onOpenSettings: () => void;
@@ -36,14 +35,9 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
         </span>
         <span className="brand-name">
           SpinTrack
-          <span className="brand-caption">TVOJA HRA. TVOJ PROGRES.</span>
+          <span className="brand-caption">Tvoja hra vo vrecku</span>
         </span>
       </button>
-      <div className="topbar-location" aria-label="Aktuálna sekcia">
-        <span>Môj priestor</span>
-        <ChevronRight size={14} />
-        <strong>{NAV_TABS.find((tab) => tab.id === currentTab)?.label}</strong>
-      </div>
       <div className="topbar-actions">
         <button
           className="icon-button theme-toggle"

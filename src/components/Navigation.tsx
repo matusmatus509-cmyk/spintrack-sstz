@@ -98,15 +98,10 @@ export const Navigation: React.FC<NavigationProps> = ({
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [query, setQuery] = useState('');
   const dialogRef = useDialog(isMoreOpen, () => setIsMoreOpen(false));
-  const primaryTabs = ['dashboard', 'diary', 'calendar', 'sstz'].map(id => NAV_TABS.find(tab => tab.id === id)!);
+  const primaryTabs = ['dashboard', 'diary', 'calendar'].map(id => NAV_TABS.find(tab => tab.id === id)!);
   const moreTabs = NAV_TABS.filter(tab => !primaryTabs.includes(tab));
   const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('sk');
   const visibleTabs = moreTabs.filter(tab => normalize(`${tab.label} ${tab.description}`).includes(normalize(query)));
-  const groups = [
-    { label: 'Môj priestor', ids: ['dashboard', 'diary', 'calendar', 'equipment'] },
-    { label: 'Moja hra', ids: ['performance', 'matches', 'opponents', 'stats'] },
-    { label: 'Objavovať', ids: ['sstz', 'tournaments', 'community'] },
-  ];
   const select = (tab: NavTab) => {
     setIsMoreOpen(false);
     onSelectTab(tab);
@@ -114,42 +109,26 @@ export const Navigation: React.FC<NavigationProps> = ({
   const moreActive = moreTabs.some((tab) => tab.id === currentTab);
   return (
     <>
-      <aside className="desktop-sidebar">
-        <nav aria-label="Hlavná navigácia" className="sidebar-links">
-          {groups.map(group => <div className="nav-group" key={group.label}>
-            <span className="nav-eyebrow">{group.label}</span>
-            {group.ids.map(id => {
-              const { label, icon: Icon } = NAV_TABS.find(tab => tab.id === id)!;
-              return <button key={id} className={`sidebar-link ${currentTab === id ? 'is-active' : ''}`}
-                aria-current={currentTab === id ? 'page' : undefined} onClick={() => select(id as NavTab)}>
-                <Icon size={19} strokeWidth={1.8} /><span>{label}</span>
-                {currentTab === id && <span className="nav-active-dot" />}
-              </button>;
-            })}
-          </div>)}
-        </nav>
-        <button className="btn-primary sidebar-add" onClick={onAddActivity}><Plus size={18} />Pridať aktivitu</button>
-        <div className="sidebar-note">
-          <span className="status-dot" />
-          <div>
-            Každý tréning sa počíta.
-            <small>Všetko o tvojej hre na jednom mieste.</small>
-          </div>
-        </div>
-      </aside>
       <nav className="mobile-bottom-nav" aria-label="Mobilná navigácia">
         {primaryTabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            className={`mobile-nav-btn ${currentTab === id ? 'is-active' : ''}`}
-            aria-current={currentTab === id ? 'page' : undefined}
-            onClick={() => select(id)}
-          >
-            <span className="mobile-nav-icon">
-              <Icon size={22} strokeWidth={1.8} />
-            </span>
-            <span>{label}</span>
-          </button>
+          <React.Fragment key={id}>
+            {id === 'calendar' && (
+              <button className="mobile-nav-btn mobile-create" onClick={onAddActivity} aria-label="Pridať aktivitu">
+                <span className="mobile-nav-icon"><Plus size={24} /></span>
+                <span>Pridať</span>
+              </button>
+            )}
+            <button
+              className={`mobile-nav-btn ${currentTab === id ? 'is-active' : ''}`}
+              aria-current={currentTab === id ? 'page' : undefined}
+              onClick={() => select(id)}
+            >
+              <span className="mobile-nav-icon">
+                <Icon size={22} strokeWidth={1.8} />
+              </span>
+              <span>{label}</span>
+            </button>
+          </React.Fragment>
         ))}
         <button
           className={`mobile-nav-btn ${moreActive || isMoreOpen ? 'is-active' : ''}`}
