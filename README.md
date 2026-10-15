@@ -116,3 +116,5 @@ Prehľad obsahuje výsledky, najbližší neodohraný zápas od dnešného dňa,
 Úvodný prehľad zobrazuje najbližšie tri plánované aktivity a ligové zápasy, stav výstroja a rýchle odkazy. Sekcia **Tvoja hra v číslach** umožňuje prepínať posledných 7, 30 alebo 90 dní: stĺpce zobrazujú čas dokončených tréningov, výber stĺpca odhalí presný čas a počet tréningov. Zápasová forma zahŕňa dvojhry aj štvorhry v zvolenom období. Plánované a budúce tréningy sa do grafu nezapočítavajú.
 
 Aplikácia používa výhradne mobilné rozloženie so šírkou najviac 480 px. Spodná navigácia zostáva vo všetkých sekciách; stredné tlačidlo **Pridať** otvorí zápis aktivity. SSTZ a ďalšie sekcie nájdeš v **Viac**. Formuláre majú dotykové ovládanie, minimálne 16 px písmo a panely rešpektujú bezpečné okraje displeja.
+
+Mobilný domov má kompaktný súhrn, program, rozbaľovaciu výstroj s kondíciou FH/BH a posledné aktivity pred podrobnými grafmi. Horná lišta zobrazuje aktuálnu sekciu s návratom na prehľad. Plávajúca spodná navigácia necháva hlavné akcie dostupné palcom.
