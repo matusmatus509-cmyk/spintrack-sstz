@@ -96,15 +96,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <span className="eyebrow home-date">{dateLabel}</span>
           <h1>{name ? `Ahoj, ${name.split(" ")[0]}.` : "Poďme si zahrať."}</h1>
-          <p>
-            {sstzProfile?.clubName ||
-              account.profile?.club ||
-              "Všetko dôležité pre tvoju ďalšiu hru."}
-          </p>
+          {(sstzProfile?.clubName || account.profile?.club) && (
+            <p>{sstzProfile?.clubName || account.profile?.club}</p>
+          )}
         </div>
       </header>
 
-      <section className="home-metrics" aria-label="Tvoje výsledky">
+      <section
+        className="home-metrics"
+        aria-label="Tvoje výsledky za celú históriu"
+      >
         {[
           {
             label: "Úspešnosť",
@@ -133,6 +134,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         ].map(({ label, value, detail, Icon, tone, tab }) => (
           <button
             key={tab}
+            aria-label={`${label}: ${value}. ${detail}. Celá história.`}
             className={`home-metric metric-${tone}`}
             onClick={() =>
               onNavigate(tab as NavTab, tab === "diary" ? "tréning" : "all")
@@ -149,6 +151,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         ))}
       </section>
 
+      <button
+        className="home-next-up"
+        onClick={() =>
+          agenda.length ? onNavigate("calendar") : onOpenQuickLog?.()
+        }
+      >
+        <span className="home-next-icon">
+          {agenda.length ? <Calendar size={20} /> : <Plus size={20} />}
+        </span>
+        <span>
+          <small>
+            {agenda.length
+              ? `Najbližšie · ${agenda[0].date === today ? "dnes" : new Date(`${agenda[0].date}T12:00:00`).toLocaleDateString("sk", { day: "numeric", month: "numeric" })}${agenda[0].time ? ` o ${agenda[0].time}` : ""}`
+              : "Každý tréning sa počíta"}
+          </small>
+          <strong>{agenda[0]?.title || "Zapíš dnešnú aktivitu"}</strong>
+        </span>
+        <ChevronRight size={17} />
+      </button>
+      <DashboardProgress
+        activities={activities}
+        matches={insightMatches}
+        onPerformance={() => onNavigate("performance")}
+        onTraining={() => onNavigate("diary", "tréning")}
+      />
       <div className="home-main-grid">
         <section className="home-match" aria-labelledby="home-match-title">
           <div className="home-match-top">
@@ -430,12 +457,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         )}
       </section>
-      <DashboardProgress
-        activities={activities}
-        matches={insightMatches}
-        onPerformance={() => onNavigate("performance")}
-        onTraining={() => onNavigate("diary", "tréning")}
-      />
     </div>
   );
 };
