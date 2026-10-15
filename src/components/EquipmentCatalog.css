@@ -25,4 +25,4 @@
 .gear-empty { padding: 28px; text-align: center; display: grid; gap: 12px; justify-items: center; }
 .gear-pagination { display: flex; justify-content: center; align-items: center; gap: 15px; color: var(--text-muted); font-size: .85rem; }
 .gear-catalog :is(input, select, button):focus-visible { outline: 2px solid var(--accent-tt-green); outline-offset: 3px; }
-@media all { .gear-filter-fields { grid-template-columns: 1fr; } .gear-catalog-filters { padding: 12px; } .gear-kind-tabs button { flex: 1; padding: 8px; } .gear-catalog-actions { width: 100%; } .gear-catalog-actions button { flex: 1; } }
+@media (max-width: 640px) { .gear-filter-fields { grid-template-columns: 1fr; } .gear-catalog-filters { padding: 12px; } .gear-kind-tabs button { flex: 1; padding: 8px; } .gear-catalog-actions { width: 100%; } .gear-catalog-actions button { flex: 1; } }
