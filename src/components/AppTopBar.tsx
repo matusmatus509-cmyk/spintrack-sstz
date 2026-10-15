@@ -3,12 +3,13 @@ import { useCommunity } from "../context/CommunityContext";
 import { useTheme } from "../context/ThemeContext";
 import {
   Settings,
+  ArrowLeft,
   CircleDot,
   UserRound,
   Sun,
   Moon,
 } from "lucide-react";
-import { type NavTab } from "./Navigation";
+import { NAV_TABS, type NavTab } from "./Navigation";
 
 interface AppTopBarProps {
   onOpenSettings: () => void;
@@ -29,13 +30,27 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({
     theme === "dark" ? "Zapnúť svetlý režim" : "Zapnúť tmavý režim";
   return (
     <header className="app-topbar">
-      <button className="brand" onClick={onHome} aria-label="SpinTrack – domov">
+      <button
+        className={`brand ${currentTab !== "dashboard" ? "screen-brand" : ""}`}
+        onClick={onHome}
+        aria-label={
+          currentTab === "dashboard" ? "SpinTrack – domov" : "Späť na prehľad"
+        }
+      >
         <span className="brand-mark">
-          <CircleDot size={25} strokeWidth={2.2} />
+          {currentTab === "dashboard" ? (
+            <CircleDot size={25} strokeWidth={2.2} />
+          ) : (
+            <ArrowLeft size={22} />
+          )}
         </span>
         <span className="brand-name">
-          SpinTrack
-          <span className="brand-caption">Tvoja hra vo vrecku</span>
+          {currentTab === "dashboard"
+            ? "SpinTrack"
+            : NAV_TABS.find((tab) => tab.id === currentTab)?.label}
+          <span className="brand-caption">
+            {currentTab === "dashboard" ? "Tvoja hra vo vrecku" : "SpinTrack"}
+          </span>
         </span>
       </button>
       <div className="topbar-actions">

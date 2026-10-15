@@ -36,7 +36,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => { if (community.recovering) setCurrentTab('community'); }, [community.recovering]);
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-screen={currentTab}>
       <a className="skip-link" href="#main-content">Prejsť na obsah</a>
       {/* Sleek Minimal App Top Bar */}
       <AppTopBar onOpenSettings={() => setIsSettingsOpen(true)} onOpenCommunity={() => selectTab('community')} currentTab={currentTab} onHome={() => selectTab('dashboard')} />

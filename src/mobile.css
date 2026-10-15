@@ -240,3 +240,312 @@ textarea {
     transform: scale(0.98);
   }
 }
+
+/* Compact screens and grouped controls give the app a consistent phone rhythm. */
+.app-topbar {
+  height: calc(60px + env(safe-area-inset-top, 0px));
+  background: var(--bg-primary);
+  border-bottom: 0;
+}
+.screen-brand .brand-mark {
+  background: transparent;
+  color: var(--text-main);
+  width: 32px;
+}
+.screen-brand {
+  min-height: 44px;
+}
+.screen-brand .brand-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.main-content {
+  padding-top: 12px;
+}
+.app-shell:not([data-screen="dashboard"]) .main-content h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px !important;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.app-shell:not([data-screen="dashboard"]) .page-header > div > .eyebrow,
+.app-shell:not([data-screen="dashboard"]) .page-header > div > p,
+.diary-eyebrow,
+.diary-header > div > p,
+.calendar-page-heading > div > .calendar-eyebrow,
+.calendar-page-heading > div > p {
+  display: none;
+}
+.page-header:has(> div:only-child) {
+  padding-bottom: 0;
+  gap: 0;
+}
+.page-view {
+  gap: 16px !important;
+}
+.mobile-bottom-nav {
+  width: min(calc(100% - 20px), 460px);
+  bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--border-subtle);
+  border-radius: 25px;
+  padding: 7px 5px;
+  background: var(--bg-card);
+  box-shadow: 0 8px 32px #00000018;
+}
+.mobile-nav-btn {
+  min-height: 52px;
+  gap: 3px;
+  font-size: 0.62rem;
+}
+.mobile-nav-btn .mobile-nav-icon {
+  height: 27px;
+}
+.mobile-create .mobile-nav-icon {
+  width: 44px;
+  height: 36px;
+  border-radius: 14px;
+}
+.home-heading h1 {
+  font-size: 1.55rem !important;
+  margin-block: 6px !important;
+}
+.home-heading p {
+  font-size: 0.76rem;
+  margin: 0;
+}
+.home-date {
+  font-size: 0.6rem;
+}
+.home-metrics {
+  gap: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--bg-card);
+  padding: 14px 0;
+}
+.home-metric {
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  gap: 5px;
+}
+.home-metric + .home-metric {
+  border-left: 1px solid var(--border-subtle);
+}
+.home-metric::after,
+.home-metric .metric-icon,
+.home-metric .metric-arrow {
+  display: none;
+}
+.home-metric .metric-label {
+  min-height: 0;
+  font-size: 0.65rem;
+}
+.home-metric .metric-value {
+  font-size: 1.45rem;
+  letter-spacing: -0.045em;
+}
+.home-metric:hover {
+  transform: none;
+  box-shadow: none;
+}
+.home-match {
+  padding: 18px;
+  border-radius: 22px;
+}
+.home-match-content {
+  min-height: 0;
+  padding: 12px 0 14px;
+}
+.home-match h2 {
+  font-size: 1.25rem;
+}
+.home-match p {
+  font-size: 0.75rem;
+  line-height: 1.55;
+  margin-top: 6px;
+  max-width: none;
+}
+.home-match-cta {
+  min-height: 42px;
+  padding: 9px 12px;
+  font-size: 0.73rem;
+}
+.home-main-grid {
+  gap: 12px;
+}
+.home-equipment {
+  display: block;
+  padding: 16px;
+  border-radius: 18px;
+}
+.equipment-disclosure {
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+}
+.equipment-disclosure::-webkit-details-marker {
+  display: none;
+}
+.equipment-disclosure h2 {
+  font-size: 0.88rem;
+  margin: 5px 0;
+}
+.equipment-disclosure .eyebrow {
+  font-size: 0.55rem;
+}
+.equipment-disclosure-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+.home-equipment[open] .equipment-disclosure-hint svg {
+  transform: rotate(90deg);
+}
+.home-shortcuts {
+  gap: 8px;
+}
+.home-shortcuts > button {
+  min-height: 72px;
+  padding: 10px 4px;
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  gap: 7px;
+}
+.home-shortcuts .shortcut-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+.home-shortcuts strong {
+  font-size: 0.67rem;
+}
+.home-shortcuts > button:hover {
+  transform: none;
+  box-shadow: none;
+}
+.home-recent {
+  border-radius: 20px;
+}
+.home-recent .home-section-heading p {
+  display: none;
+}
+.home-recent h2 {
+  font-size: 0.95rem;
+}
+.recent-list {
+  margin-top: 8px;
+}
+.recent-row {
+  min-height: 64px;
+  padding: 12px 0;
+}
+.recent-copy strong {
+  font-size: 0.78rem;
+}
+.recent-copy small {
+  font-size: 0.67rem;
+}
+.recent-result {
+  font-size: 0.78rem;
+}
+.progress-heading .eyebrow {
+  display: none;
+}
+.progress-heading h2 {
+  font-size: 1.05rem;
+}
+.progress-heading {
+  margin-bottom: 12px;
+}
+.period-switch {
+  border-radius: 13px;
+  padding: 3px;
+}
+.period-switch button {
+  min-height: 40px;
+  border-radius: 10px;
+}
+.progress-grid {
+  gap: 12px;
+}
+.glass-panel {
+  box-shadow: 0 2px 8px #00000003;
+}
+.more-menu-link {
+  min-height: 65px;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  padding-block: 10px;
+}
+.more-menu-link:last-child {
+  border-bottom: 0;
+}
+.more-menu-link strong {
+  font-size: 0.86rem;
+}
+.more-menu-icon {
+  border-radius: 13px;
+  background: var(--bg-secondary);
+}
+.nav-sheet .dialog-header {
+  border-bottom: 0;
+}
+.nav-sheet .dialog-header .eyebrow {
+  display: none;
+}
+.nav-sheet .dialog-header h2 {
+  font-size: 1.25rem;
+}
+.scroll-tabs {
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: 14px;
+  gap: 3px;
+}
+.scroll-tabs button {
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.diary-controls,
+.calendar-day-panel,
+.community-auth {
+  border-radius: 20px;
+}
+@media (max-width: 360px) {
+  .screen-brand .brand-name {
+    max-width: 100px;
+  }
+  .home-metric {
+    padding-inline: 10px;
+  }
+  .home-metric .metric-value {
+    font-size: 1.3rem;
+  }
+}
+
+.equipment-health-preview {
+  display: flex;
+  gap: 14px;
+}
+.equipment-health-preview strong {
+  color: var(--accent-tt-green);
+  margin-left: 3px;
+}
+.equipment-health-preview .needs-care strong {
+  color: var(--accent-tt-red);
+}
