@@ -59,8 +59,8 @@
 .calendar-day-empty > svg { color: var(--accent-tt-green); }
 .calendar-day-empty h3 { color: var(--text-main); font-size: .95rem; margin: 0; }
 .calendar-day-empty p { font-size: .78rem; line-height: 1.6; margin: 0; }
-@media (max-width: 1050px) { .calendar-workspace { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 640px) {
+@media all { .calendar-workspace { grid-template-columns: minmax(0, 1fr); } }
+@media all {
   .calendar-page-heading h1 { font-size: 1.5rem; }
   .calendar-page-heading .btn-primary { width: 100%; justify-content: center; }
   .calendar-view-tabs { width: 100%; }

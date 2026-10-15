@@ -1,0 +1,242 @@
+/* SpinTrack is a phone web app. Every screen shares this single mobile shell. */
+:root {
+  --phone-width: 480px;
+}
+html {
+  background: var(--bg-secondary);
+  scroll-padding-top: calc(76px + env(safe-area-inset-top, 0px));
+}
+body {
+  max-width: var(--phone-width);
+  margin-inline: auto;
+  background: var(--bg-primary);
+}
+.app-shell {
+  min-height: 100dvh;
+  width: 100%;
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+.app-container {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.main-content {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px))
+    calc(108px + env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+}
+.app-topbar {
+  width: 100%;
+  left: 0;
+  right: auto;
+  transform: none;
+  height: calc(64px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 12px 0;
+  gap: 4px;
+}
+.brand {
+  gap: 7px;
+}
+.brand-name {
+  font-size: 1rem;
+}
+.brand-caption {
+  font-size: 0.48rem;
+  letter-spacing: 0.025em;
+  margin-top: 4px;
+}
+.brand-mark {
+  width: 30px;
+  height: 30px;
+}
+.topbar-actions {
+  gap: 0;
+}
+.topbar-actions .icon-button,
+.account-button {
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
+}
+.account-button {
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+}
+.account-label,
+.topbar-location,
+.desktop-sidebar {
+  display: none;
+}
+.mobile-bottom-nav {
+  width: min(100%, var(--phone-width));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  padding-top: 8px;
+}
+.mobile-nav-btn {
+  min-height: 56px;
+  font-size: 0.65rem;
+}
+.mobile-create .mobile-nav-icon {
+  width: 44px;
+  height: 34px;
+  background: var(--action-primary);
+  color: var(--on-primary);
+  border-radius: 12px;
+  box-shadow: 0 3px 10px
+    color-mix(in srgb, var(--action-primary) 18%, transparent);
+}
+.mobile-create {
+  color: var(--text-main);
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.icon-button {
+  min-height: 44px;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="file"]
+  ),
+select,
+textarea {
+  font-size: 16px !important;
+}
+input,
+select {
+  min-height: 44px;
+}
+textarea {
+  min-height: 100px;
+}
+.scroll-tabs {
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.scroll-tabs button,
+.period-switch button,
+.diary-categories button {
+  min-height: 44px;
+}
+.page-view {
+  gap: 18px !important;
+}
+.page-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.home-heading {
+  gap: 12px;
+}
+.home-heading h1 {
+  font-size: 1.65rem !important;
+}
+.home-heading p {
+  line-height: 1.5;
+}
+.home-heading .btn-primary {
+  min-height: 46px;
+}
+.home-metric .metric-label {
+  font-size: 0.64rem;
+}
+.home-shortcuts > button {
+  min-height: 70px;
+}
+.home-shortcuts strong {
+  font-size: 0.68rem;
+}
+.home-match-content {
+  min-height: 145px;
+}
+.home-equipment {
+  padding: 18px;
+}
+.home-equipment h2 {
+  margin-top: 10px;
+}
+.home-section-heading .text-button {
+  min-height: 44px;
+}
+.chart-column {
+  min-height: 44px;
+}
+.bar-label {
+  font-size: 0.64rem;
+}
+.chart-selection {
+  font-size: 0.73rem;
+  min-height: 42px;
+}
+.form-results > span {
+  min-width: 28px;
+}
+.mobile-sheet-container,
+.modal-overlay {
+  align-items: flex-end;
+  padding: 0;
+}
+.mobile-sheet-content,
+.modal-content {
+  width: 100%;
+  max-width: var(--phone-width) !important;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
+  border-radius: 24px 24px 0 0;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  overscroll-behavior-y: contain;
+}
+.nav-sheet {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
+}
+.dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card);
+  padding-block: 8px;
+}
+.sync-status {
+  max-width: min(calc(100% - 32px), 448px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 360px) {
+  .main-content {
+    padding-inline: 12px;
+  }
+  .brand-caption {
+    display: none;
+  }
+  .brand-mark {
+    width: 27px;
+    height: 27px;
+  }
+  .home-metric .metric-label {
+    font-size: 0.6rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button:active {
+    transform: scale(0.98);
+  }
+}

@@ -43,7 +43,7 @@ const AppContent: React.FC = () => {
 
       {/* Main Container */}
       <div className="app-container">
-        {/* Navigation (Sidebar desktop + bottom mobile) */}
+        {/* Mobile navigation */}
         <Navigation
           currentTab={currentTab}
           onSelectTab={selectTab}
