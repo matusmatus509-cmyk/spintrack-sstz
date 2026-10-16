@@ -105,7 +105,7 @@ node scripts/generate-snapshot.mjs <SSTZ_ID_HRÁČA>
 
 Prihlásenie e-mailom, registrácia, obnova hesla, priateľstvá a pozvánky na spoločné aktivity používajú Supabase. Pri aktivitách si vyberieš **Len ja**, **Iba priatelia** alebo **Verejná**; označený priateľ si pozvánku môže pridať do vlastného kalendára. Súkromné poznámky a fotky zostávajú v osobnom denníku.
 
-Na aktiváciu treba vytvoriť Supabase projekt, spustiť databázovú migráciu a nastaviť dve verejné premenné vo Verceli. Postup je v [docs/COMMUNITY-SETUP.md](docs/COMMUNITY-SETUP.md). Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa nesimulujú.
+Produkčný projekt je pripojený k Supabase, komunitná migrácia je aplikovaná a Vercel má nastavené obe verejné premenné. Pre registrácie mimo tímu projektu ešte treba dokončiť vlastné SMTP s overenou odosielacou doménou. Stav nasadenia a postup sú v [docs/COMMUNITY-SETUP.md](docs/COMMUNITY-SETUP.md). Príkaz `npm run check:community` overí živé API bez zápisu dát alebo odosielania e-mailov. Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa nesimulujú.
 
 ## Vzhľad aplikácie
 

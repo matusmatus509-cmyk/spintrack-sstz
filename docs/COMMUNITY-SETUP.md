@@ -2,7 +2,47 @@
 
 Aplikácia používa Supabase Auth a PostgreSQL. Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa zobrazia ako nepripojené. Žiadne účty ani spoločné aktivity nie sú simulované v produkcii.
 
-## 1. Vytvor projekt
+## Produkčné nasadenie – 16. 10. 2026
+
+| Súčasť | Overený stav |
+| --- | --- |
+| Aplikácia | https://spintrack-sstz.vercel.app/ |
+| Vercel projekt | `spintrack-sstz` / `prj_DQqSYzyGHOIfZnfT054PWDjhH3ss` |
+| Supabase projekt | `spintrack-sstz` / `vjquiiaroinvcveaiixl`, región `eu-central-1` |
+| Databáza | Komunitná migrácia aplikovaná, všetkých 6 tabuliek má RLS |
+| Vercel premenné | `VITE_SUPABASE_URL` a `VITE_SUPABASE_PUBLISHABLE_KEY` pre Production, Preview a Development |
+| Auth Site URL | `https://spintrack-sstz.vercel.app/` |
+| Povolený návrat | `https://spintrack-sstz.vercel.app/` (staršie aliasy zachované) |
+| E-mailová registrácia | Zapnutá, potvrdenie e-mailu zapnuté |
+| Vlastné SMTP | **Nedokončené: chýba poskytovateľ a overená odosielacia doména** |
+
+Migráciu znovu nespúšťaj na existujúcom produkčnom projekte. Obsahuje ju už tento repozitár; nastavenia Vercel a Supabase Auth sa nesynchronizujú samotným Git merge.
+
+Na živej databáze prešla transakčná kontrola vytvorenia profilov, ochrany súkromnej zálohy, prijatia priateľstva, zdieľania iba povolených polí a opakovaného prijatia pozvánky bez duplikátu. Transakcia skončila `ROLLBACK`; testovacie účty a záznamy nezostali v produkcii. Nešlo o overenie doručenia registračných e-mailov ani o úplný test prihlásenia dvoch reálnych používateľov.
+
+### Dokončenie e-mailov cez Resend
+
+Predvolená služba Supabase doručuje iba členom tímu projektu. Verejná registrácia preto vyžaduje vlastné SMTP. Odporúčaný postup:
+
+1. Pripoj Resend cez [Vercel Marketplace](https://vercel.com/marketplace/resend) k projektu `spintrack-sstz` a dokonči vytvorenie/prihlásenie účtu.
+2. V Resend over vlastnú odosielaciu doménu pomocou DNS záznamov, ktoré poskytovateľ zobrazí. Adresa `vercel.app` nie je tvoja odosielacia doména.
+3. V Supabase **Authentication → Emails → SMTP Settings** nastav meno odosielateľa `SpinTrack`, adresu na overenej doméne, host `smtp.resend.com`, port `465`, používateľa `resend` a API kľúč Resend ako SMTP heslo. Zapni vlastné SMTP a ulož.
+4. Tajný kľúč vlož iba cez nastavenia poskytovateľa/Supabase. Nepatrí do GitHubu, klienta, `.env.example` ani premennej s prefixom `VITE_`. Samotný `RESEND_API_KEY` vo Verceli nenastaví Supabase SMTP.
+5. Over registráciu e-mailom mimo tímu, potvrdenie odkazu, prihlásenie a obnovu hesla. Až potom označ SMTP za funkčné. Potvrdenie e-mailu nevypínaj ako náhradu za SMTP.
+
+Zdroje: [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Resend so Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp).
+
+### Kontrola živého API
+
+Použi Node.js 22 alebo novší. V ignorovanom `.env.local` nastav iba dve verejné premenné podľa `.env.example`, prípadne ich poskytni prostredím. Potom spusti:
+
+```sh
+npm run check:community
+```
+
+Kontrola číta Auth konfiguráciu, dostupnosť komunitných tabuliek a odmietnutie anonymného prístupu k súkromným tabuľkám. Pri dotazoch používa `limit=0`, nevytvára používateľov, neposiela e-maily a nemení databázu. Zlyhanie vráti nenulový exit kód. Nie je to náhrada kontroly SMTP ani RLS medzi prihlásenými účtami; na tie slúžia nižšie uvedené kroky a databázové testy. Publishable kľúče sú verejné, ale kontrola odmietne tajný/service-role kľúč ešte pred sieťovým požiadavkom.
+
+## 1. Vytvor projekt (iba pre nové nasadenie)
 
 1. Otvor https://supabase.com/dashboard a vytvor projekt (pre európskych hráčov zvoľ región v EÚ).
 2. Otvor **SQL Editor → New query**. Spusti celý súbor [202610100001_community.sql](../supabase/migrations/202610100001_community.sql). Spúšťa sa raz v novom projekte.
