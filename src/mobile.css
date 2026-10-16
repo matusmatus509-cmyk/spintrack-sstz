@@ -549,3 +549,271 @@ textarea {
 .equipment-health-preview .needs-care strong {
   color: var(--accent-tt-red);
 }
+
+/* Home: immediate summary, next action and charts, with fully wrapping content. */
+.dashboard-view {
+  gap: 14px !important;
+}
+.dashboard-view :is(h1, h2, h3, p, strong, small) {
+  overflow-wrap: anywhere;
+}
+.dashboard-view .home-heading {
+  padding: 2px 2px 0;
+}
+.dashboard-view .home-heading h1 {
+  font-size: 1.55rem !important;
+}
+.dashboard-view .home-heading p {
+  font-size: 0.74rem;
+}
+.dashboard-view .home-metrics {
+  background: linear-gradient(120deg, var(--bg-card), var(--surface-tint));
+}
+.dashboard-view .home-metric {
+  overflow: visible;
+  min-width: 0;
+}
+.dashboard-view .home-metric .metric-value {
+  white-space: normal;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  font-size: clamp(1.1rem, 5.5vw, 1.5rem);
+}
+.home-next-up {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 17px;
+  color: var(--text-main);
+  background: var(--bg-card);
+  text-align: left;
+}
+.home-next-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  color: var(--accent-tt-green);
+  background: var(--selection);
+}
+.home-next-up > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.home-next-up small {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+}
+.home-next-up strong {
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+.home-next-up > svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.dashboard-view .progress-section {
+  min-width: 0;
+}
+.dashboard-view .progress-heading {
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.dashboard-view .progress-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.dashboard-view .period-switch {
+  background: var(--bg-secondary);
+}
+.dashboard-view .progress-grid {
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+}
+.dashboard-view .training-chart,
+.dashboard-view .form-chart {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 15px 16px;
+}
+.dashboard-view .training-chart {
+  border-radius: 22px 22px 0 0;
+}
+.dashboard-view .form-chart {
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0 0 22px 22px;
+}
+.dashboard-view .progress-grid h3 {
+  font-size: 0.81rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.dashboard-view .chart-link {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+.dashboard-view .chart-total {
+  margin-top: 4px;
+  gap: 4px 10px;
+}
+.dashboard-view .chart-total strong {
+  font-size: 1.4rem;
+  line-height: 1.3;
+}
+.dashboard-view .chart-total > span {
+  font-size: 0.64rem;
+}
+.dashboard-view .training-plot {
+  height: 112px;
+  margin-top: 14px;
+}
+.dashboard-view .bar-track {
+  height: 84px;
+}
+.dashboard-view .chart-columns {
+  padding-left: 38px;
+  gap: 8px;
+}
+.dashboard-view .chart-column {
+  gap: 8px;
+}
+.dashboard-view .bar-label {
+  font-size: 0.59rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+.dashboard-view .training-bar {
+  border-radius: 6px 6px 2px 2px;
+  max-width: 26px;
+}
+.dashboard-view .chart-selection {
+  min-height: 0;
+  font-size: 0.66rem;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.dashboard-view .chart-selection.has-selection {
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: var(--selection);
+  color: var(--text-main);
+}
+.dashboard-view .chart-note {
+  border-top: 0;
+  padding-top: 7px;
+  font-size: 0.59rem;
+  flex-wrap: wrap;
+}
+.dashboard-view .form-summary {
+  gap: 18px;
+  justify-content: flex-start;
+  padding: 8px 0;
+}
+.dashboard-view .form-ring {
+  width: 94px;
+  height: 94px;
+}
+.dashboard-view .form-ring strong {
+  font-size: 1.3rem;
+}
+.dashboard-view .form-ring span {
+  font-size: 0.58rem;
+}
+.dashboard-view .form-ring.has-results .ring-track {
+  stroke: color-mix(in srgb, var(--accent-tt-red) 55%, var(--bg-card));
+}
+.dashboard-view .form-counts {
+  max-width: none;
+  min-width: 0;
+  gap: 6px;
+}
+.dashboard-view .form-counts > span {
+  font-size: 0.73rem;
+}
+.dashboard-view .form-counts small {
+  font-size: 0.62rem;
+}
+.dashboard-view .form-history > div:first-child {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.dashboard-view .form-results {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+.dashboard-view .form-results > span {
+  width: 27px;
+  min-width: 27px;
+}
+.dashboard-view .form-empty {
+  padding-bottom: 0;
+}
+.dashboard-view .home-match {
+  overflow: visible;
+}
+.dashboard-view .home-match::after {
+  display: none;
+}
+.dashboard-view .home-section-heading {
+  flex-wrap: wrap;
+}
+.dashboard-view .equipment-health-preview {
+  flex-wrap: wrap;
+}
+.dashboard-view .home-equipment,
+.dashboard-view .home-recent {
+  min-width: 0;
+}
+.dashboard-view .recent-row {
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.dashboard-view .recent-copy {
+  min-width: 100px;
+}
+.dashboard-view .recent-result {
+  max-width: 100%;
+  white-space: normal;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dashboard-view .training-bar {
+    transition: height 0.25s ease;
+  }
+}
+
+.dashboard-view .progress-heading {
+  flex-wrap: wrap;
+}
+.dashboard-view .progress-heading > div:first-child {
+  flex: 1;
+  min-width: 120px;
+}
+.dashboard-view .period-switch {
+  width: auto;
+}
+.dashboard-view .period-switch button {
+  min-width: 44px;
+  padding-inline: 9px;
+  font-size: 0.65rem;
+}
+.dashboard-view .chart-gridlines span {
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-view .home-heading p:empty {
+  display: none;
+}

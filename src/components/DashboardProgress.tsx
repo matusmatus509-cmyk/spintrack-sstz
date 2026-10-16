@@ -90,13 +90,6 @@ export function DashboardProgress({
               {data.sessions} tréningov za {days} dní
             </span>
           </div>
-          <div className="chart-selection" aria-live="polite">
-            {selectedBucket
-              ? `${shortDate(selectedBucket.from)}${selectedBucket.from !== selectedBucket.to ? ` – ${shortDate(selectedBucket.to)}` : ""} · ${duration(selectedBucket.minutes)} · ${selectedBucket.sessions} tréningov`
-              : data.sessions
-                ? "Vyber stĺpec a pozri si podrobnosti."
-                : "Zapíš tréning a sleduj, ako rastie tvoja pravidelnosť."}
-          </div>
           <div
             className="training-plot"
             aria-label="Tréningový čas podľa dátumu"
@@ -127,10 +120,22 @@ export function DashboardProgress({
                       style={{ height: `${(bucket.minutes / max) * 100}%` }}
                     />
                   </span>
-                  <span className="bar-label">{shortDate(bucket.from)}</span>
+                  <span className="bar-label">
+                    {shortDate(bucket.from).replace(/\s/g, "")}
+                  </span>
                 </button>
               ))}
             </div>
+          </div>
+          <div
+            className={`chart-selection ${selectedBucket ? "has-selection" : ""}`}
+            aria-live="polite"
+          >
+            {selectedBucket
+              ? `${shortDate(selectedBucket.from)}${selectedBucket.from !== selectedBucket.to ? ` – ${shortDate(selectedBucket.to)}` : ""} · ${duration(selectedBucket.minutes)} · ${selectedBucket.sessions} tréningov`
+              : data.sessions
+                ? "Vyber stĺpec a pozri si podrobnosti."
+                : "Zapíš tréning a sleduj, ako rastie tvoja pravidelnosť."}
           </div>
           <div className="chart-note">
             <span className="legend-dot" /> Dokončené tréningy{" "}
@@ -158,7 +163,7 @@ export function DashboardProgress({
           </div>
           <div className="form-summary">
             <div
-              className="form-ring"
+              className={`form-ring ${results.played ? "has-results" : ""}`}
               role="img"
               aria-label={
                 results.rate === null
@@ -230,9 +235,6 @@ export function DashboardProgress({
               </p>
             </div>
           )}
-          <button className="text-button" onClick={onPerformance}>
-            Preskúmať štatistiky <ArrowUpRight size={16} />
-          </button>
         </article>
       </div>
     </section>
