@@ -8,6 +8,8 @@ Aplikácia inšpirovaná populárnou mobilnou aplikáciou **SpinTrack (SpinBook 
 
 Aplikácia beží ako kompletný webový systém (Express backend + React frontend s proxy).
 
+Nová inštalácia začína prázdna: bez tréningov, zápasov, rakiet a poťahov. Záznamy pribudnú až po vlastnom zápise alebo výslovnom importe; existujúce uložené údaje zostávajú zachované. Aj reset vyprázdni denník a výbavu bez ukážkových dát.
+
 ### 1. Spustenie aplikácie (produkčný server):
 ```bash
 npm start

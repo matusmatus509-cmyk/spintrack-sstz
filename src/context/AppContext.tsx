@@ -109,141 +109,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY = 'spintrack_sstz_data_v1';
 
 export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: string; initialData?: Record<string, any> | null; onPersist?: (data: Record<string, any>) => void; beforeDeleteActivity?: (id: string) => Promise<void>; beforeReset?: () => Promise<void> }> = ({ children, storageKey = LOCAL_STORAGE_KEY, initialData, onPersist, beforeDeleteActivity, beforeReset }) => {
-  // Initial default inventory
-  const defaultBlades: Blade[] = [
-    {
-      id: 'blade-1',
-      brand: 'Butterfly',
-      model: 'Viscaria',
-      plies: '5 drevo + 2 ALC',
-      weightGrams: 87,
-      grip: 'FL',
-      speed: 93,
-      control: 87,
-      hoursPlayed: 34.5,
-      dateAcquired: '2026-05-10',
-      notes: 'Hlavná zbraň pre ligu a turnaje. Skvelá rovnováha a cit.'
-    },
-    {
-      id: 'blade-2',
-      brand: 'Stiga',
-      model: 'Clipper CR',
-      plies: '7 vrstiev drevo',
-      weightGrams: 89,
-      grip: 'FL',
-      speed: 89,
-      control: 88,
-      hoursPlayed: 12.0,
-      dateAcquired: '2026-02-14',
-      notes: 'Záložné celodrevené drevo pre tréning kontroly.'
-    }
-  ];
-
-  const defaultRubbers: Rubber[] = [
-    {
-      id: 'rubber-1',
-      brand: 'Butterfly',
-      model: 'Dignics 09C',
-      type: 'inverted',
-      color: 'black',
-      spongeThickness: '2.1mm',
-      spongeHardness: 44,
-      speed: 92,
-      spin: 98,
-      control: 89,
-      hoursPlayed: 32.5,
-      maxRecommendedHours: 80,
-      dateInstalled: '2026-08-15',
-      notes: 'Forehand poťah na Viscarii. Extrémna rotácia pri servise a topspine.'
-    },
-    {
-      id: 'rubber-2',
-      brand: 'Butterfly',
-      model: 'Tenergy 05',
-      type: 'inverted',
-      color: 'red',
-      spongeThickness: '2.1mm',
-      spongeHardness: 36,
-      speed: 94,
-      spin: 96,
-      control: 85,
-      hoursPlayed: 34.0,
-      maxRecommendedHours: 75,
-      dateInstalled: '2026-08-15',
-      notes: 'Backhand poťah na Viscarii. Dynamický prechod zo strednej vzdialenosti.'
-    },
-    {
-      id: 'rubber-3',
-      brand: 'Yasaka',
-      model: 'Rakza 7',
-      type: 'inverted',
-      color: 'black',
-      spongeThickness: '2.0mm',
-      spongeHardness: 45,
-      speed: 89,
-      spin: 92,
-      control: 90,
-      hoursPlayed: 12.0,
-      maxRecommendedHours: 85,
-      dateInstalled: '2026-07-01',
-      notes: 'Tréningový poťah.'
-    }
-  ];
-
-  const defaultRackets: RacketSetup[] = [
-    {
-      id: 'racket-1',
-      name: 'Ligová zostava (Viscaria + D09C / T05)',
-      bladeId: 'blade-1',
-      forehandRubberId: 'rubber-1',
-      backhandRubberId: 'rubber-2',
-      isActive: true,
-      totalHours: 32.5,
-      winCount: 14,
-      lossCount: 3,
-      gpiScore: 94,
-      dateCreated: '2026-08-15'
-    },
-    {
-      id: 'racket-2',
-      name: 'Tréningové drevo (Clipper + Rakza 7)',
-      bladeId: 'blade-2',
-      forehandRubberId: 'rubber-3',
-      backhandRubberId: 'rubber-2',
-      isActive: false,
-      totalHours: 12.0,
-      winCount: 4,
-      lossCount: 2,
-      gpiScore: 82,
-      dateCreated: '2026-07-01'
-    }
-  ];
-
-  const defaultSessions: TrainingSession[] = [
-    {
-      id: 'session-1',
-      date: '2026-09-28T18:00:00.000Z',
-      durationMinutes: 90,
-      type: 'tréning',
-      focusDrills: ['Topspin z behu', 'Príjem servisu krátko', 'Falkenberg cvičenie'],
-      racketId: 'racket-1',
-      intensity: 4,
-      location: 'Klubová herňa STK',
-      notes: 'Skvelý cit na forhende, dobré zrýchlenie pri protitopspine.'
-    },
-    {
-      id: 'session-2',
-      date: '2026-09-30T17:30:00.000Z',
-      durationMinutes: 75,
-      type: 'multiball',
-      focusDrills: ['Multiball práca nôh', 'Backhand flip cez stôl'],
-      racketId: 'racket-1',
-      intensity: 5,
-      location: 'Klubová herňa STK',
-      notes: 'Zamerané na rýchlu reakciu po vlastnom servise.'
-    }
-  ];
-
+  // Personal records start empty; the equipment catalog remains available separately.
+  const defaultBlades: Blade[] = [];
+  const defaultRubbers: Rubber[] = [];
+  const defaultRackets: RacketSetup[] = [];
+  const defaultSessions: TrainingSession[] = [];
   const defaultMatches: MatchRecord[] = [];
 
   // Helper to sync opponents list from matches
@@ -307,37 +177,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const [blades, setBlades] = useState<Blade[]>(saved?.blades || defaultBlades);
   const [rubbers, setRubbers] = useState<Rubber[]>(saved?.rubbers || defaultRubbers);
   const [rackets, setRackets] = useState<RacketSetup[]>(saved?.rackets || defaultRackets);
-  const [activeRacketId, setActiveRacketId] = useState<string>(saved?.activeRacketId || 'racket-1');
-  const defaultActivities: ActivityRecord[] = [
-    {
-      id: 'activity-1',
-      category: 'tréning',
-      date: '2026-09-28',
-      durationMinutes: 90,
-      focusDrills: ['Topspin', 'Príjem', 'Práca nôh', 'Rozcvička'],
-      location: 'Klubová herňa STK',
-      publicNote: 'Skvelý cit na forhende, dobré zrýchlenie pri protitopspine.',
-      visibility: 'community',
-      addEquipmentWear: true,
-      racketId: 'racket-1',
-      intensity: 4,
-      createdAt: '2026-09-28T18:00:00.000Z'
-    },
-    {
-      id: 'activity-2',
-      category: 'tréning',
-      date: '2026-09-30',
-      durationMinutes: 75,
-      focusDrills: ['Multiball', 'Práca nôh', 'Blok / kontra'],
-      location: 'Klubová herňa STK',
-      publicNote: 'Zamerané na rýchlu reakciu po vlastnom servise.',
-      visibility: 'community',
-      addEquipmentWear: true,
-      racketId: 'racket-1',
-      intensity: 5,
-      createdAt: '2026-09-30T17:30:00.000Z'
-    }
-  ];
+  const [activeRacketId, setActiveRacketId] = useState<string>(saved?.activeRacketId || '');
+  const defaultActivities: ActivityRecord[] = [];
 
   const initialActivities: ActivityRecord[] = saved?.activities || (saved?.trainingSessions ? saved.trainingSessions.map((s: any) => ({
     id: s.id,
@@ -368,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const isTournamentLoading = syncJobs.tournaments?.state === 'loading';
   const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [teamSchedule, setTeamSchedule] = useState<TeamScheduleMatch[]>(saved?.teamSchedule || []);
-  const [selectedLeagueSlug, setSelectedLeagueSlug] = useState<string>(saved?.selectedLeagueSlug || 'sezona-2026-27-joola-extraliga-muzi-sstz');
+  const [selectedLeagueSlug, setSelectedLeagueSlug] = useState<string>(saved?.selectedLeagueSlug || '');
   const [selectedClubId, setSelectedClubId] = useState<string>(saved?.selectedClubId || '');
   const [badges, setBadges] = useState<Badge[]>(saved?.badges || INITIAL_BADGES);
 
@@ -1136,28 +977,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const resetToDefaults = async () => {
     await beforeReset?.();
     runningSyncs.current.forEach(job => job.controller.abort());
-    if (storageKey !== LOCAL_STORAGE_KEY) {
-      importData(JSON.stringify({ ...emptyAccountData(), badges: INITIAL_BADGES }));
-      setSstzProfile(null); setTournamentProfile(null); setActiveRacketId(''); setSelectedClubId('');
-      return;
-    }
-    runningSyncs.current.forEach(job => job.controller.abort());
-    setScheduleConnected(false);
-    localStorage.removeItem(storageKey);
-    setBlades(defaultBlades);
-    setRubbers(defaultRubbers);
-    setRackets(defaultRackets);
-    setActiveRacketId('racket-1');
-    setActivities(defaultActivities);
-    setTrainingSessions(defaultSessions);
-    setMatches(defaultMatches);
-    setDoublesMatches([]);
-    setOpponents([]);
-    setSstzProfile(null);
-    setTournamentProfile(null);
+    importData(JSON.stringify({ ...emptyAccountData(), badges: INITIAL_BADGES }));
+    setActiveRacketId('');
+    setSelectedClubId('');
+    setSelectedLeagueSlug('');
+    setSstzError(null);
     setTournamentError(null);
-    setTeamSchedule([]);
-    setBadges(INITIAL_BADGES);
   };
 
   return (
