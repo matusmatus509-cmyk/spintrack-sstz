@@ -104,3 +104,15 @@ npm run dev
 ```
 
 `tests/communityDatabase.test.mjs` vykonáva skutočnú migráciu v zabudovanom PostgreSQL (PGlite) a overuje prístup troch účtov, súkromné zálohy, prijatie priateľstva, odobratie prístupu, nezverejnenie súkromných polí a prijímanie pozvánok bez duplikátov. Nevyžaduje Supabase kľúče. E-mailové doručovanie a Supabase Auth treba overiť vo vlastnom nakonfigurovanom projekte podľa postupu vyššie.
+
+## Kluby a import do denníka
+
+Migrácia `20261017185313_clubs.sql` pridáva klubové skupiny. Zakladateľ vytvorí klub v **Komunita → Kluby**, pošle členom pozývací kód a v sekcii Členovia určí trénerov. Kód sa dá obnoviť, čím starý prestane platiť. Noví členovia sú vždy hráči. Zakladateľ má aj oprávnenia trénera.
+
+Tréneri vytvárajú spoločné tréningy v rozpise. Každý člen môže dobrovoľne zdieľať aktivitu zo svojho denníka, označiť ďalších členov a prečítať si poznámky trénera. Klubové záznamy a spätná väzba sú dostupné iba členom; súkromné poznámky, fotky a vybavenie sa nekopírujú. Odchod odoberie prístup, existujúce zdieľané aktivity zostanú v klube (UI na to upozorňuje).
+
+Označovanie priateľov funguje aj pri už zapísanej aktivite v **Komunita → Moje aktivity**. Pozvánku alebo klubovú aktivitu možno importovať do vlastného denníka. Import má stabilné ID podľa zdroja, je súkromný a vždy plánovaný. Dokončenie a prípadné opotrebenie si hráč nastaví až pri úprave vlastnej aktivity. Cudzie individuálne výsledky sa nepreberajú. Prijatá pozvánka sa v kalendári nezobrazuje druhýkrát, ak už bola importovaná do denníka. Zmena alebo odstránenie zdrojovej aktivity nemení už importovanú osobnú kópiu.
+
+Databázové pravidlá sa testujú na skutočnom PostgreSQL engine (PGlite), vrátane cudzích klubov, odobratého členstva, podvrhnutia roly/autora, povyšovania trénerov, rotácie kódu a opakovaného zdieľania. Privilegované implementácie sú v nezverejnenej schéme `club_private`; verejné RPC sú `SECURITY INVOKER` a delegujú na implementácie s explicitnými kontrolami aktuálneho používateľa. Nové tabuľky majú RLS a explicitné granty.
+
+Overenie pri nasadení klubov: 67 automatických testov, TypeScript a produkčný build prešli. Mobilný prehliadač (390 px, izolované API fixtures) overil vytvorenie rozpisu, označenie, poznámku, prijatie pozvánky, súkromný plánovaný import a uloženie do účtu bez opakovania. Produkčná databáza bola overená transakčným testom s rollbackom. Security Advisor nehlási nové klubové problémy; pôvodné upozornenia na [existujúce privilegované komunitné RPC](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) a [ochranu proti uniknutým heslám](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) zostávajú mimo tejto zmeny.

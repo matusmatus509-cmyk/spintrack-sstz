@@ -1,3 +1,4 @@
+import { sharedImportId } from '../utils/sharedImport';
 import { useDialog } from '../hooks/useDialog';
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -53,7 +54,7 @@ export const CalendarView: React.FC = () => {
       detail: `${match.round}${match.isPlayed ? ` · ${match.homeScore}:${match.awayScore}` : ''}`,
       planned: !match.isPlayed, actionLabel: 'Zapísať výsledok',
     })),
-    ...account.calendar.map(entry => ({
+    ...account.calendar.filter(entry => !activities.some(activity => activity.id === sharedImportId('community', entry.source_activity_id || ''))).map(entry => ({
       id: `invitation-${entry.id}`, date: normalizeDiaryDate(entry.data.date),
       category: entry.data.category, title: entry.data.title || entry.data.opponentName || 'Spoločná aktivita',
       time: entry.data.startTime, location: entry.data.location, duration: entry.data.durationMinutes,
