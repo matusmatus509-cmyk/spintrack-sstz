@@ -63,6 +63,53 @@ export const emptyAccountData = () => ({
   scheduleConnected: false,
 });
 
+export const LOCAL_DIARY_KEY = "spintrack_sstz_data_v1";
+
+export function parseLocalDiary(raw: string): Record<string, any> {
+  const data = JSON.parse(raw);
+  if (!data || typeof data !== "object" || Array.isArray(data))
+    throw new Error("Neplatná miestna záloha.");
+  for (const key of ["activities", "trainingSessions", "matches", "doublesMatches", "blades", "rubbers", "rackets", "opponents", "teamSchedule", "badges"]) {
+    if (data[key] !== undefined && (!Array.isArray(data[key]) || data[key].some(
+      (row: any) => !row || typeof row !== "object" || typeof row.id !== "string" || !row.id,
+    ))) throw new Error("Neplatná miestna záloha.");
+  }
+  return data;
+}
+
+function localActivities(local: Record<string, any>) {
+  // Older diaries only had trainingSessions. An explicit modern activities: []
+  // represents a deliberately empty diary and must not resurrect deleted items.
+  if (Array.isArray(local.activities)) return local.activities;
+  return (local.trainingSessions || []).map((session: any) => ({
+    id: session.id,
+    category: "tréning",
+    date: session.date?.split("T")[0],
+    durationMinutes: session.durationMinutes ?? 60,
+    focusDrills: session.focusDrills || [],
+    location: session.location || "",
+    privateNote: session.notes || "",
+    visibility: "private",
+    addEquipmentWear: false,
+    racketId: session.racketId,
+    intensity: session.intensity,
+    createdAt: session.date,
+  }));
+}
+
+export function localRecoverySummary(current: Record<string, any>, local: Record<string, any>) {
+  const missing = (key: string, rows = local[key] || []) => {
+    const ids = new Set((current[key] || []).map((row: any) => row.id));
+    return rows.filter((row: any) => !ids.has(row.id)).length;
+  };
+  const activities = missing("activities", localActivities(local));
+  const matches = missing("matches") + missing("doublesMatches");
+  const sstz = Boolean(!current.sstzProfile && local.sstzProfile);
+  const equipment = missing("blades") + missing("rubbers") + missing("rackets");
+  const other = missing("opponents") + missing("teamSchedule") + Boolean(!current.tournamentProfile && local.tournamentProfile);
+  return { activities, matches, sstz, equipment, available: Boolean(activities || matches || sstz || equipment || other) };
+}
+
 // Migration is explicit. Never silently publish old local records marked community.
 export function mergeLocalData(
   current: Record<string, any>,
@@ -82,7 +129,7 @@ export function mergeLocalData(
     "badges",
   ]) {
     const entries = new Map<string, any>();
-    for (const row of Array.isArray(local[key]) ? local[key] : [])
+    for (const row of key === "activities" ? localActivities(local) : Array.isArray(local[key]) ? local[key] : [])
       entries.set(
         row.id,
         key === "activities" ? { ...row, visibility: "private" } : { ...row },
@@ -101,7 +148,14 @@ export function mergeLocalData(
     merged[key] = current[key] || local[key];
   }
   merged.scheduleConnected = Boolean(
-    current.scheduleConnected || local.scheduleConnected,
+    (current.scheduleConnected ?? current.teamSchedule?.length) ||
+    (local.scheduleConnected ?? local.teamSchedule?.length),
   );
+  // A fresh account has a default league slug even though it has no SSTZ link.
+  // That default must not override the restored player's league selection.
+  if (!current.sstzProfile && !current.scheduleConnected && !current.teamSchedule?.length)
+    merged.selectedLeagueSlug = local.selectedLeagueSlug || current.selectedLeagueSlug;
+  if (!(current.rackets || []).some((racket: any) => racket.id === current.activeRacketId))
+    merged.activeRacketId = local.activeRacketId || current.activeRacketId;
   return merged;
 }

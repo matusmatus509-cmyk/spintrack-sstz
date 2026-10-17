@@ -18,6 +18,7 @@ import { SyncStatus } from './components/SyncStatus';
 import { AddActivityModal } from './components/AddActivityModal';
 import { CommunityProvider, useCommunity } from './context/CommunityContext';
 import { CommunityView } from './views/CommunityView';
+import { LocalDiaryRecovery } from './components/LocalDiaryRecovery';
 import './views/Community.css';
 
 const AppContent: React.FC = () => {
@@ -52,6 +53,7 @@ const AppContent: React.FC = () => {
 
         {/* Dynamic View Content */}
         <main id="main-content" className="main-content" tabIndex={-1}>
+          <LocalDiaryRecovery />
           {currentTab === 'dashboard' && (
             <DashboardView
               onNavigate={selectTab}

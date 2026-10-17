@@ -73,6 +73,16 @@ Na lokálny vývoj vytvor ignorovaný `.env.local` podľa `.env.example`, vlož 
 6. Over súkromnú, priateľskú a verejnú viditeľnosť tretím nepriateľským účtom. Súkromnú poznámku ani fotky nesmie vidieť v komunite alebo pozvánke.
 7. Over odhlásenie, opätovné prihlásenie na inom zariadení, potvrdenie e-mailu a obnovu hesla. Pri zmene účtu sa načíta samostatný denník.
 
+## Obnova denníka po prihlásení
+
+Prihlásený účet má oddelené úložisko od pôvodného miestneho denníka. Po prihlásení aplikácia na každej obrazovke vyhľadá chýbajúce záznamy v `spintrack_sstz_data_v1` a ponúkne **Obnoviť môj denník do účtu**. Prenos vyžaduje kliknutie používateľa; údaje zdieľaného zariadenia sa nepriradia automaticky cudziemu účtu.
+
+Obnova zlúči tréningy, zápasy, štvorhry, výbavu, súperov, profil SSTZ a rozpis. Rovnaké ID sa neduplikuje a existujúce údaje účtu majú prednosť. Starší formát `trainingSessions` bez `activities` sa prevedie do viditeľného denníka, súkromné poznámky zostanú súkromné a opotrebovanie výbavy sa znova nepripočítava. Nový účet prevezme pôvodnú ligu aj aktívnu raketu. Importované aktivity sa nezverejnia.
+
+Pôvodný miestny kľúč sa nemení. Pred importom vznikne aj miestna kópia aktuálneho účtu pod `spintrack_before_recovery_<user-id>`; ak nie je miesto na túto zálohu, import sa zastaví. Cloudové uloženie používa existujúcu synchronizáciu účtu a prípadné zlyhanie je viditeľné v Komunite.
+
+Miestne úložisko je viazané na presnú adresu a prehliadač. Ak údaje nie sú nájdené, otvor pôvodnú adresu v rovnakom prehliadači (vrátane režimu PWA) alebo importuj existujúcu JSON zálohu. Nemaž údaje prehliadača. Obnova hesla a registrácia teraz posielajú návrat na koreň aktuálnej adresy s koncovým `/`, aby zodpovedal povoleným adresám Supabase.
+
 ## Ako sa ukladajú údaje
 
 - `user_data`: súkromná záloha denníka, výbavy a SSTZ údajov. Číta a zapisuje ju iba vlastník. Miestne údaje sú oddelené kľúčom používateľa. Pri probléme so zálohou sa zobrazí možnosť zopakovať uloženie; miestna novšia kópia sa obnoví pri ďalšom prihlásení. Záloha používa posledný uložený stav, nie zlúčenie súčasných úprav z viacerých zariadení.
