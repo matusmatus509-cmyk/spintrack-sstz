@@ -60,6 +60,7 @@ export const emptyAccountData = () => ({
   tournamentProfile: null,
   teamSchedule: [],
   selectedClubId: "",
+  selectedLeagueSlug: "",
   scheduleConnected: false,
 });
 
@@ -159,7 +160,7 @@ export function mergeLocalData(
     "selectedClubId",
     "selectedLeagueSlug",
   ]) {
-    merged[key] = current[key] || local[key];
+    merged[key] = current[key] || local[key] || current[key];
   }
   merged.scheduleConnected = Boolean(
     (current.scheduleConnected ?? current.teamSchedule?.length) ||
