@@ -235,7 +235,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
           .select(activitySelect)
           .neq("owner_id", owner)
           .order("activity_date", { ascending: false })
-          .order("created_at", { ascending: false })
+          .order("id", { ascending: true })
           .limit(60),
         supabase
           .from("activity_invitations")

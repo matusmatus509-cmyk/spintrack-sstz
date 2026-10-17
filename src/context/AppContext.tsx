@@ -1,5 +1,6 @@
+import { compareOccurrenceDesc, normalizeDiaryDate, occurrenceTime } from '../utils/diary';
 import { newActivityId } from '../utils/activityId';
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import {
   Rubber,
   Blade,
@@ -183,7 +184,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const initialActivities: ActivityRecord[] = saved?.activities || (saved?.trainingSessions ? saved.trainingSessions.map((s: any) => ({
     id: s.id,
     category: 'tréning' as ActivityCategory,
-    date: s.date ? s.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    date: normalizeDiaryDate(s.date),
+    startTime: occurrenceTime(s).slice(0, 5) || undefined,
     durationMinutes: s.durationMinutes || 60,
     focusDrills: s.focusDrills || [],
     location: s.location || 'Klubová herňa',
@@ -673,7 +675,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     if (Array.isArray(data.matches)) {
       const importedMatches: MatchRecord[] = data.matches.map((m: any) => ({
         id: `sstz-${m.id}`,
-        date: m.date || new Date().toISOString().split('T')[0],
+        date: m.date || '',
         season: m.season || '2026/27',
         competition: m.competition || m.leagueName || 'SSTZ Liga',
         leagueName: m.leagueName || 'SSTZ Liga',
@@ -877,7 +879,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   const addScheduleMatchToMatches = (scheduleMatch: TeamScheduleMatch, result: 'WIN' | 'LOSS', score: string) => {
     addMatch({
-      date: scheduleMatch.dateTime.split(' ')[0] || new Date().toISOString().split('T')[0],
+      date: scheduleMatch.dateTime || '',
       competition: 'SSTZ Liga',
       round: scheduleMatch.round,
       teamHome: scheduleMatch.homeTeam,
@@ -985,6 +987,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     setTournamentError(null);
   };
 
+  // Every consumer sees occurrence order, even when an import appends old records.
+  const orderedActivities = useMemo(() => [...activities].sort(compareOccurrenceDesc), [activities]);
+  const orderedSessions = useMemo(() => [...trainingSessions].sort(compareOccurrenceDesc), [trainingSessions]);
+  const orderedMatches = useMemo(() => [...matches].sort(compareOccurrenceDesc), [matches]);
+  const orderedDoubles = useMemo(() => [...doublesMatches].sort(compareOccurrenceDesc), [doublesMatches]);
+
   return (
     <AppContext.Provider
       value={{
@@ -1004,18 +1012,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         updateBlade,
         deleteBlade,
         getRubberHealth,
-        activities,
+        activities: orderedActivities,
         addActivity,
         updateActivity,
         deleteActivity,
-        trainingSessions,
+        trainingSessions: orderedSessions,
         addTrainingSession,
         deleteTrainingSession,
-        matches,
+        matches: orderedMatches,
         addMatch,
         deleteMatch,
         updateMatchNotes,
-        doublesMatches,
+        doublesMatches: orderedDoubles,
         addDoublesMatch,
         deleteDoublesMatch,
         opponents,

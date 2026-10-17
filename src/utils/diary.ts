@@ -9,6 +9,7 @@ export interface DiaryEntry {
   id: string;
   date: string;
   originalDate: string;
+  startTime?: string;
   category: ActivityCategory;
   source: 'manual' | 'sstz';
   title: string;
@@ -42,9 +43,11 @@ const normalizeText = (value: string) =>
     .toLowerCase();
 
 /** Both SSTZ's day.month.year and local ISO dates sort as calendar days. */
-export function normalizeDiaryDate(value: string): string {
-  const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T|\s)/);
-  const local = value.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})(?:$|\s)/);
+export function normalizeDiaryDate(value: string | null | undefined): string {
+  if (typeof value !== 'string') return '';
+  value = value.trim();
+  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:$|T|\s)/);
+  const local = value.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})(?:$|T|\s|,)/);
   if (!iso && !local) return '';
   const [year, month, day] = iso
     ? [Number(iso[1]), Number(iso[2]), Number(iso[3])]
@@ -57,6 +60,31 @@ export function normalizeDiaryDate(value: string): string {
   )
     return '';
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export interface DatedRecord {
+  id?: string;
+  date?: string | null;
+  startTime?: string;
+}
+
+/** Only the time of the event itself; never its creation/import timestamp. */
+export function occurrenceTime(record: DatedRecord): string {
+  const value = record.startTime?.trim() ||
+    record.date?.match(/(?:T|[\s,])(\d{1,2}:\d{2}(?::\d{2})?)/)?.[1] || '';
+  const match = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match || Number(match[1]) > 23 || Number(match[2]) > 59 || Number(match[3] || 0) > 59) return '';
+  return `${match[1].padStart(2, '0')}:${match[2]}:${match[3] || '00'}`;
+}
+
+/** Latest occurrence first. Undated records go last; ties never use import order. */
+export function compareOccurrenceDesc(a: DatedRecord, b: DatedRecord): number {
+  const left = normalizeDiaryDate(a.date);
+  const right = normalizeDiaryDate(b.date);
+  const dayOrder = right.localeCompare(left);
+  if (dayOrder) return dayOrder;
+  const timeOrder = left ? occurrenceTime(b).localeCompare(occurrenceTime(a)) : 0;
+  return timeOrder || (a.id || '').localeCompare(b.id || '');
 }
 
 export function getDiaryEntries(
@@ -84,6 +112,7 @@ export function getDiaryEntries(
       id: `activity-${activity.id}`,
       date: normalizeDiaryDate(activity.date),
       originalDate: activity.date,
+      startTime: occurrenceTime(activity),
       category: activity.category,
       source: 'manual',
       title,
@@ -124,6 +153,7 @@ export function getDiaryEntries(
       id: `${'opponentPair' in match ? 'doubles' : 'match'}-${match.id}`,
       date: normalizeDiaryDate(match.date),
       originalDate: match.date,
+      startTime: occurrenceTime(match),
       category: match.source === 'SSTZ' ? 'liga' : 'turnaj',
       source: 'sstz',
       title,
@@ -145,7 +175,7 @@ export function getDiaryEntries(
       ),
     });
   }
-  return entries.sort((a, b) => b.date.localeCompare(a.date));
+  return entries.sort(compareOccurrenceDesc);
 }
 
 export function filterDiaryEntries(

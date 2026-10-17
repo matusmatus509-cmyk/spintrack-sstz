@@ -1,3 +1,4 @@
+import { compareOccurrenceDesc } from "../utils/diary";
 import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -362,17 +363,17 @@ export function CommunityView({
   const feed = [...account.feed, ...account.ownShares]
     .sort(
       (a, b) =>
-        b.activity_date.localeCompare(a.activity_date) ||
-        b.created_at.localeCompare(a.created_at),
+        compareOccurrenceDesc(
+          { id: a.id, date: a.activity_date, startTime: a.payload.startTime },
+          { id: b.id, date: b.activity_date, startTime: b.payload.startTime },
+        ),
     )
     .filter(
       (row) =>
         row.visibility !== "private" &&
         (feedScope === "all" || friendsIds.has(row.owner_id)),
     );
-  const myActivities = [...activities].sort((a, b) =>
-    b.date.localeCompare(a.date),
-  );
+  const myActivities = [...activities].sort(compareOccurrenceDesc);
   let guestData: string | null = null;
   try {
     guestData = localStorage.getItem("spintrack_sstz_data_v1");

@@ -1,3 +1,4 @@
+import { normalizeDiaryDate, occurrenceTime } from "./diary.ts";
 import type { ActivityRecord } from "../types/index";
 import type { SharedActivityData } from "../types/community";
 
@@ -85,7 +86,8 @@ function localActivities(local: Record<string, any>) {
   return (local.trainingSessions || []).map((session: any) => ({
     id: session.id,
     category: "tréning",
-    date: session.date?.split("T")[0],
+    date: normalizeDiaryDate(session.date),
+    startTime: occurrenceTime(session).slice(0, 5) || undefined,
     durationMinutes: session.durationMinutes ?? 60,
     focusDrills: session.focusDrills || [],
     location: session.location || "",
