@@ -109,6 +109,8 @@ Prihlásenie e-mailom, registrácia, obnova hesla, priateľstvá a pozvánky na 
 
 Produkčný projekt je pripojený k Supabase, komunitná migrácia je aplikovaná a Vercel má nastavené obe verejné premenné. Pre registrácie mimo tímu projektu ešte treba dokončiť vlastné SMTP s overenou odosielacou doménou. Stav nasadenia a postup sú v [docs/COMMUNITY-SETUP.md](docs/COMMUNITY-SETUP.md). Príkaz `npm run check:community` overí živé API bez zápisu dát alebo odosielania e-mailov. Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa nesimulujú.
 
+Aktivity a zápasové histórie sa radia podľa dátumu konania, potom podľa dostupného času začiatku. Čas zápisu ani importu poradie neurčuje. Dátumy zo SSTZ (`DD.MM.RRRR`) a ISO formáty sa porovnávajú spoločne; záznamy bez známeho dátumu sú na konci a import im nevymýšľa dnešný dátum.
+
 ## Vzhľad aplikácie
 
 V hornej lište prepínaš svetlý a tmavý režim ikonou slnka alebo mesiaca. V **Nastavenia → Vzhľad aplikácie** môžeš vybrať aj **Podľa systému**. Voľba sa uchováva v danom prehliadači, synchronizuje medzi jeho kartami a aplikuje ešte pred vykreslením aplikácie.

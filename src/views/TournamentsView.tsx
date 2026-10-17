@@ -1,3 +1,4 @@
+import { compareOccurrenceDesc } from '../utils/diary';
 import { RecommendedTournaments } from '../components/RecommendedTournaments';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -113,7 +114,7 @@ export const TournamentsView: React.FC = () => {
             opponentName: m.opponentPair,
             duelType: 'doubles' as const,
           })),
-      ].sort((a, b) => b.date.localeCompare(a.date)),
+      ].sort(compareOccurrenceDesc),
     [matches, doublesMatches],
   );
   const seasons = Array.from(
