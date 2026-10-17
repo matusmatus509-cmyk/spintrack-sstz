@@ -110,6 +110,20 @@ export function localRecoverySummary(current: Record<string, any>, local: Record
   return { activities, matches, sstz, equipment, available: Boolean(activities || matches || sstz || equipment || other) };
 }
 
+export function prepareLocalRecovery(
+  storage: Pick<Storage, "getItem" | "setItem">,
+  ownerId: string,
+  currentRaw: string,
+) {
+  const raw = storage.getItem(LOCAL_DIARY_KEY);
+  if (!raw) throw new Error("Miestna kópia už nie je dostupná. Otvor pôvodnú adresu aplikácie.");
+  const local = parseLocalDiary(raw);
+  const merged = mergeLocalData(parseLocalDiary(currentRaw), local);
+  // Do not start the import if its safety snapshot cannot be persisted.
+  storage.setItem(`spintrack_before_recovery_${ownerId}`, currentRaw);
+  return merged;
+}
+
 // Migration is explicit. Never silently publish old local records marked community.
 export function mergeLocalData(
   current: Record<string, any>,

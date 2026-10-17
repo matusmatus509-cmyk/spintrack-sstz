@@ -6,6 +6,8 @@ import {
   mergeLocalData,
   parseLocalDiary,
   localRecoverySummary,
+  prepareLocalRecovery,
+  LOCAL_DIARY_KEY,
 } from "../src/utils/community.ts";
 
 test("sharing excludes private notes, photos and equipment while retaining training details", () => {
@@ -104,6 +106,27 @@ test("legacy team schedule restores its connected status", () => {
   const merged = mergeLocalData(emptyAccountData(), { teamSchedule: [{ id: "fixture" }], selectedLeagueSlug: "local-league" });
   assert.equal(merged.scheduleConnected, true);
   assert.equal(merged.selectedLeagueSlug, "local-league");
+});
+
+test("recovery backs up the current account without modifying its original guest storage", () => {
+  const guest = JSON.stringify({ matches: [{ id: "old-match" }] });
+  const current = JSON.stringify({ ...emptyAccountData(), matches: [{ id: "just-added" }] });
+  const values = new Map([[LOCAL_DIARY_KEY, guest]]);
+  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+  const restored = prepareLocalRecovery(storage, "my-account", current);
+  assert.equal(values.get(LOCAL_DIARY_KEY), guest);
+  assert.equal(values.get("spintrack_before_recovery_my-account"), current);
+  assert.deepEqual(restored.matches.map(row => row.id), ["old-match", "just-added"]);
+});
+
+test("recovery stops before import when storage is full or the guest backup is corrupt", () => {
+  const current = JSON.stringify(emptyAccountData());
+  const full = { getItem: () => '{"matches":[{"id":"old-match"}]}', setItem: () => { throw new Error("quota"); } };
+  assert.throws(() => prepareLocalRecovery(full, "owner", current), /quota/);
+  let writes = 0;
+  const corrupt = { getItem: () => '{"activities":[null]}', setItem: () => { writes++; } };
+  assert.throws(() => prepareLocalRecovery(corrupt, "owner", current), /Neplatná/);
+  assert.equal(writes, 0);
 });
 test("local migration merges identities without duplicating or overwriting existing account records", () => {
   const existing = {

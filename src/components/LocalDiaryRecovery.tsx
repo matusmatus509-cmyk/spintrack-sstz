@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
 import { useCommunity } from "../context/CommunityContext";
-import { LOCAL_DIARY_KEY, localRecoverySummary, mergeLocalData, parseLocalDiary } from "../utils/community";
+import { LOCAL_DIARY_KEY, localRecoverySummary, parseLocalDiary, prepareLocalRecovery } from "../utils/community";
 import "./LocalDiaryRecovery.css";
 
 /** Mounted in every account screen, rather than hidden inside account settings. */
@@ -52,13 +52,7 @@ export function LocalDiaryRecovery() {
     setError("");
     try {
       // Re-read both sides at click time; never overwrite records added since render.
-      const latest = localStorage.getItem(LOCAL_DIARY_KEY);
-      if (!latest) throw new Error("Miestna kópia už nie je dostupná. Otvor pôvodnú adresu aplikácie.");
-      const local = parseLocalDiary(latest);
-      const before = exportData();
-      const merged = mergeLocalData(JSON.parse(before), local);
-      // Keep the pre-import account snapshot, too. If storage is full, stop before changing it.
-      localStorage.setItem(`spintrack_before_recovery_${account.user!.id}`, before);
+      const merged = prepareLocalRecovery(localStorage, account.user!.id, exportData());
       if (!importData(JSON.stringify(merged))) throw new Error("Obnova sa nepodarila. Pôvodná kópia zostala zachovaná.");
       setRestored(true);
     } catch (cause) {
