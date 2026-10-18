@@ -2,7 +2,47 @@
 
 Aplikácia používa Supabase Auth a PostgreSQL. Bez konfigurácie ďalej funguje miestny denník; prihlásenie a komunita sa zobrazia ako nepripojené. Žiadne účty ani spoločné aktivity nie sú simulované v produkcii.
 
-## 1. Vytvor projekt
+## Produkčné nasadenie – 16. 10. 2026
+
+| Súčasť | Overený stav |
+| --- | --- |
+| Aplikácia | https://spintrack-sstz.vercel.app/ |
+| Vercel projekt | `spintrack-sstz` / `prj_DQqSYzyGHOIfZnfT054PWDjhH3ss` |
+| Supabase projekt | `spintrack-sstz` / `vjquiiaroinvcveaiixl`, región `eu-central-1` |
+| Databáza | Komunitná migrácia aplikovaná, všetkých 6 tabuliek má RLS |
+| Vercel premenné | `VITE_SUPABASE_URL` a `VITE_SUPABASE_PUBLISHABLE_KEY` pre Production, Preview a Development |
+| Auth Site URL | `https://spintrack-sstz.vercel.app/` |
+| Povolený návrat | `https://spintrack-sstz.vercel.app/` (staršie aliasy zachované) |
+| E-mailová registrácia | Zapnutá, potvrdenie e-mailu zapnuté |
+| Vlastné SMTP | **Nedokončené: chýba poskytovateľ a overená odosielacia doména** |
+
+Migráciu znovu nespúšťaj na existujúcom produkčnom projekte. Obsahuje ju už tento repozitár; nastavenia Vercel a Supabase Auth sa nesynchronizujú samotným Git merge.
+
+Na živej databáze prešla transakčná kontrola vytvorenia profilov, ochrany súkromnej zálohy, prijatia priateľstva, zdieľania iba povolených polí a opakovaného prijatia pozvánky bez duplikátu. Transakcia skončila `ROLLBACK`; testovacie účty a záznamy nezostali v produkcii. Nešlo o overenie doručenia registračných e-mailov ani o úplný test prihlásenia dvoch reálnych používateľov.
+
+### Dokončenie e-mailov cez Resend
+
+Predvolená služba Supabase doručuje iba členom tímu projektu. Verejná registrácia preto vyžaduje vlastné SMTP. Odporúčaný postup:
+
+1. Pripoj Resend cez [Vercel Marketplace](https://vercel.com/marketplace/resend) k projektu `spintrack-sstz` a dokonči vytvorenie/prihlásenie účtu.
+2. V Resend over vlastnú odosielaciu doménu pomocou DNS záznamov, ktoré poskytovateľ zobrazí. Adresa `vercel.app` nie je tvoja odosielacia doména.
+3. V Supabase **Authentication → Emails → SMTP Settings** nastav meno odosielateľa `SpinTrack`, adresu na overenej doméne, host `smtp.resend.com`, port `465`, používateľa `resend` a API kľúč Resend ako SMTP heslo. Zapni vlastné SMTP a ulož.
+4. Tajný kľúč vlož iba cez nastavenia poskytovateľa/Supabase. Nepatrí do GitHubu, klienta, `.env.example` ani premennej s prefixom `VITE_`. Samotný `RESEND_API_KEY` vo Verceli nenastaví Supabase SMTP.
+5. Over registráciu e-mailom mimo tímu, potvrdenie odkazu, prihlásenie a obnovu hesla. Až potom označ SMTP za funkčné. Potvrdenie e-mailu nevypínaj ako náhradu za SMTP.
+
+Zdroje: [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Resend so Supabase SMTP](https://resend.com/docs/send-with-supabase-smtp).
+
+### Kontrola živého API
+
+Použi Node.js 22 alebo novší. V ignorovanom `.env.local` nastav iba dve verejné premenné podľa `.env.example`, prípadne ich poskytni prostredím. Potom spusti:
+
+```sh
+npm run check:community
+```
+
+Kontrola číta Auth konfiguráciu, dostupnosť komunitných tabuliek a odmietnutie anonymného prístupu k súkromným tabuľkám. Pri dotazoch používa `limit=0`, nevytvára používateľov, neposiela e-maily a nemení databázu. Zlyhanie vráti nenulový exit kód. Nie je to náhrada kontroly SMTP ani RLS medzi prihlásenými účtami; na tie slúžia nižšie uvedené kroky a databázové testy. Publishable kľúče sú verejné, ale kontrola odmietne tajný/service-role kľúč ešte pred sieťovým požiadavkom.
+
+## 1. Vytvor projekt (iba pre nové nasadenie)
 
 1. Otvor https://supabase.com/dashboard a vytvor projekt (pre európskych hráčov zvoľ región v EÚ).
 2. Otvor **SQL Editor → New query**. Spusti celý súbor [202610100001_community.sql](../supabase/migrations/202610100001_community.sql). Spúšťa sa raz v novom projekte. Potom spusti [202610180001_club_attendance.sql](../supabase/migrations/202610180001_club_attendance.sql), ktorý pridá klubové tréningy a dochádzku. V existujúcom projekte s hotovou prvou migráciou spusti iba túto novú migráciu.
@@ -52,6 +92,15 @@ Tri nepovinné otázky pri dokončenej aktivite sa ukladajú súkromne. Najnovš
 Stav nad obsahom rozlišuje miestne uloženie, čakanie, ukladanie, úspešnú zálohu a chybu. Nepodarený zápis zostane vo fronte, dá sa zopakovať a po návrate pripojenia sa odošle znova. Plné miestne úložisko má samostatné upozornenie.
 
 V SSTZ a denníku vidíš poslednú úspešnú aktualizáciu, počet nových zápasov pri nej a aktuálnu chybu. Zápas s rovnakým dátumom a súperom ako ručný záznam ponúkne zlúčenie alebo ponechanie oboch. Zlúčenie zachová poznámky, taktickú poznámku aj raketu a použije oficiálny výsledok. Rozhodnutie ponechať oba sa ukladá. Pôvodná aktivita s fotkami a vyhodnotením zostane zachovaná a v denníku sa nezobrazí druhý importovaný riadok.
+## Obnova denníka po prihlásení
+
+Prihlásený účet má oddelené úložisko od pôvodného miestneho denníka. Po prihlásení aplikácia na každej obrazovke vyhľadá chýbajúce záznamy v `spintrack_sstz_data_v1` a ponúkne **Obnoviť môj denník do účtu**. Prenos vyžaduje kliknutie používateľa; údaje zdieľaného zariadenia sa nepriradia automaticky cudziemu účtu.
+
+Obnova zlúči tréningy, zápasy, štvorhry, výbavu, súperov, profil SSTZ a rozpis. Rovnaké ID sa neduplikuje a existujúce údaje účtu majú prednosť. Starší formát `trainingSessions` bez `activities` sa prevedie do viditeľného denníka, súkromné poznámky zostanú súkromné a opotrebovanie výbavy sa znova nepripočítava. Nový účet prevezme pôvodnú ligu aj aktívnu raketu. Importované aktivity sa nezverejnia.
+
+Pôvodný miestny kľúč sa nemení. Pred importom vznikne aj miestna kópia aktuálneho účtu pod `spintrack_before_recovery_<user-id>`; ak nie je miesto na túto zálohu, import sa zastaví. Cloudové uloženie používa existujúcu synchronizáciu účtu a prípadné zlyhanie je viditeľné v Komunite.
+
+Miestne úložisko je viazané na presnú adresu a prehliadač. Ak údaje nie sú nájdené, otvor pôvodnú adresu v rovnakom prehliadači (vrátane režimu PWA) alebo importuj existujúcu JSON zálohu. Nemaž údaje prehliadača. Obnova hesla a registrácia teraz posielajú návrat na koreň aktuálnej adresy s koncovým `/`, aby zodpovedal povoleným adresám Supabase.
 
 ## Ako sa ukladajú údaje
 
@@ -74,3 +123,15 @@ npm run dev
 ```
 
 `tests/communityDatabase.test.mjs` vykonáva skutočnú migráciu v zabudovanom PostgreSQL (PGlite) a overuje prístup troch účtov, súkromné zálohy, prijatie priateľstva, odobratie prístupu, nezverejnenie súkromných polí a prijímanie pozvánok bez duplikátov. Nevyžaduje Supabase kľúče. E-mailové doručovanie a Supabase Auth treba overiť vo vlastnom nakonfigurovanom projekte podľa postupu vyššie.
+
+## Kluby a import do denníka
+
+Migrácia `20261017185313_clubs.sql` pridáva klubové skupiny. Zakladateľ vytvorí klub v **Komunita → Kluby**, pošle členom pozývací kód a v sekcii Členovia určí trénerov. Kód sa dá obnoviť, čím starý prestane platiť. Noví členovia sú vždy hráči. Zakladateľ má aj oprávnenia trénera.
+
+Tréneri vytvárajú spoločné tréningy v rozpise. Každý člen môže dobrovoľne zdieľať aktivitu zo svojho denníka, označiť ďalších členov a prečítať si poznámky trénera. Klubové záznamy a spätná väzba sú dostupné iba členom; súkromné poznámky, fotky a vybavenie sa nekopírujú. Odchod odoberie prístup, existujúce zdieľané aktivity zostanú v klube (UI na to upozorňuje).
+
+Označovanie priateľov funguje aj pri už zapísanej aktivite v **Komunita → Moje aktivity**. Pozvánku alebo klubovú aktivitu možno importovať do vlastného denníka. Import má stabilné ID podľa zdroja, je súkromný a vždy plánovaný. Dokončenie a prípadné opotrebenie si hráč nastaví až pri úprave vlastnej aktivity. Cudzie individuálne výsledky sa nepreberajú. Prijatá pozvánka sa v kalendári nezobrazuje druhýkrát, ak už bola importovaná do denníka. Zmena alebo odstránenie zdrojovej aktivity nemení už importovanú osobnú kópiu.
+
+Databázové pravidlá sa testujú na skutočnom PostgreSQL engine (PGlite), vrátane cudzích klubov, odobratého členstva, podvrhnutia roly/autora, povyšovania trénerov, rotácie kódu a opakovaného zdieľania. Privilegované implementácie sú v nezverejnenej schéme `club_private`; verejné RPC sú `SECURITY INVOKER` a delegujú na implementácie s explicitnými kontrolami aktuálneho používateľa. Nové tabuľky majú RLS a explicitné granty.
+
+Overenie pri nasadení klubov: 67 automatických testov, TypeScript a produkčný build prešli. Mobilný prehliadač (390 px, izolované API fixtures) overil vytvorenie rozpisu, označenie, poznámku, prijatie pozvánky, súkromný plánovaný import a uloženie do účtu bez opakovania. Produkčná databáza bola overená transakčným testom s rollbackom. Security Advisor nehlási nové klubové problémy; pôvodné upozornenia na [existujúce privilegované komunitné RPC](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) a [ochranu proti uniknutým heslám](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) zostávajú mimo tejto zmeny.

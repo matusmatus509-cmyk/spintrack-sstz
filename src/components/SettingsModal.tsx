@@ -76,7 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
 
   const handleReset = async () => {
-    if (window.confirm('Naozaj chceš vymazať všetky údaje a vrátiť aplikáciu do predvoleného stavu?')) {
+    if (window.confirm('Naozaj chceš vymazať všetky údaje a začať s prázdnym denníkom a výbavou?')) {
       setResetting(true);
       try { await resetToDefaults(); onClose(); }
       catch { setImportStatus('Chyba: Údaje sa nepodarilo vymazať. Skontroluj pripojenie a skús znova.'); }
@@ -298,7 +298,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-tt-red)' }}>Vynulovanie aplikácie</h4>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              Vymaže lokálne úložisko a nastaví predvolené vzorové dáta.
+              Vymaže tvoje záznamy a výbavu. Aplikácia zostane prázdna.
             </span>
           </div>
 

@@ -242,7 +242,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
           .select(activitySelect)
           .neq("owner_id", owner)
           .order("activity_date", { ascending: false })
-          .order("created_at", { ascending: false })
+          .order("id", { ascending: true })
           .limit(60),
         supabase
           .from("activity_invitations")
@@ -408,7 +408,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
             display_name: name.trim(),
             handle: handle.trim().toLowerCase(),
           },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
       check(error);
@@ -431,7 +431,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     resetPassword: async (email) => {
       const { error } = await client().auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: window.location.origin },
+        { redirectTo: `${window.location.origin}/` },
       );
       check(error);
     },

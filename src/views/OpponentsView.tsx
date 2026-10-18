@@ -1,4 +1,4 @@
-import { matchDay } from '../utils/matchMerge';
+import { compareOccurrenceDesc } from '../utils/diary';
 import { useDialog } from '../hooks/useDialog';
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -278,7 +278,7 @@ export const OpponentsView: React.FC = () => {
   const selectedOpponentMatches = useMemo(() => {
     if (!selectedOpponent) return [];
     const list = matchesByOpponent.get(selectedOpponent.name.toLowerCase().trim()) || [];
-    return [...list].sort((a, b) => matchDay(b.date || '').localeCompare(matchDay(a.date || '')));
+    return [...list].sort(compareOccurrenceDesc);
   }, [selectedOpponent, matchesByOpponent]);
 
   const selectedOpponentWins = selectedOpponentMatches.filter(m => m.result === 'WIN').length;

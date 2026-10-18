@@ -57,3 +57,13 @@ export interface CalendarEntry {
   activity_date: string;
   data: SharedActivityData & { authorName: string };
 }
+
+export interface Club { id: string; name: string; owner_id: string }
+export interface ClubMember {
+  club_id: string; user_id: string; role: 'owner' | 'coach' | 'player'; profile: PlayerProfile;
+}
+export interface ClubActivity {
+  id: string; club_id: string; owner_id: string; local_id: string; activity_date: string;
+  scheduled: boolean; tagged_ids: string[]; payload: SharedActivityData; author: PlayerProfile;
+}
+export interface ClubNote { id: string; activity_id: string; author_id: string; body: string; created_at: string; author: PlayerProfile }

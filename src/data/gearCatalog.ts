@@ -275,8 +275,7 @@ export const INITIAL_BADGES = [
     description: 'Začni svoju cestu a zaznamenaj prvý tréning alebo zápas.',
     icon: 'Target',
     maxProgress: 1,
-    progress: 1,
-    unlockedAt: '2026-09-01'
+    progress: 0
   },
   {
     id: 'badge-hours-10',
@@ -284,7 +283,7 @@ export const INITIAL_BADGES = [
     description: 'Zaznamenaj aspoň 10 hodín tréningu s tvojím vybavením.',
     icon: 'Clock',
     maxProgress: 10,
-    progress: 8
+    progress: 0
   },
   {
     id: 'badge-hours-50',
@@ -292,7 +291,7 @@ export const INITIAL_BADGES = [
     description: 'Dosiahni 50 hodín tréningov a zápasov v denníku.',
     icon: 'Flame',
     maxProgress: 50,
-    progress: 24
+    progress: 0
   },
   {
     id: 'badge-sstz-connected',
@@ -300,8 +299,7 @@ export const INITIAL_BADGES = [
     description: 'Prepoj aplikáciu so svojím SSTZ hráčskym profilom.',
     icon: 'ShieldCheck',
     maxProgress: 1,
-    progress: 1,
-    unlockedAt: '2026-09-15'
+    progress: 0
   },
   {
     id: 'badge-rubber-care',
@@ -309,8 +307,7 @@ export const INITIAL_BADGES = [
     description: 'Sleduj opotrebovanie a vymeň poťah v optimálnom stave.',
     icon: 'Sparkles',
     maxProgress: 1,
-    progress: 1,
-    unlockedAt: '2026-09-20'
+    progress: 0
   },
   {
     id: 'badge-streak-5',
@@ -318,7 +315,7 @@ export const INITIAL_BADGES = [
     description: 'Trénuj 5 po sebe idúcich dní v týždni.',
     icon: 'Zap',
     maxProgress: 5,
-    progress: 3
+    progress: 0
   },
   {
     id: 'badge-winrate-70',
@@ -326,6 +323,6 @@ export const INITIAL_BADGES = [
     description: 'Udrž si úspešnosť v lige vyššiu ako 70% po aspoň 10 zápasoch.',
     icon: 'Trophy',
     maxProgress: 10,
-    progress: 8
+    progress: 0
   }
 ];

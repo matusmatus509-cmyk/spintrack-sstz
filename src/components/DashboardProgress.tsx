@@ -8,7 +8,7 @@ import {
   summarizeMatches,
   type InsightMatch,
 } from "../utils/matchInsights";
-import { normalizeDiaryDate } from "../utils/diary";
+import { compareOccurrenceDesc } from "../utils/diary";
 
 const shortDate = (value: string) =>
   new Date(`${value}T12:00:00`).toLocaleDateString("sk", {
@@ -39,9 +39,7 @@ export function DashboardProgress({
   const max = Math.max(60, ...data.buckets.map((item) => item.minutes));
   const selectedBucket = selected === null ? null : data.buckets[selected];
   const recent = [...data.matches]
-    .sort((a, b) =>
-      normalizeDiaryDate(b.date).localeCompare(normalizeDiaryDate(a.date)),
-    )
+    .sort(compareOccurrenceDesc)
     .slice(0, 8)
     .reverse();
   return (

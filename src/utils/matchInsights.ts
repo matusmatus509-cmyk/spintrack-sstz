@@ -1,5 +1,5 @@
 import type { MatchRecord, DoublesMatchRecord } from "../types";
-import { normalizeDiaryDate } from "./diary.ts";
+import { compareOccurrenceDesc, normalizeDiaryDate } from "./diary.ts";
 export type InsightMatch = MatchRecord | DoublesMatchRecord;
 export const matchSeason = (match: InsightMatch) =>
   match.season?.trim() || "Bez sezóny";
@@ -18,9 +18,7 @@ export function allInsightMatches(
   const unique = new Map<string, InsightMatch>();
   for (const match of [...singles, ...doubles])
     unique.set(matchKey(match), match);
-  return [...unique.values()].sort((a, b) =>
-    normalizeDiaryDate(b.date).localeCompare(normalizeDiaryDate(a.date)),
-  );
+  return [...unique.values()].sort(compareOccurrenceDesc);
 }
 export function summarizeMatches(matches: InsightMatch[]) {
   const played = matches.length;

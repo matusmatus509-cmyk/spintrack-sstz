@@ -271,7 +271,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
           {hasFilters ? `z ${entries.length} aktivít` : 'aktivít v denníku'}
         </span>
         <span>
-          <ArrowDown size={14} /> Od najnovších
+          <ArrowDown size={14} /> Podľa dátumu konania
         </span>
       </div>
       <section className="diary-timeline" aria-label="Zoznam aktivít">

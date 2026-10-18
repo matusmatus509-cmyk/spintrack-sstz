@@ -1,4 +1,8 @@
 import { ClubTrainingPanel } from '../components/ClubTrainingPanel';
+import { ClubView } from "./ClubView";
+import { ImportSharedActivity } from "../components/ImportSharedActivity";
+import { TagActivityFriend } from "../components/TagActivityFriend";
+import { compareOccurrenceDesc } from "../utils/diary";
 import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -48,7 +52,7 @@ export function communityError(error: unknown) {
   if (/password.*(least|weak)/i.test(message))
     return "Zvoľ silnejšie heslo s aspoň 8 znakmi.";
   if (
-    /^(Pozvať|Súkromná|Pozvánka|Aktivita|Žiadosť|Najprv|Neplatn)/.test(message)
+    /^(Pozvať|Označiť|Klub|Rozpis|Zakladateľ|Súkromná|Pozvánka|Aktivita|Žiadosť|Najprv|Neplatn)/.test(message)
   )
     return message;
   return "Nepodarilo sa to dokončiť. Skontroluj pripojenie a skús znova.";
@@ -265,7 +269,7 @@ export function CommunityView({
 }) {
   const account = useCommunity();
   const { activities, updateActivity, exportData, importData } = useApp();
-  const [tab, setTab] = useState<"feed" | "friends" | "invitations" | "mine" | "club">(
+  const [tab, setTab] = useState<"feed" | "friends" | "invitations" | "mine" | "club" | "clubs">(
     "feed",
   );
   const [feedScope, setFeedScope] = useState<"all" | "friends">("all");
@@ -363,17 +367,17 @@ export function CommunityView({
   const feed = [...account.feed, ...account.ownShares]
     .sort(
       (a, b) =>
-        b.activity_date.localeCompare(a.activity_date) ||
-        b.created_at.localeCompare(a.created_at),
+        compareOccurrenceDesc(
+          { id: a.id, date: a.activity_date, startTime: a.payload.startTime },
+          { id: b.id, date: b.activity_date, startTime: b.payload.startTime },
+        ),
     )
     .filter(
       (row) =>
         row.visibility !== "private" &&
         (feedScope === "all" || friendsIds.has(row.owner_id)),
     );
-  const myActivities = [...activities].sort((a, b) =>
-    b.date.localeCompare(a.date),
-  );
+  const myActivities = [...activities].sort(compareOccurrenceDesc);
   let guestData: string | null = null;
   try {
     guestData = localStorage.getItem("spintrack_sstz_data_v1");
@@ -538,6 +542,7 @@ export function CommunityView({
               label: `Pozvánky${pending.length ? ` (${pending.length})` : ""}`,
             },
             { id: "mine", label: "Moje aktivity" },
+            { id: "clubs", label: "Kluby" },
           ] as const
         ).map((item) => (
           <button
@@ -555,6 +560,7 @@ export function CommunityView({
       {account.socialLoading && !account.feed.length && (
         <p role="status">Načítavam komunitu…</p>
       )}
+      {tab === "clubs" && <ClubView key={account.user.id} />}
       {tab === "feed" && (
         <>
           <div
@@ -781,7 +787,7 @@ export function CommunityView({
               <h2>Zatiaľ žiadne pozvánky</h2>
               <p>
                 Keď ťa priateľ označí v aktivite, môžeš si ju tu pridať do
-                kalendára.
+                denníka alebo kalendára.
               </p>
             </section>
           )}
@@ -798,6 +804,7 @@ export function CommunityView({
                     pozýva
                   </p>
                   <ActivityPreview data={invite.activity!.payload} />
+                  <ImportSharedActivity source="community" sourceId={invite.activity_id} data={invite.activity!.payload} beforeImport={() => account.acceptInvitation(invite.id)} />
                   <div className="community-actions">
                     <button
                       className="btn-primary"
@@ -866,6 +873,7 @@ export function CommunityView({
           {myActivities.slice(0, limit).map((activity) => (
             <article className="glass-panel community-card" key={activity.id}>
               <ActivityPreview data={activity} />
+              <TagActivityFriend activity={activity} />
               <label className="community-visibility-select">
                 Viditeľnosť aktivity
                 <select

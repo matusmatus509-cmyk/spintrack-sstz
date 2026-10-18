@@ -1,0 +1,13 @@
+.diary-recovery {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--accent-tt-green);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+.diary-recovery p { margin: 8px 0; font-size: .85rem; line-height: 1.5; }
+.diary-recovery summary { cursor: pointer; font-weight: 600; }
+.diary-recovery a { color: var(--accent-tt-green); text-decoration: underline; }
+.diary-recovery .community-actions { margin-top: 12px; flex-wrap: wrap; }

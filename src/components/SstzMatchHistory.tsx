@@ -1,3 +1,4 @@
+import { compareOccurrenceDesc } from '../utils/diary';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { SetBreakdown } from './SetBreakdown';
@@ -57,9 +58,7 @@ export const SstzMatchHistory: React.FC = () => {
         competition: m.competition || m.leagueName || 'SSTZ Liga',
       }));
 
-    return [...sMatches, ...dMatches].sort((a, b) => {
-      return (b.date || '').localeCompare(a.date || '');
-    });
+    return [...sMatches, ...dMatches].sort(compareOccurrenceDesc);
   }, [matches, doublesMatches]);
 
   // Unique seasons and leagues for filter dropdowns
