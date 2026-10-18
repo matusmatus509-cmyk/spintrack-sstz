@@ -1,4 +1,5 @@
 import { useDialog } from '../hooks/useDialog';
+import { TrainingQuickActions } from '../components/TrainingQuickActions';
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useCommunity } from '../context/CommunityContext';
@@ -113,6 +114,7 @@ export const CalendarView: React.FC = () => {
   return (
     <div className="page-view calendar-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      <TrainingQuickActions />
       <header className="calendar-page-heading">
         <div><span className="calendar-eyebrow">TRÉNINGY · ZÁPASY · ZÁŽITKY</span><h1>Tvoj kalendár</h1><p>Celý športový program na jednom mieste.</p></div>
         <button type="button" className="btn-primary" onClick={() => openActivity(true)}><Plus size={18} /> Naplánovať aktivitu</button>

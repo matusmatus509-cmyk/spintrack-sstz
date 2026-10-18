@@ -54,6 +54,10 @@ export type ActivityOpponentRubber = 'in' | 'long_pips' | 'short_pips' | 'anti';
 export interface ActivityRecord {
   id: string;
   category: ActivityCategory;
+  linkedMatchId?: string;
+  trainingPartnerIds?: string[];
+  trainingPartners?: string;
+  reflection?: { wentWell: string; improve: string; nextGoal: string };
   sourceEventId?: string; // Official tournament identity prevents duplicate calendar additions.
   planned?: boolean; // Planned events do not contribute to played hours or results.
   date: string; // YYYY-MM-DD
@@ -111,6 +115,7 @@ export interface SetDetail {
 }
 
 export interface MatchRecord {
+  sourceActivityId?: string;
   id: string;
   date: string;
   season?: string; // e.g. '2026/27' or '2025/26'
@@ -250,6 +255,7 @@ export interface SSTZProfile {
     winRate: number;
   };
   doublesMatches?: DoublesMatchRecord[];
+  lastImportCount?: number;
   lastSync: string;
 }
 
@@ -300,6 +306,7 @@ export interface SSTZTournamentProfile {
   id: string;
   name: string;
   clubName?: string;
+  lastImportCount?: number;
   lastSync: string;
   complete: true;
 }

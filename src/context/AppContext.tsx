@@ -1,3 +1,4 @@
+import { mergeCandidates, mergeMatchNotes, matchDay } from '../utils/matchMerge';
 import { newActivityId } from '../utils/activityId';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
@@ -72,6 +73,8 @@ interface AppContextType {
   updateOpponent: (opponent: OpponentProfile) => void;
   getOpponent: (idOrName: string) => OpponentProfile | undefined;
 
+  matchMergeCandidates: ReturnType<typeof mergeCandidates>;
+  resolveMatchMerge: (manualId: string, importedId: string, merge: boolean) => void;
   syncJobs: Partial<Record<SyncKind, SyncJob>>;
 
   // SSTZ Integration
@@ -98,6 +101,7 @@ interface AppContextType {
   totalPlayHours: number;
   overallWinRate: number;
 
+  localSaveError: boolean;
   // System
   exportData: () => string;
   importData: (jsonStr: string) => boolean;
@@ -363,6 +367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   );
   const [sstzProfile, setSstzProfile] = useState<SSTZProfile | null>(saved?.sstzProfile || null);
   const [tournamentProfile, setTournamentProfile] = useState<SSTZTournamentProfile | null>(saved?.tournamentProfile || null);
+  const [ignoredMerges, setIgnoredMerges] = useState<string[]>(saved?.ignoredMerges || []);
   const [syncJobs, setSyncJobs] = useState<Partial<Record<SyncKind, SyncJob>>>({});
   const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController; showProgress: boolean }>());
   const isTournamentLoading = syncJobs.tournaments?.state === 'loading';
@@ -378,6 +383,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const isSstzLoading = syncJobs.player?.state === 'loading' || syncJobs.schedule?.state === 'loading';
   const [sstzError, setSstzError] = useState<string | null>(null);
 
+  const [localSaveError, setLocalSaveError] = useState(false);
+
   // Persist to localStorage
   useEffect(() => {
     const dataToSave = {
@@ -392,6 +399,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       opponents,
       sstzProfile,
       tournamentProfile,
+      ignoredMerges,
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
@@ -401,7 +409,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      setLocalSaveError(false);
     } catch (e) {
+      setLocalSaveError(true);
       console.warn('Failed to save state to localStorage:', e);
     }
     onPersist?.(dataToSave);
@@ -419,6 +429,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     opponents,
     sstzProfile,
     tournamentProfile,
+    ignoredMerges,
     teamSchedule,
     selectedLeagueSlug,
     selectedClubId,
@@ -723,6 +734,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       // If match score was entered, also save to match records
       if (newActivity.category !== 'tréning' && newActivity.category !== 'podujatie' && newActivity.matchScore && newActivity.matchResult) {
         addMatch({
+          sourceActivityId: id,
           date: newActivity.date,
           competition: newActivity.category === 'liga' ? newActivity.leagueName || 'Liga' : (newActivity.category === 'turnaj' ? newActivity.title || 'Turnaj' : 'Priateľský zápas'),
           leagueName: newActivity.category === 'liga' ? newActivity.leagueName : undefined,
@@ -804,6 +816,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const resetStopwatch = () => {};
   const saveStopwatchAsSession = () => {};
 
+  const matchMergeCandidates = mergeCandidates(matches, ignoredMerges);
+  const resolveMatchMerge = (manualId: string, importedId: string, merge: boolean) => {
+    const pair = mergeCandidates(matches).find(p => p.manual.id === manualId && p.imported.id === importedId);
+    if (!pair) return;
+    if (!merge) { setIgnoredMerges(previous => [...previous, `${manualId}|${importedId}`]); return; }
+    const matchingActivities = activities.filter(a => !a.planned && a.category !== 'tréning' && matchDay(a.date) === matchDay(pair.manual.date) && a.opponentName?.trim().toLowerCase() === pair.manual.opponentName.trim().toLowerCase() && a.matchScore === pair.manual.score);
+    const sourceActivityId = pair.manual.sourceActivityId || (matchingActivities.length === 1 ? matchingActivities[0].id : undefined);
+    const combined = mergeMatchNotes({...pair.manual, sourceActivityId}, pair.imported);
+    setMatches(previous => previous.filter(m => m.id !== manualId).map(m => m.id === importedId ? combined : m));
+    if (sourceActivityId) setActivities(previous => previous.map(a => a.id === sourceActivityId ? {...a, linkedMatchId: importedId, matchScore: combined.score, matchResult: combined.result} : a));
+  };
+
   // Applies a full authentic SSTZ profile payload, saving verified matches and updating opponents
   const applySstzPayload = (data: any) => {
     if (!data) return;
@@ -820,6 +844,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       seasonsBreakdown: data.seasonsBreakdown || [],
       singlesStats: data.singlesStats || data.singles || { won: 0, played: 0, lost: 0, winRate: 0 },
       doublesStats: data.doublesStats || data.doubles || { won: 0, played: 0, lost: 0, winRate: 0 },
+      lastImportCount: Array.isArray(data.matches) ? data.matches.filter((m: any) => !matches.some(old => old.id === `sstz-${m.id}`)).length + (data.doublesMatches || []).filter((m: any) => !doublesMatches.some(old => old.source === 'SSTZ' && old.id === m.id)).length : 0,
       lastSync: data.syncedAt || new Date().toISOString()
     };
 
@@ -864,7 +889,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         const previous = new Map(prev.filter(p => p.source === 'SSTZ').map(p => [p.id, p]));
         const combined = [...importedMatches.map(match => {
           const old = previous.get(match.id);
-          return old ? { ...match, notes: old.notes, tacticsNote: old.tacticsNote, racketId: old.racketId } : match;
+          return old ? { ...match, notes: old.notes, tacticsNote: old.tacticsNote, racketId: old.racketId, sourceActivityId: old.sourceActivityId } : match;
         }), ...nonSstz];
         setOpponents(curOpp => extractOpponentsFromMatches(combined, curOpp));
         return combined;
@@ -917,8 +942,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     const promise = (async () => {
       try {
         await task(AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]));
+        if (kind === 'tournaments') setTournamentError(null);
+        else setSstzError(null);
         if (runningSyncs.current.get(kind)?.showProgress) {
           setSyncJobs(previous => ({ ...previous, [kind]: { state: 'success', message: successMessage, startedAt, finishedAt: Date.now() } }));
+        } else {
+          setSyncJobs(previous => { const next = {...previous}; delete next[kind]; return next; });
         }
         return true;
       } catch (error) {
@@ -929,11 +958,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
           return false;
         }
         const detail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
-        if (runningSyncs.current.get(kind)?.showProgress) {
-          if (kind === 'tournaments') setTournamentError(detail);
-          else setSstzError(detail);
-          setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
-        }
+        if (kind === 'tournaments') setTournamentError(detail);
+        else setSstzError(detail);
+        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
         return false;
       } finally {
         runningSyncs.current.delete(kind);
@@ -956,7 +983,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       signal.throwIfAborted();
       setMatches(previous => replaceTournamentMatches(previous, imported.matches));
       setDoublesMatches(previous => replaceTournamentMatches(previous, imported.doublesMatches));
-      setTournamentProfile(imported.profile);
+      setTournamentProfile({...imported.profile, lastImportCount: imported.matches.filter(m => !matches.some(old => old.id === m.id)).length + imported.doublesMatches.filter(m => !doublesMatches.some(old => old.id === m.id)).length});
     }, showProgress,
   );
 
@@ -1097,6 +1124,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       opponents,
       sstzProfile,
       tournamentProfile,
+      ignoredMerges,
       teamSchedule,
       selectedLeagueSlug,
       selectedClubId,
@@ -1115,6 +1143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       if (data.rackets) setRackets(data.rackets);
       if (data.activeRacketId !== undefined) setActiveRacketId(data.activeRacketId);
       if (data.activities) setActivities(data.activities);
+      if (data.ignoredMerges) setIgnoredMerges(data.ignoredMerges);
       if (data.trainingSessions) setTrainingSessions(data.trainingSessions);
       if (data.matches) setMatches(data.matches);
       if (data.doublesMatches) setDoublesMatches(data.doublesMatches);
@@ -1149,6 +1178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     setRackets(defaultRackets);
     setActiveRacketId('racket-1');
     setActivities(defaultActivities);
+    setIgnoredMerges([]);
     setTrainingSessions(defaultSessions);
     setMatches(defaultMatches);
     setDoublesMatches([]);
@@ -1197,6 +1227,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         updateOpponent,
         getOpponent,
         sstzProfile,
+        localSaveError,
+        matchMergeCandidates,
+        resolveMatchMerge,
         syncJobs,
         tournamentProfile,
         isTournamentLoading,

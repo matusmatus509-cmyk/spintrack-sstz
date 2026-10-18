@@ -1,3 +1,4 @@
+import { matchDay } from '../utils/matchMerge';
 import { useDialog } from '../hooks/useDialog';
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -277,7 +278,7 @@ export const OpponentsView: React.FC = () => {
   const selectedOpponentMatches = useMemo(() => {
     if (!selectedOpponent) return [];
     const list = matchesByOpponent.get(selectedOpponent.name.toLowerCase().trim()) || [];
-    return [...list].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return [...list].sort((a, b) => matchDay(b.date || '').localeCompare(matchDay(a.date || '')));
   }, [selectedOpponent, matchesByOpponent]);
 
   const selectedOpponentWins = selectedOpponentMatches.filter(m => m.result === 'WIN').length;
@@ -973,6 +974,14 @@ export const OpponentsView: React.FC = () => {
               </div>
             </div>
 
+            {!isNewOpponentModal && <section className="practice-panel opponent-brief" aria-label="Pred zápasom">
+              <div className="practice-heading"><div><span>PRED ZÁPASOM</span><h3>Čo si pripomenúť</h3></div><Target size={20}/></div>
+              <div className="practice-callout"><span>Posledná taktická poznámka</span><strong>{selectedOpponentMatches.find(m => m.tacticsNote?.trim())?.tacticsNote || selectedOpponent?.notes || 'Zatiaľ bez poznámky. Po zápase si zapíš, čo fungovalo.'}</strong></div>
+              <p><strong>{selectedOpponentWins} výhier · {selectedOpponentLosses} prehier</strong> · {selectedOpponentWinRate}% vo vzájomných zápasoch</p>
+              <h4>Posledné vzájomné zápasy</h4>
+              {selectedOpponentMatches.slice(0,3).map(match => <div className="opponent-recent" key={match.id}><span>{match.date}</span><strong>{match.score} · {match.result === 'WIN' ? 'Výhra' : 'Prehra'}</strong><span>{match.tacticsNote || match.competition}</span></div>)}
+              {!selectedOpponentMatches.length && <p className="practice-muted">Zatiaľ ste proti sebe nehrali.</p>}
+            </section>}
             {/* TAB SELECTOR: Matches History vs Scouting */}
             {!isNewOpponentModal && (
               <div className="opponent-modal-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '8px' }}>

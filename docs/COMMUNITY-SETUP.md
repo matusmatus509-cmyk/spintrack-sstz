@@ -5,7 +5,7 @@ Aplikácia používa Supabase Auth a PostgreSQL. Bez konfigurácie ďalej funguj
 ## 1. Vytvor projekt
 
 1. Otvor https://supabase.com/dashboard a vytvor projekt (pre európskych hráčov zvoľ región v EÚ).
-2. Otvor **SQL Editor → New query**. Spusti celý súbor [202610100001_community.sql](../supabase/migrations/202610100001_community.sql). Spúšťa sa raz v novom projekte.
+2. Otvor **SQL Editor → New query**. Spusti celý súbor [202610100001_community.sql](../supabase/migrations/202610100001_community.sql). Spúšťa sa raz v novom projekte. Potom spusti [202610180001_club_attendance.sql](../supabase/migrations/202610180001_club_attendance.sql), ktorý pridá klubové tréningy a dochádzku. V existujúcom projekte s hotovou prvou migráciou spusti iba túto novú migráciu.
 3. V **Authentication → Providers → Email** povoľ prihlásenie e-mailom a heslom a potvrdenie e-mailu. Pri verejnej prevádzke nastav vlastný SMTP pre registračné e-maily a obnovu hesla; predvolený e-mailový servis Supabase má obmedzenia pre príjemcov a počet správ.
 4. V **Authentication → URL Configuration** nastav **Site URL** na skutočnú adresu aplikácie. Do povolených **Redirect URLs** pridaj túto adresu a lokálnu vývojovú adresu, ak ju používaš. Potvrdzovacie a obnovovacie odkazy sa vracajú na hlavnú obrazovku aplikácie.
 5. V **Project Settings → API / API Keys** nájdi URL projektu a **Publishable key** (prípadne starší `anon` kľúč). Nikdy nepouži `secret` ani `service_role` kľúč v prehliadači alebo v premenných začínajúcich `VITE_`.
@@ -32,6 +32,26 @@ Na lokálny vývoj vytvor ignorovaný `.env.local` podľa `.env.example`, vlož 
 5. Druhému účtu sa v **Komunita → Pozvánky** zobrazí aktivita. Až po **Pridať do kalendára** vznikne jeho vlastný kalendárový záznam. Opakované prijatie nevytvorí ďalšiu kópiu.
 6. Over súkromnú, priateľskú a verejnú viditeľnosť tretím nepriateľským účtom. Súkromnú poznámku ani fotky nesmie vidieť v komunite alebo pozvánke.
 7. Over odhlásenie, opätovné prihlásenie na inom zariadení, potvrdenie e-mailu a obnovu hesla. Pri zmene účtu sa načíta samostatný denník.
+
+## Klubová dochádzka
+
+V **Komunita → Klubové tréningy** organizátor vytvorí termín, miesto, trvanie a cvičenia, určí termín odpovede a pozve prijatých priateľov. Pri tejto aktivite plní úlohu trénera jej organizátor; nejde o globálnu klubovú rolu. Čas tréningu a uzávierky sa zadáva podľa Slovenska (`Europe/Bratislava`).
+
+Pozvaný hráč odpovie **Prídem / Neprídem / Neviem**. Odpoveď sa dá meniť do uzávierky. Organizátor vidí súhrn aj hráčov bez odpovede. Až po skončení tréningu môže označiť **Bol/a / Nebol/a**; skutočná účasť je oddelená od predbežnej odpovede.
+
+Hráč s potvrdenou účasťou použije **Zapísať absolvovaný tréning**. Vznikne súkromný záznam s miestom, dátumom, cvičeniami a trvaním; s aktívnou raketou sa započíta opotrebovanie. Pôvod tréningu bráni opakovanému pridaniu na tom istom účte. Trvanie a súkromné vyhodnotenie sa upravia v denníku. Záloha účtu má stále režim posledného uloženého stavu, preto súbežné úpravy na viacerých zariadeniach nemožno automaticky zlúčiť.
+
+Tabuľky `club_trainings` a `club_training_members` povoľujú čítanie iba organizátorovi a pozvaným. Hráč vidí svoju odpoveď, organizátor celý zoznam. Všetky zápisy prechádzajú databázovými funkciami; potvrdenie dochádzky je povolené iba organizátorovi po konci tréningu. Bez novej migrácie sa zobrazí správa, že dochádzka čaká na aktiváciu.
+
+## Rýchly denník a spoľahlivá synchronizácia
+
+Na hlavnej obrazovke, v denníku a kalendári sa dá zopakovať posledný absolvovaný tréning. Skopíruje sa miesto, cvičenia, spoluhráči a existujúca raketa; nový záznam začína dnes a súkromne, bez minulého vyhodnotenia. Starší plán sa dokončí cez **Absolvované** po jeho skončení. Bez zadaného začiatku sa ponúkne až na konci dňa.
+
+Tri nepovinné otázky pri dokončenej aktivite sa ukladajú súkromne. Najnovší cieľ z tréningu je viditeľný na hlavnej obrazovke aj v novom tréningu. Vyhodnotenie a mená spoluhráčov sa neposielajú do verejného zdieľania.
+
+Stav nad obsahom rozlišuje miestne uloženie, čakanie, ukladanie, úspešnú zálohu a chybu. Nepodarený zápis zostane vo fronte, dá sa zopakovať a po návrate pripojenia sa odošle znova. Plné miestne úložisko má samostatné upozornenie.
+
+V SSTZ a denníku vidíš poslednú úspešnú aktualizáciu, počet nových zápasov pri nej a aktuálnu chybu. Zápas s rovnakým dátumom a súperom ako ručný záznam ponúkne zlúčenie alebo ponechanie oboch. Zlúčenie zachová poznámky, taktickú poznámku aj raketu a použije oficiálny výsledok. Rozhodnutie ponechať oba sa ukladá. Pôvodná aktivita s fotkami a vyhodnotením zostane zachovaná a v denníku sa nezobrazí druhý importovaný riadok.
 
 ## Ako sa ukladajú údaje
 

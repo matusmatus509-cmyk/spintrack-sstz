@@ -1,3 +1,4 @@
+import { ClubTrainingPanel } from '../components/ClubTrainingPanel';
 import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -264,7 +265,7 @@ export function CommunityView({
 }) {
   const account = useCommunity();
   const { activities, updateActivity, exportData, importData } = useApp();
-  const [tab, setTab] = useState<"feed" | "friends" | "invitations" | "mine">(
+  const [tab, setTab] = useState<"feed" | "friends" | "invitations" | "mine" | "club">(
     "feed",
   );
   const [feedScope, setFeedScope] = useState<"all" | "friends">("all");
@@ -527,6 +528,7 @@ export function CommunityView({
         {(
           [
             { id: "feed", label: "Aktivity" },
+            { id: "club", label: "Klubové tréningy" },
             {
               id: "friends",
               label: `Priatelia${incoming.length ? ` (${incoming.length})` : ""}`,
@@ -770,6 +772,7 @@ export function CommunityView({
           ))}
         </>
       )}
+      {tab === "club" && <ClubTrainingPanel />}
       {tab === "invitations" && (
         <>
           {!account.invitations.length && (

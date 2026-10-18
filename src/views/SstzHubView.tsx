@@ -1,3 +1,4 @@
+import { ImportHealth } from '../components/ImportHealth';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
@@ -149,6 +150,7 @@ export const SstzHubView: React.FC = () => {
   return (
     <div className="page-view sstz-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      <ImportHealth />
       {/* Top Compact Header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>

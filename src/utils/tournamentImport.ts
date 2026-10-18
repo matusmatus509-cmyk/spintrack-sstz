@@ -87,6 +87,7 @@ export function replaceTournamentMatches<
     notes?: string;
     tacticsNote?: string;
     racketId?: string;
+    sourceActivityId?: string;
   },
 >(existing: T[], incoming: T[]): T[] {
   const previous = new Map(
@@ -102,6 +103,7 @@ export function replaceTournamentMatches<
           notes: old.notes,
           tacticsNote: old.tacticsNote,
           racketId: old.racketId,
+          sourceActivityId: old.sourceActivityId,
         }
       : m;
   });

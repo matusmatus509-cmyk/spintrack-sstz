@@ -1,3 +1,4 @@
+import { TrainingQuickActions } from '../components/TrainingQuickActions';
 import React, { useMemo } from "react";
 import { useCommunity } from "../context/CommunityContext";
 import { useApp } from "../context/AppContext";
@@ -102,6 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </header>
 
+      <TrainingQuickActions />
       <section
         className="home-metrics"
         aria-label="Tvoje výsledky za celú históriu"

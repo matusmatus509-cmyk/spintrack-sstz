@@ -1,0 +1,338 @@
+.practice-panel {
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    var(--bg-card),
+    var(--bg-panel, var(--bg-card))
+  );
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.practice-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.practice-heading > div {
+  min-width: 0;
+}
+.practice-heading span:first-child {
+  font-size: 0.63rem;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+.practice-heading h2,
+.practice-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+.practice-heading > svg {
+  flex-shrink: 0;
+  color: var(--accent-tt-green);
+}
+.practice-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  background: color-mix(in srgb, var(--accent-tt-green) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-tt-green) 22%, transparent);
+  padding: 12px;
+  border-radius: 14px;
+  margin: 10px 0;
+  line-height: 1.6;
+}
+.practice-callout > div {
+  flex: 1;
+  min-width: 0;
+}
+.practice-callout span,
+.practice-callout strong {
+  display: block;
+  width: 100%;
+}
+.practice-callout span {
+  color: var(--text-muted);
+  font-size: 0.73rem;
+}
+.practice-callout strong {
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+.practice-wide {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+  white-space: normal;
+}
+.practice-muted {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin: 9px 0;
+}
+.practice-due {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.practice-due > div {
+  flex: 1;
+  min-width: 130px;
+}
+.practice-due strong,
+.practice-due span {
+  display: block;
+  font-size: 0.81rem;
+  line-height: 1.6;
+}
+.practice-due span {
+  color: var(--text-muted);
+}
+.practice-due button {
+  min-height: 44px;
+}
+.practice-reflection {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.practice-reflection h3 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: baseline;
+}
+.practice-reflection small {
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.practice-reflection p {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.account-save-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 0.69rem;
+  padding: 0 2px 12px;
+  line-height: 1.6;
+}
+.account-save-status svg {
+  flex-shrink: 0;
+}
+.account-save-status span {
+  flex: 1;
+  min-width: 150px;
+}
+.account-save-status.save-error {
+  color: var(--accent-tt-red);
+}
+.account-save-status button {
+  min-height: 36px;
+}
+.practice-import {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+  font-size: 0.79rem;
+  line-height: 1.65;
+}
+.practice-import span {
+  color: var(--text-muted);
+}
+.practice-merge {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 14px;
+  margin-top: 10px;
+  font-size: 0.83rem;
+  line-height: 1.7;
+}
+.practice-merge p {
+  margin: 6px 0;
+  color: var(--text-muted);
+}
+.practice-merge button {
+  min-height: 44px;
+  white-space: normal;
+  text-align: center;
+}
+.practice-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.practice-form label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.practice-form input,
+.practice-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-main);
+  padding: 10px;
+  font: inherit;
+  font-size: 16px;
+}
+.practice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.practice-grid > label {
+  min-width: 0;
+}
+.practice-form fieldset {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  padding: 12px;
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+}
+.practice-form legend {
+  font-size: 0.8rem;
+  padding: 0 5px;
+}
+.practice-form .practice-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.practice-check input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  accent-color: var(--accent-tt-green);
+}
+.club-session {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 18px;
+  padding-top: 18px;
+}
+.club-session > p {
+  font-size: 0.81rem;
+  line-height: 1.65;
+  margin: 7px 0;
+}
+.club-badge {
+  font-size: 0.65rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 6px 9px;
+  flex-shrink: 0;
+}
+.club-response {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 9px 0;
+}
+.club-response button {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px;
+  font-size: 0.76rem;
+  white-space: normal;
+}
+.club-response button[aria-pressed="true"] {
+  border-color: var(--accent-tt-green);
+  background: color-mix(in srgb, var(--accent-tt-green) 13%, var(--bg-card));
+  color: var(--text-main);
+}
+.club-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 12px 0;
+}
+.club-counts span {
+  display: grid;
+  text-align: center;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 3px;
+  font-size: 0.59rem;
+  color: var(--text-muted);
+}
+.club-counts strong {
+  font-size: 1.15rem;
+  color: var(--text-main);
+}
+.club-member {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 0;
+}
+.club-member > div:first-child {
+  flex: 1;
+  min-width: 130px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+.club-member span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.opponent-brief {
+  margin-bottom: 18px;
+}
+.opponent-brief > p {
+  font-size: 0.83rem;
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.opponent-brief h4 {
+  font-size: 0.8rem;
+  margin: 14px 0 5px;
+}
+.opponent-recent {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.79rem;
+}
+.opponent-recent > span:last-child {
+  width: 100%;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}

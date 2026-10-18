@@ -19,6 +19,8 @@ import { AddActivityModal } from './components/AddActivityModal';
 import { CommunityProvider, useCommunity } from './context/CommunityContext';
 import { CommunityView } from './views/CommunityView';
 import './views/Community.css';
+import './practice.css';
+import { AccountSaveStatus } from './components/AccountSaveStatus';
 
 const AppContent: React.FC = () => {
   const community = useCommunity();
@@ -52,6 +54,7 @@ const AppContent: React.FC = () => {
 
         {/* Dynamic View Content */}
         <main id="main-content" className="main-content" tabIndex={-1}>
+          <AccountSaveStatus />
           {currentTab === 'dashboard' && (
             <DashboardView
               onNavigate={selectTab}

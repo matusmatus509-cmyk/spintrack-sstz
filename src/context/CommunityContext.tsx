@@ -27,6 +27,9 @@ interface CommunityContextType {
   initialData: Record<string, any> | null;
   accountError: string;
   cloudError: string;
+  saveState: 'local' | 'pending' | 'saving' | 'saved' | 'error';
+  lastSavedAt: string | null;
+  retrySave: () => Promise<void>;
   socialError: string;
   socialLoading: boolean;
   friends: PlayerProfile[];
@@ -93,6 +96,8 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   );
   const [accountError, setAccountError] = useState("");
   const [cloudError, setCloudError] = useState("");
+  const [saveState, setSaveState] = useState<'local' | 'pending' | 'saving' | 'saved' | 'error'>('local');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [socialError, setSocialError] = useState("");
   const [socialLoading, setSocialLoading] = useState(false);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -122,6 +127,8 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, next) => {
       if (!active) return;
       if (currentId.current !== next?.user.id) {
+        setSaveState('local');
+        setLastSavedAt(null);
         clearTimeout(timer.current);
         pending.current = null;
       }
@@ -294,23 +301,40 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
         const job = pending.current;
         pending.current = null;
         if (job.owner !== currentId.current) continue;
+        if (!navigator.onLine) {
+          pending.current = pending.current || job;
+          setSaveState('pending');
+          break;
+        }
+        setSaveState('saving');
         try {
           const { error } = await supabase.from("user_data").upsert({
             owner_id: job.owner,
             data: job.data,
             updated_at: new Date().toISOString(),
           });
-          if (job.owner === currentId.current)
+          if (job.owner === currentId.current) {
+            if (error) {
+              pending.current = pending.current || job;
+              setSaveState('error');
+            } else {
+              setSaveState(pending.current ? 'pending' : 'saved');
+              setLastSavedAt(new Date().toISOString());
+            }
             setCloudError(
               error
                 ? "Údaje sú uložené v tomto zariadení, ale záloha do účtu zlyhala. Skús uložiť znova."
                 : "",
             );
+            if (error) break;
+          }
         } catch {
-          if (job.owner === currentId.current)
-            setCloudError(
-              "Údaje sú uložené v tomto zariadení, ale záloha do účtu zlyhala. Skús uložiť znova.",
-            );
+          if (job.owner === currentId.current) {
+            pending.current = pending.current || job;
+            setSaveState(navigator.onLine ? 'error' : 'pending');
+            setCloudError("Údaje sú uložené v tomto zariadení, ale záloha do účtu zlyhala. Skús uložiť znova.");
+          }
+          break;
         }
       }
     })();
@@ -324,6 +348,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     (data: Record<string, any>) => {
       if (!userId || !dataReady) return;
       pending.current = { owner: userId, data };
+      setSaveState('pending');
       clearTimeout(timer.current);
       timer.current = setTimeout(() => {
         void flush();
@@ -331,6 +356,12 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     },
     [userId, dataReady, flush],
   );
+
+  useEffect(() => {
+    const retry = () => { if (pending.current) void flush(); };
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [flush]);
 
   const rpc = async (
     name: string,
@@ -351,6 +382,9 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     initialData,
     accountError,
     cloudError,
+    saveState,
+    lastSavedAt,
+    retrySave: flush,
     socialError,
     socialLoading,
     recovering,

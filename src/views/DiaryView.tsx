@@ -1,3 +1,5 @@
+import { TrainingQuickActions } from '../components/TrainingQuickActions';
+import { ImportHealth } from '../components/ImportHealth';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -108,6 +110,8 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
   return (
     <div className="page-view diary-view animate-fade-in">
       {deleteError && <p role="alert" className="community-error">{deleteError}</p>}
+      <TrainingQuickActions />
+      <ImportHealth />
       <header className="diary-header">
         <div>
           <span className="diary-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
@@ -424,6 +428,12 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                           </div>
                         </div>
                       )}
+                      {activity.trainingPartners && <p className="practice-muted">Spoluhráči: {activity.trainingPartners}</p>}
+                      {activity.reflection && <div className="practice-reflection">
+                        {activity.reflection.wentWell && <p><strong>Darilo sa:</strong> {activity.reflection.wentWell}</p>}
+                        {activity.reflection.improve && <p><strong>Zlepšiť:</strong> {activity.reflection.improve}</p>}
+                        {activity.reflection.nextGoal && <p><strong>Nabudúce:</strong> {activity.reflection.nextGoal}</p>}
+                      </div>}
                       {!!activity.photos?.length && (
                         <div className="diary-photos">
                           {activity.photos.map((src, photoIndex) => (

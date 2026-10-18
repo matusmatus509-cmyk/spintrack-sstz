@@ -33,6 +33,8 @@ interface AddActivityModalProps {
   editActivity?: ActivityRecord | null;
   defaultDate?: string;
   defaultPlanned?: boolean;
+  repeatActivity?: ActivityRecord | null;
+  completePlanned?: boolean;
 }
 
 const categories = [
@@ -115,6 +117,10 @@ const initialForm = (category: ActivityCategory, racketId: string) => ({
   opponentScore: "",
   publicNote: "",
   privateNote: "",
+  trainingPartners: "",
+  wentWell: "",
+  improve: "",
+  nextGoal: "",
   visibility: "private" as ActivityVisibility,
   racketId,
   wear: true,
@@ -130,12 +136,14 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   editActivity = null,
   defaultDate,
   defaultPlanned = false,
+  repeatActivity = null,
+  completePlanned = false,
 }) => {
   const community = useCommunity();
   const [invitees, setInvitees] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const localId = useRef(newActivityId());
-  const { addActivity, updateActivity, rackets, activeRacket, opponents } = useApp();
+  const { addActivity, updateActivity, rackets, activeRacket, opponents, activities } = useApp();
   const [form, setForm] = useState(() =>
     initialForm(defaultCategory, activeRacket?.id || ""),
   );
@@ -152,12 +160,19 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       );
       nextForm.date = defaultDate || localDate();
       nextForm.planned = defaultPlanned || nextForm.date > localDate();
+      if (repeatActivity && !editActivity) {
+        nextForm.location = repeatActivity.location;
+        nextForm.drills = [...repeatActivity.focusDrills];
+        nextForm.trainingPartners = repeatActivity.trainingPartners || community.friends.filter(f => repeatActivity.trainingPartnerIds?.includes(f.id)).map(f => f.display_name).join(", ");
+        nextForm.racketId = rackets.some(r => r.id === repeatActivity.racketId) ? repeatActivity.racketId! : nextForm.racketId;
+        nextForm.duration = repeatActivity.durationMinutes || 60;
+      }
       if (editActivity) {
         const [ownScore = "", opponentScore = ""] = (editActivity.matchScore || "").split(":");
         setForm({
           ...nextForm,
           category: editActivity.category,
-          planned: editActivity.planned || false,
+          planned: completePlanned ? false : editActivity.planned || false,
           date: editActivity.date,
           duration: editActivity.durationMinutes || 60,
           startTime: editActivity.startTime || "",
@@ -178,9 +193,13 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
           opponentScore,
           publicNote: editActivity.publicNote || "",
           privateNote: editActivity.privateNote || "",
+          trainingPartners: editActivity.trainingPartners || "",
+          wentWell: editActivity.reflection?.wentWell || "",
+          improve: editActivity.reflection?.improve || "",
+          nextGoal: editActivity.reflection?.nextGoal || "",
           visibility: editActivity.visibility,
           racketId: editActivity.racketId || "",
-          wear: editActivity.addEquipmentWear,
+          wear: completePlanned ? true : editActivity.addEquipmentWear,
           drills: editActivity.focusDrills || [],
           photos: editActivity.photos || [],
           tournamentDuel: Boolean(editActivity.matchScore),
@@ -190,10 +209,10 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       }
       setCustomDrill("");
       setError("");
-      setInvitees([]);
+      setInvitees((editActivity?.trainingPartnerIds || repeatActivity?.trainingPartnerIds || []).filter(id => community.friends.some(friend => friend.id === id)));
       localId.current = newActivityId();
     }
-  }, [isOpen, defaultCategory, activeRacket?.id, editActivity, defaultDate, defaultPlanned]);
+  }, [isOpen, defaultCategory, activeRacket?.id, editActivity, defaultDate, defaultPlanned, repeatActivity, completePlanned]);
   const field = <K extends keyof typeof form>(
     key: K,
     value: (typeof form)[K],
@@ -303,6 +322,9 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       matchResult: match ? (own > other ? "WIN" : "LOSS") : undefined,
       publicNote: form.publicNote.trim() || undefined,
       privateNote: form.privateNote.trim() || undefined,
+      trainingPartners: training ? form.trainingPartners.trim() : undefined,
+      trainingPartnerIds: training ? invitees : undefined,
+      reflection: !form.planned ? { wentWell: form.wentWell.trim(), improve: form.improve.trim(), nextGoal: form.nextGoal.trim() } : undefined,
       visibility: form.visibility,
       racketId:
         form.category !== "podujatie" ? form.racketId || undefined : undefined,
@@ -352,7 +374,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
         <header className="activity-header">
           <div>
             <span className="activity-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
-            <h2 id="activity-title">{editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
+            <h2 id="activity-title">{completePlanned ? "Dokončiť tréning" : repeatActivity ? "Zopakovať tréning" : editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
           </div>
           <button
             type="button"
@@ -395,8 +417,14 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 <p>{current.hint}</p>
               </div>
             </div>
+            {training && (!editActivity || completePlanned) && (() => {
+              const previous = [...activities].filter(a => a.id !== editActivity?.id && a.category === "tréning" && !a.planned && a.date <= form.date && a.reflection?.nextGoal).sort((a,b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))[0];
+              return previous ? <aside className="practice-callout"><span>Cieľ z posledného tréningu</span><strong>{previous.reflection!.nextGoal}</strong></aside> : null;
+            })()}
+            {completePlanned && <p className="practice-callout">Absolvované. Uprav skutočné trvanie a ulož tréning.</p>}
             <section className="activity-section">
               <h3>Základné údaje</h3>
+              {training && <label>Spoluhráči<input value={form.trainingPartners} onChange={e => field("trainingPartners", e.target.value)} placeholder="S kým si trénoval/a?" maxLength={300} /></label>}
               <label className="activity-check activity-plan-toggle">
                 <input type="checkbox" checked={form.planned}
                   onChange={(e) => field("planned", e.target.checked)} />
@@ -920,6 +948,12 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                 {error}
               </p>
             )}
+          {!form.planned && <section className="activity-section practice-reflection">
+            <h3>Krátke vyhodnotenie <small>nepovinné · iba pre teba</small></h3>
+            <label>Čo sa dnes darilo?<textarea maxLength={2000} value={form.wentWell} onChange={e => field("wentWell", e.target.value)} rows={2} /></label>
+            <label>Čo potrebujem zlepšiť?<textarea maxLength={2000} value={form.improve} onChange={e => field("improve", e.target.value)} rows={2} /></label>
+            <label>Na čo sa zameriam nabudúce?<textarea maxLength={2000} value={form.nextGoal} onChange={e => field("nextGoal", e.target.value)} placeholder="Napr. príjem krátkeho podania" rows={2} /></label>
+          </section>}
           </div>
           <footer className="activity-footer">
             <button

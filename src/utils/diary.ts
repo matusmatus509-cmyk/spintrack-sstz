@@ -85,7 +85,7 @@ export function getDiaryEntries(
       date: normalizeDiaryDate(activity.date),
       originalDate: activity.date,
       category: activity.category,
-      source: 'manual',
+      source: activity.linkedMatchId ? 'sstz' : 'manual',
       title,
       subtitle,
       result: activity.matchResult,
@@ -99,6 +99,10 @@ export function getDiaryEntries(
           activity.eventCategory,
           activity.publicNote,
           activity.privateNote,
+          activity.trainingPartners,
+          activity.reflection?.wentWell,
+          activity.reflection?.improve,
+          activity.reflection?.nextGoal,
           activity.teamHome,
           activity.teamAway,
           ...activity.focusDrills,
@@ -109,6 +113,7 @@ export function getDiaryEntries(
     };
   });
   for (const match of [...matches, ...doubles]) {
+    if (activities.some(a => a.linkedMatchId === match.id)) continue;
     if (match.source !== 'SSTZ' && match.source !== 'SSTZ_TOURNAMENT') continue;
     const opponent =
       'opponentPair' in match ? match.opponentPair : match.opponentName;
