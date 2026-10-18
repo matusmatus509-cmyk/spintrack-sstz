@@ -75,7 +75,7 @@ Na lokálny vývoj vytvor ignorovaný `.env.local` podľa `.env.example`, vlož 
 
 ## Klubová dochádzka
 
-V **Komunita → Klubové tréningy** organizátor vytvorí termín, miesto, trvanie a cvičenia, určí termín odpovede a pozve prijatých priateľov. Pri tejto aktivite plní úlohu trénera jej organizátor; nejde o globálnu klubovú rolu. Čas tréningu a uzávierky sa zadáva podľa Slovenska (`Europe/Bratislava`).
+V **Komunita → Kluby → Dochádzka** organizátor vytvorí termín, miesto, trvanie a cvičenia, určí termín odpovede a pozve prijatých priateľov. Pri tejto aktivite plní úlohu trénera jej organizátor; nejde o globálnu klubovú rolu. Čas tréningu a uzávierky sa zadáva podľa Slovenska (`Europe/Bratislava`).
 
 Pozvaný hráč odpovie **Prídem / Neprídem / Neviem**. Odpoveď sa dá meniť do uzávierky. Organizátor vidí súhrn aj hráčov bez odpovede. Až po skončení tréningu môže označiť **Bol/a / Nebol/a**; skutočná účasť je oddelená od predbežnej odpovede.
 

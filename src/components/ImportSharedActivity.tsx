@@ -1,3 +1,4 @@
+import { CheckCircle2, PlusCircle, LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { useApp } from "../context/AppContext";
 import type { SharedActivityData } from "../types/community";
@@ -29,22 +30,40 @@ export function ImportSharedActivity({
         onClick={async () => {
           if (saved || importing.current) return;
           importing.current = true;
-          setBusy(true); setError("");
+          setBusy(true);
+          setError("");
           try {
             await beforeImport?.();
             addActivity(sharedImportData(data), id);
             setImported(true);
           } catch {
-            setError("Aktivitu sa nepodarilo importovať. Obnov komunitu a skús znova.");
+            setError(
+              "Aktivitu sa nepodarilo importovať. Obnov komunitu a skús znova.",
+            );
           } finally {
             setBusy(false);
             importing.current = false;
           }
         }}
       >
-        {saved ? "Už v mojich aktivitách" : "Importovať do mojich aktivít"}
+        {busy ? (
+          <LoaderCircle size={17} className="sync-spinner" />
+        ) : saved ? (
+          <CheckCircle2 size={17} />
+        ) : (
+          <PlusCircle size={17} />
+        )}
+        {busy
+          ? "Pridávam…"
+          : saved
+            ? "Uložené v mojom denníku"
+            : "Pridať do môjho denníka"}
       </button>
-      {error && <small role="alert" className="community-error">{error}</small>}
+      {error && (
+        <small role="alert" className="community-error">
+          {error}
+        </small>
+      )}
       {imported && (
         <small role="status">
           Pridané ako plán. Po tréningu otvor aktivitu v denníku a označ ju za

@@ -1,11 +1,20 @@
-import { ClubTrainingPanel } from '../components/ClubTrainingPanel';
+import { PlayerAvatar } from "../components/PlayerAvatar";
+import { ClubTrainingPanel } from "../components/ClubTrainingPanel";
 import { ClubView } from "./ClubView";
 import { ImportSharedActivity } from "../components/ImportSharedActivity";
 import { TagActivityFriend } from "../components/TagActivityFriend";
 import { compareOccurrenceDesc } from "../utils/diary";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
+  ArrowRight,
+  CalendarDays,
+  Clock3,
+  MapPin,
+  ShieldCheck,
+  Activity,
+  Inbox,
+  Search,
   Users,
   UserPlus,
   CalendarPlus,
@@ -24,6 +33,7 @@ import type { ActivityRecord, ActivityVisibility } from "../types";
 import type { PlayerProfile, SharedActivityData } from "../types/community";
 import { mergeLocalData } from "../utils/community";
 import "./Community.css";
+import "./CommunityMobile.css";
 
 const visibilityLabel = {
   private: "Len ja",
@@ -52,15 +62,26 @@ export function communityError(error: unknown) {
   if (/password.*(least|weak)/i.test(message))
     return "Zvoľ silnejšie heslo s aspoň 8 znakmi.";
   if (
-    /^(Pozvať|Označiť|Klub|Rozpis|Zakladateľ|Súkromná|Pozvánka|Aktivita|Žiadosť|Najprv|Neplatn)/.test(message)
+    /^(Pozvať|Označiť|Klub|Rozpis|Zakladateľ|Súkromná|Pozvánka|Aktivita|Žiadosť|Najprv|Neplatn)/.test(
+      message,
+    )
   )
     return message;
   return "Nepodarilo sa to dokončiť. Skontroluj pripojenie a skús znova.";
 }
 export function ActivityPreview({ data }: { data: SharedActivityData }) {
+  const date = new Date(`${data.date}T12:00:00`);
+  const dateLabel = Number.isNaN(date.getTime())
+    ? data.date
+    : date.toLocaleDateString("sk-SK", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
   return (
-    <div className="community-activity-info">
+    <div className="community-activity-info" data-category={data.category}>
       <span className="community-kicker">
+        <Activity size={12} />
         {categoryLabel[data.category] || "Aktivita"}
       </span>
       <h3>
@@ -69,15 +90,58 @@ export function ActivityPreview({ data }: { data: SharedActivityData }) {
             ? `Zápas s ${data.opponentName}`
             : categoryLabel[data.category])}
       </h3>
-      <p>
-        {new Date(`${data.date}T12:00:00`).toLocaleDateString("sk-SK")}
-        {data.startTime && ` · ${data.startTime}`}
-        {data.durationMinutes > 0 && ` · ${formatDuration(data.durationMinutes)}`}
-        {data.matchScore && ` · ${data.matchScore}`}
-      </p>
-      {data.location && <p>{data.location}</p>}
-      {data.leagueName && <p>{data.leagueName}</p>}
-      {data.publicNote && <p className="community-note">{data.publicNote}</p>}
+      <div className="social-event-meta">
+        <span>
+          <CalendarDays size={15} />
+          {dateLabel}
+          {data.startTime && ` · ${data.startTime.slice(0, 5)}`}
+        </span>
+        {data.durationMinutes > 0 && (
+          <span>
+            <Clock3 size={15} />
+            {formatDuration(data.durationMinutes)}
+          </span>
+        )}
+        {data.location && (
+          <span>
+            <MapPin size={15} />
+            {data.location}
+          </span>
+        )}
+      </div>
+      {data.leagueName && (
+        <p className="social-event-league">{data.leagueName}</p>
+      )}
+      {data.matchScore && (
+        <div className="social-result">
+          <strong>{data.matchScore}</strong>
+          <span>
+            {data.matchResult === "WIN"
+              ? "Výhra"
+              : data.matchResult === "LOSS"
+                ? "Prehra"
+                : "Výsledok zápasu"}
+          </span>
+        </div>
+      )}
+      {!!data.focusDrills?.length && (
+        <div className="social-drills">
+          {data.focusDrills.map((drill) => (
+            <span key={drill}>{drill}</span>
+          ))}
+        </div>
+      )}
+      {data.publicNote &&
+        (data.publicNote.length > 180 ? (
+          <details className="social-note">
+            <summary>
+              Poznámka k aktivite <ChevronRight size={15} />
+            </summary>
+            <p className="community-note">{data.publicNote}</p>
+          </details>
+        ) : (
+          <p className="community-note">{data.publicNote}</p>
+        ))}
     </div>
   );
 }
@@ -262,6 +326,9 @@ function AuthForm() {
     </section>
   );
 }
+type CommunityTab =
+  "feed" | "friends" | "invitations" | "mine" | "club" | "clubs";
+
 export function CommunityView({
   onNavigate,
 }: {
@@ -269,9 +336,16 @@ export function CommunityView({
 }) {
   const account = useCommunity();
   const { activities, updateActivity, exportData, importData } = useApp();
-  const [tab, setTab] = useState<"feed" | "friends" | "invitations" | "mine" | "club" | "clubs">(
-    "feed",
-  );
+  const [tab, setTab] = useState<CommunityTab>("feed");
+  const navRef = useRef<HTMLElement>(null);
+  const selectTab = (next: CommunityTab) => {
+    setTab(next);
+    setError("");
+    setMessage("");
+    requestAnimationFrame(() =>
+      navRef.current?.scrollIntoView({ block: "start", behavior: "auto" }),
+    );
+  };
   const [feedScope, setFeedScope] = useState<"all" | "friends">("all");
   const [query, setQuery] = useState("");
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
@@ -365,12 +439,11 @@ export function CommunityView({
   );
   const friendsIds = new Set(account.friends.map((player) => player.id));
   const feed = [...account.feed, ...account.ownShares]
-    .sort(
-      (a, b) =>
-        compareOccurrenceDesc(
-          { id: a.id, date: a.activity_date, startTime: a.payload.startTime },
-          { id: b.id, date: b.activity_date, startTime: b.payload.startTime },
-        ),
+    .sort((a, b) =>
+      compareOccurrenceDesc(
+        { id: a.id, date: a.activity_date, startTime: a.payload.startTime },
+        { id: b.id, date: b.activity_date, startTime: b.payload.startTime },
+      ),
     )
     .filter(
       (row) =>
@@ -385,27 +458,56 @@ export function CommunityView({
     /* storage may be unavailable */
   }
   return (
-    <div className="page-view community-view animate-fade-in">
-      <div className="page-header">
-        <div>
-          <h1>Komunita</h1>
-          <p>Hráči, spoločné tréningy a tvoj denník.</p>
+    <div
+      className="page-view community-view animate-fade-in"
+      data-community-section={tab}
+    >
+      <header className="social-hero">
+        <div className="social-hero-top">
+          <div>
+            <span className="social-eyebrow">TVOJA HRA. TVOJI ĽUDIA.</span>
+            <h1>Hra je lepšia spolu.</h1>
+          </div>
+          <button
+            type="button"
+            className="social-icon-button"
+            aria-label="Obnoviť komunitu"
+            disabled={Boolean(busy) || account.socialLoading}
+            onClick={() => void run("refresh", account.refresh)}
+          >
+            <RefreshCw
+              size={18}
+              className={account.socialLoading ? "sync-spinner" : ""}
+            />
+          </button>
         </div>
-        <button
-          className="btn-secondary"
-          disabled={Boolean(busy) || account.socialLoading}
-          onClick={() => {
-            void run("refresh", account.refresh);
-          }}
-        >
-          <RefreshCw size={16} /> Obnoviť
-        </button>
-      </div>
+        <p>Tvoj klub, spoluhráči a spoločné zážitky.</p>
+        <div className="social-hero-links">
+          <button type="button" onClick={() => selectTab("friends")}>
+            <Users size={15} />
+            <strong>{account.friends.length}</strong>{" "}
+            {account.friends.length === 1
+              ? "priateľ"
+              : account.friends.length > 1 && account.friends.length < 5
+                ? "priatelia"
+                : "priateľov"}
+            <ArrowRight size={13} />
+          </button>
+          <button type="button" onClick={() => selectTab("invitations")}>
+            <Inbox size={15} />
+            <strong>{pending.length}</strong>{" "}
+            {pending.length === 1
+              ? "nová pozvánka"
+              : pending.length > 1 && pending.length < 5
+                ? "nové pozvánky"
+                : "nových pozvánok"}
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      </header>
       <details className="glass-panel community-account">
         <summary className="community-person">
-          <span className="community-avatar">
-            {account.profile?.display_name.slice(0, 1)}
-          </span>
+          <PlayerAvatar name={account.profile?.display_name || "Hráč"} />
           <div>
             <strong>{account.profile?.display_name}</strong>
             <small>
@@ -413,6 +515,7 @@ export function CommunityView({
               {account.profile?.club && ` · ${account.profile.club}`}
             </small>
           </div>
+          <span className="social-profile-hint">Môj profil</span>
           <ChevronRight size={18} />
         </summary>
         <div className="community-account-options">
@@ -528,59 +631,162 @@ export function CommunityView({
           {message}
         </p>
       )}
-      <div className="community-tabs" role="group" aria-label="Sekcie komunity">
+      <nav ref={navRef} className="social-nav" aria-label="Sekcie komunity">
         {(
           [
-            { id: "feed", label: "Aktivity" },
-            { id: "club", label: "Klubové tréningy" },
+            { id: "feed", label: "Aktivity", Icon: Activity, count: 0 },
+            { id: "clubs", label: "Kluby", Icon: ShieldCheck, count: 0 },
             {
               id: "friends",
-              label: `Priatelia${incoming.length ? ` (${incoming.length})` : ""}`,
+              label: "Hráči",
+              Icon: Users,
+              count: incoming.length,
             },
             {
               id: "invitations",
-              label: `Pozvánky${pending.length ? ` (${pending.length})` : ""}`,
+              label: "Pozvánky",
+              Icon: Inbox,
+              count: pending.length,
             },
-            { id: "mine", label: "Moje aktivity" },
-            { id: "clubs", label: "Kluby" },
           ] as const
-        ).map((item) => (
-          <button
-            key={item.id}
-            aria-pressed={tab === item.id}
-            onClick={() => {
-              setTab(item.id);
-              setError("");
-            }}
+        ).map(({ id, label, Icon, count }) => {
+          const active =
+            tab === id ||
+            (id === "feed" && tab === "mine") ||
+            (id === "clubs" && tab === "club");
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                selectTab(id);
+              }}
+            >
+              <span className="social-nav-icon">
+                <Icon size={21} />
+                {count > 0 && <span className="social-count">{count}</span>}
+              </span>
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
+      {(tab === "clubs" || tab === "club") && (
+        <div className="social-section-intro">
+          <span className="social-eyebrow">SPOLOČNE PRI STOLE</span>
+          <h2>Tvoje klubové zázemie</h2>
+          <p>Rozpis a členovia klubu, pozvánky na tréning aj dochádzka.</p>
+          <div
+            className="social-segments"
+            role="group"
+            aria-label="Klubové sekcie"
           >
-            {item.label}
-          </button>
-        ))}
-      </div>
+            <button
+              aria-pressed={tab === "clubs"}
+              onClick={() => selectTab("clubs")}
+            >
+              <ShieldCheck size={17} />
+              Moje kluby
+            </button>
+            <button
+              aria-pressed={tab === "club"}
+              onClick={() => selectTab("club")}
+            >
+              <CalendarDays size={17} />
+              Dochádzka
+            </button>
+          </div>
+        </div>
+      )}
+      {(tab === "feed" || tab === "mine") && (
+        <>
+          {(incoming.length > 0 || pending.length > 0) && (
+            <button
+              className="social-attention"
+              onClick={() =>
+                selectTab(pending.length ? "invitations" : "friends")
+              }
+            >
+              <span className="social-attention-icon">
+                <Inbox size={20} />
+              </span>
+              <span>
+                <strong>
+                  {pending.length
+                    ? `Nové pozvánky: ${pending.length}`
+                    : `Žiadosti o priateľstvo: ${incoming.length}`}
+                </strong>
+                <small>
+                  {pending.length
+                    ? "Pozri, kto ťa pozýva k stolu."
+                    : "Niekto sa s tebou chce spojiť."}
+                </small>
+              </span>
+              <ChevronRight size={19} />
+            </button>
+          )}
+          <div className="social-section-intro">
+            <h2>Zo života hráčov</h2>
+            <p>Tréningy, zápasy a pokroky vašej partie.</p>
+          </div>
+          <div
+            className="social-segments"
+            role="group"
+            aria-label="Aktivity komunity"
+          >
+            <button
+              aria-pressed={tab === "feed" && feedScope === "all"}
+              onClick={() => {
+                selectTab("feed");
+                setFeedScope("all");
+              }}
+            >
+              Všetky
+            </button>
+            <button
+              aria-pressed={tab === "feed" && feedScope === "friends"}
+              onClick={() => {
+                selectTab("feed");
+                setFeedScope("friends");
+              }}
+            >
+              Priatelia
+            </button>
+            <button
+              aria-pressed={tab === "mine"}
+              onClick={() => selectTab("mine")}
+            >
+              Moje aktivity
+            </button>
+          </div>
+        </>
+      )}
+      {tab === "friends" && (
+        <div className="social-section-intro">
+          <span className="social-eyebrow">TVOJA PARTIA</span>
+          <h2>Priatelia a spoluhráči</h2>
+          <p>Nájdi hráča, spojte sa a dohodnite si tréning.</p>
+        </div>
+      )}
+      {tab === "invitations" && (
+        <div className="social-section-intro">
+          <span className="social-eyebrow">STRETNEME SA PRI STOLE</span>
+          <h2>
+            Tvoje pozvánky{" "}
+            {pending.length > 0 && (
+              <span className="social-inline-count">{pending.length}</span>
+            )}
+          </h2>
+          <p>Ulož si spoločnú aktivitu do kalendára alebo denníka.</p>
+        </div>
+      )}
       {account.socialLoading && !account.feed.length && (
         <p role="status">Načítavam komunitu…</p>
       )}
       {tab === "clubs" && <ClubView key={account.user.id} />}
       {tab === "feed" && (
         <>
-          <div
-            className="community-tabs small"
-            role="group"
-            aria-label="Aktivity komunity"
-          >
-            <button
-              aria-pressed={feedScope === "all"}
-              onClick={() => setFeedScope("all")}
-            >
-              Verejné a priatelia
-            </button>
-            <button
-              aria-pressed={feedScope === "friends"}
-              onClick={() => setFeedScope("friends")}
-            >
-              Iba priatelia
-            </button>
-          </div>
           {!feed.length && !account.socialLoading && (
             <section className="glass-panel community-empty">
               <Globe size={26} />
@@ -588,7 +794,7 @@ export function CommunityView({
               <p>Pridaj si priateľov alebo zdieľaj prvý tréning.</p>
               <button
                 className="btn-secondary"
-                onClick={() => setTab("friends")}
+                onClick={() => selectTab("friends")}
               >
                 Nájsť priateľov
               </button>
@@ -597,9 +803,7 @@ export function CommunityView({
           {feed.map((activity) => (
             <article className="glass-panel community-card" key={activity.id}>
               <div className="community-person">
-                <span className="community-avatar">
-                  {activity.author.display_name.slice(0, 1)}
-                </span>
+                <PlayerAvatar name={activity.author.display_name} />
                 <div>
                   <strong>{activity.author.display_name}</strong>
                   <small>@{activity.author.handle}</small>
@@ -615,6 +819,46 @@ export function CommunityView({
       )}
       {tab === "friends" && (
         <>
+          {incoming.length > 0 && <h2>Žiadosti o priateľstvo</h2>}
+          {incoming.map((request) => (
+            <article className="glass-panel community-friend" key={request.id}>
+              <PlayerAvatar name={request.requester.display_name} />
+              <div>
+                <strong>{request.requester.display_name}</strong>
+                <small>@{request.requester.handle}</small>
+              </div>
+              <div className="community-actions">
+                <button
+                  className="btn-primary"
+                  disabled={Boolean(busy)}
+                  onClick={() => {
+                    void run(
+                      request.id,
+                      () => account.respondFriend(request.id, true),
+                      "Priateľstvo bolo prijaté.",
+                    );
+                  }}
+                >
+                  <Check size={16} /> Prijať
+                </button>
+                <button
+                  className="btn-secondary"
+                  disabled={Boolean(busy)}
+                  onClick={() => {
+                    void run(request.id, () =>
+                      account.respondFriend(request.id, false),
+                    );
+                  }}
+                >
+                  Odmietnuť
+                </button>
+              </div>
+            </article>
+          ))}
+          <div className="social-search-heading">
+            <Search size={18} />
+            <h3>Nájdi spoluhráča</h3>
+          </div>
           <form
             className="community-search"
             onSubmit={(event) => {
@@ -659,6 +903,7 @@ export function CommunityView({
                   className="glass-panel community-friend"
                   key={player.id}
                 >
+                  <PlayerAvatar name={player.display_name} />
                   <div>
                     <strong>{player.display_name}</strong>
                     <small>
@@ -686,41 +931,6 @@ export function CommunityView({
                 </article>
               );
             })}
-          {incoming.length > 0 && <h2>Žiadosti o priateľstvo</h2>}
-          {incoming.map((request) => (
-            <article className="glass-panel community-friend" key={request.id}>
-              <div>
-                <strong>{request.requester.display_name}</strong>
-                <small>@{request.requester.handle}</small>
-              </div>
-              <div className="community-actions">
-                <button
-                  className="btn-primary"
-                  disabled={Boolean(busy)}
-                  onClick={() => {
-                    void run(
-                      request.id,
-                      () => account.respondFriend(request.id, true),
-                      "Priateľstvo bolo prijaté.",
-                    );
-                  }}
-                >
-                  <Check size={16} /> Prijať
-                </button>
-                <button
-                  className="btn-secondary"
-                  disabled={Boolean(busy)}
-                  onClick={() => {
-                    void run(request.id, () =>
-                      account.respondFriend(request.id, false),
-                    );
-                  }}
-                >
-                  Odmietnuť
-                </button>
-              </div>
-            </article>
-          ))}
           <h2>Moji priatelia ({account.friends.length})</h2>
           {!account.friends.length && (
             <p>
@@ -740,6 +950,7 @@ export function CommunityView({
                   className="glass-panel community-friend"
                   key={request.id}
                 >
+                  <PlayerAvatar name={player.display_name} />
                   <div>
                     <strong>{player.display_name}</strong>
                     <small>@{player.handle}</small>
@@ -761,6 +972,7 @@ export function CommunityView({
           {outgoing.length > 0 && <h2>Odoslané žiadosti</h2>}
           {outgoing.map((request) => (
             <article className="glass-panel community-friend" key={request.id}>
+              <PlayerAvatar name={request.recipient.display_name} />
               <div>
                 <strong>{request.recipient.display_name}</strong>
                 <small>Čaká na prijatie</small>
@@ -778,7 +990,9 @@ export function CommunityView({
           ))}
         </>
       )}
-      {tab === "club" && <ClubTrainingPanel />}
+      {tab === "club" && (
+        <ClubTrainingPanel onFindFriends={() => selectTab("friends")} />
+      )}
       {tab === "invitations" && (
         <>
           {!account.invitations.length && (
@@ -799,12 +1013,29 @@ export function CommunityView({
               );
               return (
                 <article className="glass-panel community-card" key={invite.id}>
-                  <p>
-                    <strong>{invite.activity!.author.display_name}</strong> ťa
-                    pozýva
-                  </p>
+                  <div className="community-person">
+                    <PlayerAvatar name={invite.activity!.author.display_name} />
+                    <div>
+                      <strong>{invite.activity!.author.display_name}</strong>
+                      <small>ťa pozýva na spoločnú aktivitu</small>
+                    </div>
+                    <span
+                      className={`social-status ${saved ? "status-confirmed" : "status-pending"}`}
+                    >
+                      {saved
+                        ? "Uložené"
+                        : invite.status === "pending"
+                          ? "Nová"
+                          : "Prijatá"}
+                    </span>
+                  </div>
                   <ActivityPreview data={invite.activity!.payload} />
-                  <ImportSharedActivity source="community" sourceId={invite.activity_id} data={invite.activity!.payload} beforeImport={() => account.acceptInvitation(invite.id)} />
+                  <ImportSharedActivity
+                    source="community"
+                    sourceId={invite.activity_id}
+                    data={invite.activity!.payload}
+                    beforeImport={() => account.acceptInvitation(invite.id)}
+                  />
                   <div className="community-actions">
                     <button
                       className="btn-primary"
@@ -849,11 +1080,13 @@ export function CommunityView({
       )}
       {tab === "mine" && (
         <>
-          <p>
-            Vyber, kto môže vidieť tvoju aktivitu. Súkromné poznámky a fotky
-            zostávajú iba v tvojom denníku. Prepnutie na „Len ja“ zruší
-            pozvánky; už prijaté kópie zostanú v kalendári priateľa.
-          </p>
+          <div className="social-privacy-note">
+            <Lock size={17} />
+            <p>
+              Ty rozhoduješ, čo zdieľaš. Súkromné poznámky a fotky zostávajú iba
+              pre teba.
+            </p>
+          </div>
           {!myActivities.length && (
             <section className="glass-panel community-empty">
               <Lock size={26} />

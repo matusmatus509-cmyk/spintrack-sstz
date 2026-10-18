@@ -1,3 +1,20 @@
+import { PlayerAvatar } from "../components/PlayerAvatar";
+import {
+  ShieldCheck,
+  LockKeyhole,
+  Plus,
+  LogIn,
+  Copy,
+  Share2,
+  RefreshCw,
+  CalendarDays,
+  Activity,
+  Users,
+  Search,
+  ChevronRight,
+  Settings2,
+  MessageSquare,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCommunity } from "../context/CommunityContext";
 import { useApp } from "../context/AppContext";
@@ -15,6 +32,12 @@ import type {
 } from "../types/community";
 
 const roles = { owner: "Zakladateľ / tréner", coach: "Tréner", player: "Hráč" };
+const memberSearchKey = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("sk");
 const profileFields = "id,display_name,handle,club";
 function check(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -31,6 +54,8 @@ export function ClubView() {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [entryMode, setEntryMode] = useState<"join" | "create">("join");
+  const [memberQuery, setMemberQuery] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -209,24 +234,40 @@ export function ClubView() {
     });
     setTags([]);
   };
-  return (
-    <section className="club-view">
-      <p>
-        Klubové aktivity a poznámky vidia iba členovia klubu. Súkromné poznámky
-        a fotky z denníka sa nezdieľajú.
-      </p>
-      {error && (
-        <p role="alert" className="community-error">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p role="status" className="community-message">
-          {message}
-        </p>
-      )}
-      <details className="glass-panel community-card" open={!clubs.length}>
-        <summary>Vytvoriť klub alebo pridať sa ku klubu</summary>
+  const entryPanel = (
+    <details
+      className="glass-panel community-card club-entry"
+      open={!clubs.length}
+    >
+      <summary>
+        <span className="social-summary-icon">
+          <Plus size={19} />
+        </span>
+        <span>
+          {clubs.length ? "Pridať ďalší klub" : "Tvoj klub začína tu"}
+          <small>Pripoj sa cez kód alebo vytvor vlastný klub.</small>
+        </span>
+        <ChevronRight size={18} />
+      </summary>
+      <div className="social-segments" role="group" aria-label="Pridanie klubu">
+        <button
+          type="button"
+          aria-pressed={entryMode === "join"}
+          onClick={() => setEntryMode("join")}
+        >
+          <LogIn size={16} />
+          Mám pozývací kód
+        </button>
+        <button
+          type="button"
+          aria-pressed={entryMode === "create"}
+          onClick={() => setEntryMode("create")}
+        >
+          <Plus size={16} />
+          Nový klub
+        </button>
+      </div>
+      {entryMode === "create" && (
         <form
           className="community-form"
           onSubmit={(e) => {
@@ -251,6 +292,8 @@ export function ClubView() {
             Vytvoriť klub
           </button>
         </form>
+      )}
+      {entryMode === "join" && (
         <form
           className="community-form"
           onSubmit={(e) => {
@@ -276,8 +319,45 @@ export function ClubView() {
             Pridať sa ku klubu
           </button>
         </form>
-      </details>
-      {!!clubs.length && (
+      )}
+    </details>
+  );
+  return (
+    <section className="club-view">
+      {!clubs.length && !loading && (
+        <div className="club-welcome">
+          <span className="club-welcome-icon">
+            <ShieldCheck size={32} />
+          </span>
+          <h3>Každá partia potrebuje svoj klub.</h3>
+          <p>Majte tréningy, členov a rady trénera na jednom mieste.</p>
+        </div>
+      )}
+      {!club && loading && (
+        <div className="social-loading" role="status">
+          <RefreshCw size={19} className="sync-spinner" />
+          <span>Načítavam tvoje kluby…</span>
+        </div>
+      )}
+      {!club && !loading && entryPanel}
+      {error && (
+        <div role="alert" className="community-error">
+          <p>{error}</p>
+          <button
+            className="text-button"
+            disabled={loading || busy}
+            onClick={() => setRevision((n) => n + 1)}
+          >
+            Skúsiť znova
+          </button>
+        </div>
+      )}
+      {message && (
+        <p role="status" className="community-message">
+          {message}
+        </p>
+      )}
+      {clubs.length > 1 && (
         <label className="community-form">
           Tvoj klub
           <select
@@ -289,6 +369,7 @@ export function ClubView() {
               setNotes([]);
               setCode("");
               setTags([]);
+              setMemberQuery("");
               setLimit(30);
               setMessage("");
             }}
@@ -303,31 +384,40 @@ export function ClubView() {
       )}
       {club && (
         <>
-          <div className="club-heading">
+          <header className="club-heading club-identity">
+            <span className="club-identity-logo">
+              <ShieldCheck size={28} />
+            </span>
             <div>
+              <span className="social-eyebrow">
+                <LockKeyhole size={11} /> SÚKROMNÝ KLUB
+              </span>
               <h2>{club.name}</h2>
-              <small>{myRole && roles[myRole]}</small>
+              <small>
+                {roster.length} členov <span>·</span> {myRole && roles[myRole]}
+              </small>
             </div>
             <button
-              className="btn-secondary"
+              className="social-icon-button"
+              aria-label="Obnoviť klub"
               disabled={loading || busy}
               onClick={() => setRevision((n) => n + 1)}
             >
-              Obnoviť klub
+              <RefreshCw size={18} />
             </button>
-          </div>
+          </header>
           <div
-            className="community-tabs"
+            className="social-segments club-mode-nav"
             role="group"
             aria-label="Sekcie klubu"
           >
             {(
               [
-                ["schedule", "Rozpis tréningov"],
-                ["activities", "Aktivity členov"],
-                ["members", "Členovia"],
+                ["schedule", "Rozpis", CalendarDays],
+                ["activities", "Aktivity", Activity],
+                ["members", "Členovia", Users],
               ] as const
-            ).map(([value, label]) => (
+            ).map(([value, label, Icon]) => (
               <button
                 key={value}
                 aria-pressed={mode === value}
@@ -338,6 +428,7 @@ export function ClubView() {
                   setLimit(30);
                 }}
               >
+                <Icon size={16} />
                 {label}
               </button>
             ))}
@@ -345,20 +436,71 @@ export function ClubView() {
           {mode === "members" ? (
             <>
               {myRole === "owner" && (
-                <section className="glass-panel community-card">
-                  <h3>Pozvať členov</h3>
+                <details className="glass-panel community-card club-invite-card">
+                  <summary>
+                    <span className="social-summary-icon">
+                      <Users size={19} />
+                    </span>
+                    <span>
+                      Pozvať hráčov do klubu
+                      <small>Skopíruj kód a pošli ho svojej partii.</small>
+                    </span>
+                    <ChevronRight size={17} />
+                  </summary>
                   <p>
                     Pošli tento kód spoluhráčom. Pridajú sa ako hráči; trénerov
                     nastavíš nižšie.
                   </p>
-                  <label className="community-form">
-                    Pozývací kód
-                    <input
-                      readOnly
-                      value={code}
-                      onFocus={(e) => e.target.select()}
-                    />
-                  </label>
+                  <div className="club-invite-code">
+                    <span>Pozývací kód</span>
+                    <code>{code || "Načítavam kód…"}</code>
+                  </div>
+                  <div className="club-invite-actions">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      disabled={!code || busy}
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(code);
+                          setMessage("Kód klubu je skopírovaný.");
+                        } catch {
+                          setError(
+                            "Kód sa nepodarilo skopírovať. Podrž ho a vyber Kopírovať.",
+                          );
+                        }
+                      }}
+                    >
+                      <Copy size={16} />
+                      Kopírovať kód
+                    </button>
+                    {typeof navigator.share === "function" && (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        disabled={!code || busy}
+                        onClick={async () => {
+                          try {
+                            await navigator.share({
+                              title: club.name,
+                              text: `Pridaj sa k nám do klubu ${club.name} v SpinTrack. Pozývací kód: ${code}`,
+                            });
+                          } catch (error) {
+                            if (!(
+                              error instanceof DOMException &&
+                              error.name === "AbortError"
+                            ))
+                              setError(
+                                "Kód môžeš skopírovať a poslať spoluhráčom.",
+                              );
+                          }
+                        }}
+                      >
+                        <Share2 size={16} />
+                        Zdieľať
+                      </button>
+                    )}
+                  </div>
                   <button
                     className="btn-secondary"
                     disabled={busy || !code}
@@ -368,65 +510,107 @@ export function ClubView() {
                       }, "Nový kód je pripravený. Starý už neplatí.")
                     }
                   >
-                    Vygenerovať nový kód
+                    Obnoviť pozývací kód
                   </button>
-                </section>
+                </details>
               )}
-              {roster.map((m) => (
-                <article
-                  className="glass-panel community-friend"
-                  key={m.user_id}
-                >
-                  <div>
-                    <strong>{m.profile.display_name}</strong>
-                    <small>
-                      @{m.profile.handle} · {roles[m.role]}
-                    </small>
-                  </div>
-                  {myRole === "owner" && m.role !== "owner" && (
-                    <div className="community-actions">
-                      <select
-                        aria-label={`Rola ${m.profile.display_name}`}
-                        disabled={busy}
-                        value={m.role}
-                        onChange={(e) => {
-                          const role = e.target.value;
-                          void run(async () => {
-                            await rpc("manage_club_member", {
-                              p_club: selected,
-                              p_user: m.user_id,
-                              p_role: role,
-                            });
-                          }, "Rola bola uložená.");
-                        }}
-                      >
-                        <option value="player">Hráč</option>
-                        <option value="coach">Tréner</option>
-                      </select>
-                      <button
-                        className="text-button"
-                        disabled={busy}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Odobrať ${m.profile.display_name} z klubu?`,
-                            )
-                          )
-                            void run(async () => {
-                              await rpc("manage_club_member", {
-                                p_club: selected,
-                                p_user: m.user_id,
-                                p_role: "remove",
-                              });
-                            }, "Člen bol odobratý.");
-                        }}
-                      >
-                        Odobrať
-                      </button>
+              <div className="social-list-heading">
+                <h3>Ľudia v klube</h3>
+                <span>{roster.length}</span>
+              </div>
+              <label className="social-search-field">
+                <Search size={18} />
+                <input
+                  aria-label="Hľadať člena klubu"
+                  placeholder="Nájdi člena podľa mena"
+                  value={memberQuery}
+                  onChange={(e) => setMemberQuery(e.target.value)}
+                />
+              </label>
+              {!roster.some((m) =>
+                memberSearchKey(m.profile.display_name).includes(
+                  memberSearchKey(memberQuery),
+                ),
+              ) && (
+                <p className="practice-muted">
+                  Takého člena tu nemáme. Skús iné meno.
+                </p>
+              )}
+              {roster
+                .filter((m) =>
+                  memberSearchKey(m.profile.display_name).includes(
+                    memberSearchKey(memberQuery),
+                  ),
+                )
+                .map((m) => (
+                  <article
+                    className="glass-panel community-friend"
+                    key={m.user_id}
+                  >
+                    <PlayerAvatar name={m.profile.display_name} />
+                    <div>
+                      <strong>
+                        {m.profile.display_name}
+                        {m.user_id === user!.id && (
+                          <span className="social-you">Ty</span>
+                        )}
+                      </strong>
+                      <small>
+                        @{m.profile.handle} · {roles[m.role]}
+                      </small>
                     </div>
-                  )}
-                </article>
-              ))}
+                    {myRole === "owner" && m.role !== "owner" && (
+                      <details className="social-member-manage">
+                        <summary
+                          aria-label={`Spravovať člena ${m.profile.display_name}`}
+                        >
+                          <Settings2 size={17} />
+                          <span>Spravovať</span>
+                        </summary>
+                        <div className="community-actions">
+                          <select
+                            aria-label={`Rola ${m.profile.display_name}`}
+                            disabled={busy}
+                            value={m.role}
+                            onChange={(e) => {
+                              const role = e.target.value;
+                              void run(async () => {
+                                await rpc("manage_club_member", {
+                                  p_club: selected,
+                                  p_user: m.user_id,
+                                  p_role: role,
+                                });
+                              }, "Rola bola uložená.");
+                            }}
+                          >
+                            <option value="player">Hráč</option>
+                            <option value="coach">Tréner</option>
+                          </select>
+                          <button
+                            className="text-button"
+                            disabled={busy}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Odobrať ${m.profile.display_name} z klubu?`,
+                                )
+                              )
+                                void run(async () => {
+                                  await rpc("manage_club_member", {
+                                    p_club: selected,
+                                    p_user: m.user_id,
+                                    p_role: "remove",
+                                  });
+                                }, "Člen bol odobratý.");
+                            }}
+                          >
+                            Odobrať
+                          </button>
+                        </div>
+                      </details>
+                    )}
+                  </article>
+                ))}
               {myRole !== "owner" && (
                 <button
                   className="btn-secondary"
@@ -455,7 +639,7 @@ export function ClubView() {
             <>
               {mode === "schedule" && (
                 <div
-                  className="community-tabs"
+                  className="social-segments club-period"
                   role="group"
                   aria-label="Obdobie rozpisu"
                 >
@@ -475,11 +659,22 @@ export function ClubView() {
                 </div>
               )}
               {(mode === "activities" || coach) && (
-                <details className="glass-panel community-card">
+                <details className="glass-panel community-card club-composer">
                   <summary>
-                    {mode === "schedule"
-                      ? "Naplánovať spoločný tréning"
-                      : "Zdieľať moju aktivitu s klubom"}
+                    <span className="social-summary-icon">
+                      <Plus size={20} />
+                    </span>
+                    <span>
+                      {mode === "schedule"
+                        ? "Naplánovať tréning"
+                        : "Zdieľať aktivitu"}
+                      <small>
+                        {mode === "schedule"
+                          ? "Daj partii vedieť, kedy sa hrá."
+                          : "Podeľ sa o tréning alebo zápas."}
+                      </small>
+                    </span>
+                    <ChevronRight size={18} />
                   </summary>
                   <form
                     className="community-form"
@@ -590,6 +785,9 @@ export function ClubView() {
               {loading && <p role="status">Načítavam klub…</p>}
               {!loading && !rows.length && (
                 <section className="glass-panel community-empty">
+                  <span className="social-empty-icon">
+                    <CalendarDays size={28} />
+                  </span>
                   <h3>
                     {mode === "schedule"
                       ? "Rozpis je zatiaľ prázdny"
@@ -616,10 +814,20 @@ export function ClubView() {
                 )
                 .map((row) => (
                   <article className="glass-panel community-card" key={row.id}>
-                    <p>
-                      <strong>{row.author.display_name}</strong>
-                      {row.scheduled ? " · Plán tréningu" : ""}
-                    </p>
+                    <div className="community-person">
+                      <PlayerAvatar name={row.author.display_name} />
+                      <div>
+                        <strong>{row.author.display_name}</strong>
+                        <small>
+                          {row.scheduled
+                            ? "Plánuje spoločný tréning"
+                            : "Zdieľa s klubom"}
+                        </small>
+                      </div>
+                      {row.scheduled && (
+                        <span className="social-status">V rozpise</span>
+                      )}
+                    </div>
                     {row.tagged_ids.includes(user!.id) && (
                       <p className="community-message">
                         Si označený/á v tejto aktivite.
@@ -650,8 +858,11 @@ export function ClubView() {
                     )}
                     <details className="club-feedback">
                       <summary>
-                        Poznámky trénera (
-                        {notes.filter((n) => n.activity_id === row.id).length})
+                        <MessageSquare size={16} /> Rady trénera{" "}
+                        <span className="social-inline-count">
+                          {notes.filter((n) => n.activity_id === row.id).length}
+                        </span>
+                        <ChevronRight size={16} />
                       </summary>
                       {notes
                         .filter((n) => n.activity_id === row.id)
@@ -681,6 +892,12 @@ export function ClubView() {
                             )}
                           </div>
                         ))}
+                      {!notes.some((n) => n.activity_id === row.id) && (
+                        <p className="practice-muted">
+                          Zatiaľ bez poznámky. Tréner sem môže pridať tip na
+                          ďalší tréning.
+                        </p>
+                      )}
                       {coach && (
                         <form
                           className="community-form"
@@ -756,6 +973,14 @@ export function ClubView() {
           )}
         </>
       )}
+      {club && entryPanel}
+      <div className="social-privacy-note">
+        <LockKeyhole size={16} />
+        <p>
+          Čo sa deje v klube, vidia iba jeho členovia. Tvoje súkromné poznámky a
+          fotky zostávajú v denníku.
+        </p>
+      </div>
     </section>
   );
 }

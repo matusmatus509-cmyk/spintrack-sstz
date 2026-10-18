@@ -1,5 +1,17 @@
+import { PlayerAvatar } from "./PlayerAvatar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarCheck, Users, Plus, RefreshCw } from "lucide-react";
+import {
+  CalendarCheck,
+  Users,
+  Plus,
+  RefreshCw,
+  CalendarDays,
+  MapPin,
+  Clock3,
+  ChevronRight,
+  CheckCircle2,
+  ClipboardCheck,
+} from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useCommunity } from "../context/CommunityContext";
 import { useApp } from "../context/AppContext";
@@ -48,7 +60,11 @@ const zoned = (date: string, time: string) => {
   }
   return result;
 };
-export function ClubTrainingPanel() {
+export function ClubTrainingPanel({
+  onFindFriends,
+}: {
+  onFindFriends?: () => void;
+}) {
   const { user, friends } = useCommunity();
   const { activities, addActivity, activeRacket } = useApp();
   const [trainings, setTrainings] = useState<ClubTraining[]>([]);
@@ -58,6 +74,7 @@ export function ClubTrainingPanel() {
   const [busy, setBusy] = useState(false);
   const [missing, setMissing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [scope, setScope] = useState<"upcoming" | "todo" | "past">("upcoming");
   const [notice, setNotice] = useState("");
   const [tick, setTick] = useState(Date.now());
   const version = useRef(0);
@@ -143,17 +160,47 @@ export function ClubTrainingPanel() {
     }
   };
   if (!user) return null;
+  const startOf = (training: ClubTraining) =>
+    zoned(training.training_date, training.start_time).getTime();
+  const endedTraining = (training: ClubTraining) =>
+    startOf(training) + training.duration_minutes * 60000 <= tick;
+  const needsAction = (training: ClubTraining) => {
+    const roster = members.filter((m) => m.training_id === training.id);
+    const mine = roster.find((m) => m.player_id === user.id);
+    const logged = activities.some(
+      (a) => a.sourceEventId === `club-${training.id}`,
+    );
+    return (
+      (training.coach_id === user.id &&
+        endedTraining(training) &&
+        roster.some((m) => m.attended === null)) ||
+      (!!mine &&
+        ((mine.attended === true && !logged) ||
+          (!mine.response && Date.parse(training.response_deadline) >= tick)))
+    );
+  };
+  const actionCount = trainings.filter(needsAction).length;
+  const visibleTrainings = trainings
+    .filter((t) =>
+      scope === "todo"
+        ? needsAction(t)
+        : scope === "past"
+          ? endedTraining(t)
+          : !endedTraining(t),
+    )
+    .sort((a, b) =>
+      scope === "past" ? startOf(b) - startOf(a) : startOf(a) - startOf(b),
+    );
+
   return (
     <section
-      className="practice-panel club-panel"
+      className="club-panel attendance-space"
       aria-label="Klubové tréningy"
     >
-      <div className="practice-heading">
+      <div className="practice-heading attendance-heading">
         <div>
           <span>SPOLOČNE PRI STOLE</span>
-          <h2>
-            <Users size={20} /> Klubové tréningy
-          </h2>
+          <h2>Spoločné tréningy</h2>
         </div>
         <button
           type="button"
@@ -166,8 +213,8 @@ export function ClubTrainingPanel() {
         </button>
       </div>
       <p className="practice-muted">
-        Organizátor pozve priateľov, vidí ich odpovede a po tréningu potvrdí
-        dochádzku. Časy sú podľa Slovenska.
+        Daj vedieť, či prídeš. Po tréningu si potvrdenú účasť uložíš rovno do
+        denníka.
       </p>
       {error && (
         <p role="alert" className="community-error">
@@ -185,8 +232,10 @@ export function ClubTrainingPanel() {
       {!missing && (
         <button
           type="button"
-          className="btn-secondary practice-wide"
+          className="btn-primary practice-wide"
           disabled={busy}
+          aria-expanded={creating}
+          aria-controls="training-create-form"
           onClick={() => setCreating((v) => !v)}
         >
           <Plus size={18} />
@@ -195,7 +244,8 @@ export function ClubTrainingPanel() {
       )}
       {creating && !missing && (
         <form
-          className="practice-form"
+          id="training-create-form"
+          className="practice-form attendance-form"
           onSubmit={(e) => {
             e.preventDefault();
             void run(async () => {
@@ -219,6 +269,7 @@ export function ClubTrainingPanel() {
               });
               if (error) throw error;
               setCreating(false);
+              setScope("upcoming");
               setForm({ ...form, players: [] });
               setNotice(
                 "Tréning je vytvorený. Pozvaní hráči ho nájdu vo svojej komunite.",
@@ -226,6 +277,13 @@ export function ClubTrainingPanel() {
             });
           }}
         >
+          <div className="social-section-label">
+            <CalendarDays size={19} />
+            <h3>Priprav spoločný tréning</h3>
+          </div>
+          <p className="practice-muted">
+            Vyber termín a pozvi priateľov. Časy zadávaj podľa Slovenska.
+          </p>
           <label>
             Názov
             <input
@@ -295,8 +353,41 @@ export function ClubTrainingPanel() {
             />
           </label>
           <fieldset disabled={busy}>
-            <legend>Pozvaní priatelia</legend>
-            {!friends.length && <p>Najprv si pridaj hráčov medzi priateľov.</p>}
+            <legend>Pozvaní priatelia · {form.players.length} vybraných</legend>
+            {friends.length > 1 && (
+              <div className="attendance-invite-tools">
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() =>
+                    setForm({ ...form, players: friends.map((f) => f.id) })
+                  }
+                >
+                  Vybrať všetkých
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => setForm({ ...form, players: [] })}
+                >
+                  Zrušiť výber
+                </button>
+              </div>
+            )}
+            {!friends.length && (
+              <div className="social-empty-inline">
+                <p>Najprv si pridaj spoluhráčov medzi priateľov.</p>
+                {onFindFriends && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={onFindFriends}
+                  >
+                    Nájsť spoluhráčov <ChevronRight size={15} />
+                  </button>
+                )}
+              </div>
+            )}
             {friends.map((friend) => (
               <label className="practice-check" key={friend.id}>
                 <input
@@ -311,6 +402,7 @@ export function ClubTrainingPanel() {
                     })
                   }
                 />
+                <PlayerAvatar name={friend.display_name} />
                 {friend.display_name}
               </label>
             ))}
@@ -323,202 +415,345 @@ export function ClubTrainingPanel() {
           </button>
         </form>
       )}
-      {!loading && !error && !trainings.length && (
-        <p className="practice-muted">
-          Zatiaľ nemáš žiadny spoločný tréning. Vytvor prvý alebo počkaj na
-          pozvánku trénera.
-        </p>
-      )}
-      {trainings.map((training) => {
-        const roster = members.filter((m) => m.training_id === training.id);
-        const mine = roster.find((m) => m.player_id === user.id);
-        const coach = training.coach_id === user.id;
-        const ended =
-          zoned(training.training_date, training.start_time).getTime() +
-            training.duration_minutes * 60000 <=
-          tick;
-        const deadlinePassed = Date.parse(training.response_deadline) < tick;
-        const logged = activities.some(
-          (a) => a.sourceEventId === `club-${training.id}`,
-        );
-        return (
-          <article className="club-session" key={training.id}>
-            <div className="practice-heading">
-              <h3>{training.title}</h3>
-              <span className="club-badge">
-                {coach ? "Organizuješ" : ended ? "Ukončený" : "Pozvánka"}
+      {!creating && (
+        <>
+          {actionCount > 0 && (
+            <button
+              className="social-attention"
+              onClick={() => setScope("todo")}
+            >
+              <span className="social-attention-icon">
+                <ClipboardCheck size={21} />
               </span>
-            </div>
-            <p>
-              {new Date(
-                `${training.training_date}T12:00:00`,
-              ).toLocaleDateString("sk-SK")}{" "}
-              · {training.start_time.slice(0, 5)} · {training.duration_minutes}{" "}
-              min
-            </p>
-            {training.location && <p>{training.location}</p>}
-            {!!training.focus_drills.length && (
-              <p className="practice-muted">
-                {training.focus_drills.join(" · ")}
+              <span>
+                <strong>
+                  {actionCount === 1
+                    ? "1 tréning čaká na tvoj krok"
+                    : actionCount < 5
+                      ? `${actionCount} tréningy čakajú na tvoj krok`
+                      : `${actionCount} tréningov čaká na tvoj krok`}
+                </strong>
+                <small>Odpovedz na pozvánku alebo potvrď účasť.</small>
+              </span>
+              <ChevronRight size={18} />
+            </button>
+          )}
+          <div
+            className="social-segments"
+            role="group"
+            aria-label="Filter dochádzky"
+          >
+            {(
+              [
+                { id: "upcoming", label: "Najbližšie" },
+                { id: "todo", label: "Na vybavenie" },
+                { id: "past", label: "Minulé" },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                aria-pressed={scope === item.id}
+                onClick={() => setScope(item.id)}
+              >
+                {item.label}
+                {item.id === "todo" && actionCount > 0 && (
+                  <span className="social-inline-count">{actionCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
+          {!loading && !error && !visibleTrainings.length && (
+            <div className="community-empty attendance-empty">
+              <span className="social-empty-icon">
+                {scope === "todo" ? (
+                  <CheckCircle2 size={28} />
+                ) : (
+                  <CalendarDays size={28} />
+                )}
+              </span>
+              <h3>
+                {scope === "todo"
+                  ? "Všetko vybavené"
+                  : scope === "past"
+                    ? "Tu bude tvoja tréningová história"
+                    : "Priestor na ďalší tréning"}
+              </h3>
+              <p>
+                {scope === "todo"
+                  ? "Momentálne od teba nič nečaká na odpoveď."
+                  : scope === "past"
+                    ? "Ukončené tréningy a potvrdenú účasť nájdeš vždy tu."
+                    : "Vytvor spoločný termín alebo počkaj na pozvánku od spoluhráča."}
               </p>
-            )}
-            <p className="practice-muted">
-              Odpoveď do{" "}
-              {new Date(training.response_deadline).toLocaleString("sk-SK", {
-                timeZone: "Europe/Bratislava",
-              })}
-              {deadlinePassed ? " · uzavreté" : ""}
-            </p>
-            {coach && (
-              <>
-                <div className="club-counts">
-                  {responses.map((r) => (
-                    <span key={r.id}>
-                      <strong>
-                        {roster.filter((m) => m.response === r.id).length}
-                      </strong>
-                      {r.label}
+            </div>
+          )}
+          {visibleTrainings.map((training) => {
+            const roster = members.filter((m) => m.training_id === training.id);
+            const mine = roster.find((m) => m.player_id === user.id);
+            const coach = training.coach_id === user.id;
+            const ended =
+              zoned(training.training_date, training.start_time).getTime() +
+                training.duration_minutes * 60000 <=
+              tick;
+            const deadlinePassed =
+              Date.parse(training.response_deadline) < tick;
+            const logged = activities.some(
+              (a) => a.sourceEventId === `club-${training.id}`,
+            );
+            return (
+              <article className="club-session" key={training.id}>
+                <div className="session-card-heading">
+                  <div className="session-date">
+                    <strong>
+                      {new Date(`${training.training_date}T12:00:00`).getDate()}
+                    </strong>
+                    <span>
+                      {new Date(
+                        `${training.training_date}T12:00:00`,
+                      ).toLocaleDateString("sk-SK", { month: "short" })}
                     </span>
-                  ))}
-                  <span>
-                    <strong>{roster.filter((m) => !m.response).length}</strong>
-                    Bez odpovede
-                  </span>
-                </div>
-                {roster.map((member) => (
-                  <div className="club-member" key={member.player_id}>
-                    <div>
-                      <strong>{member.player?.display_name || "Hráč"}</strong>
-                      <span>
-                        {responses.find((r) => r.id === member.response)
-                          ?.label || "Bez odpovede"}
-                        {member.attended === true
-                          ? " · účasť potvrdená"
-                          : member.attended === false
-                            ? " · neprišiel/a"
-                            : ""}
-                      </span>
-                    </div>
-                    {ended && (
-                      <div className="club-response">
-                        <button
-                          className="btn-secondary"
-                          aria-pressed={member.attended === true}
-                          disabled={busy}
-                          onClick={() =>
-                            void run(async () => {
-                              const { error } = await supabase!.rpc(
-                                "confirm_club_attendance",
-                                {
-                                  p_training: training.id,
-                                  p_player: member.player_id,
-                                  p_attended: true,
-                                },
-                              );
-                              if (error) throw error;
-                            })
-                          }
-                        >
-                          Bol/a
-                        </button>
-                        <button
-                          className="btn-secondary"
-                          aria-pressed={member.attended === false}
-                          disabled={busy}
-                          onClick={() =>
-                            void run(async () => {
-                              const { error } = await supabase!.rpc(
-                                "confirm_club_attendance",
-                                {
-                                  p_training: training.id,
-                                  p_player: member.player_id,
-                                  p_attended: false,
-                                },
-                              );
-                              if (error) throw error;
-                            })
-                          }
-                        >
-                          Nebol/a
-                        </button>
-                      </div>
+                    {new Date(
+                      `${training.training_date}T12:00:00`,
+                    ).getFullYear() !== new Date(tick).getFullYear() && (
+                      <small>{training.training_date.slice(0, 4)}</small>
                     )}
                   </div>
-                ))}
-              </>
-            )}
-            {mine && (
-              <>
-                <div
-                  className="club-response"
-                  role="group"
-                  aria-label={`Odpoveď na ${training.title}`}
-                >
-                  {responses.map((r) => (
-                    <button
-                      key={r.id}
-                      className="btn-secondary"
-                      aria-pressed={mine.response === r.id}
-                      disabled={busy || deadlinePassed}
-                      onClick={() =>
-                        void run(async () => {
-                          const { error } = await supabase!.rpc(
-                            "respond_club_training",
-                            { p_training: training.id, p_response: r.id },
-                          );
-                          if (error) throw error;
-                        })
-                      }
+                  <div>
+                    <span
+                      className={`social-status ${mine?.attended === true ? "status-confirmed" : ""}`}
                     >
-                      {r.label}
-                    </button>
-                  ))}
+                      {coach
+                        ? "Organizuješ"
+                        : mine?.attended === true
+                          ? "Účasť potvrdená"
+                          : ended
+                            ? "Ukončený"
+                            : "Pozvánka"}
+                    </span>
+                    <h3>{training.title}</h3>
+                  </div>
                 </div>
-                {ended && mine.attended === null && (
-                  <p className="practice-muted">
-                    Čaká sa na potvrdenie dochádzky trénerom.
-                  </p>
+                <div className="social-event-meta">
+                  <span>
+                    <Clock3 size={15} />
+                    {training.start_time.slice(0, 5)} ·{" "}
+                    {training.duration_minutes} min
+                  </span>
+                  {training.location && (
+                    <span>
+                      <MapPin size={15} />
+                      {training.location}
+                    </span>
+                  )}
+                </div>
+                {!!training.focus_drills.length && (
+                  <div className="social-drills">
+                    {training.focus_drills.map((drill) => (
+                      <span key={drill}>{drill}</span>
+                    ))}
+                  </div>
                 )}
-                {mine.attended === false && (
-                  <p className="practice-muted">Tréner zaznamenal neúčasť.</p>
+                <p
+                  className={`session-deadline ${deadlinePassed ? "deadline-closed" : ""}`}
+                >
+                  {deadlinePassed ? "Odpovede uzavreté od " : "Odpovedz do "}{" "}
+                  {new Date(training.response_deadline).toLocaleString(
+                    "sk-SK",
+                    {
+                      timeZone: "Europe/Bratislava",
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}
+                </p>
+                {coach && (
+                  <>
+                    <div className="club-counts">
+                      {responses.map((r) => (
+                        <span key={r.id}>
+                          <strong>
+                            {roster.filter((m) => m.response === r.id).length}
+                          </strong>
+                          {r.label}
+                        </span>
+                      ))}
+                      <span>
+                        <strong>
+                          {roster.filter((m) => !m.response).length}
+                        </strong>
+                        Bez odpovede
+                      </span>
+                    </div>
+                    <details
+                      className="attendance-roster"
+                      open={ended && roster.some((m) => m.attended === null)}
+                    >
+                      <summary>
+                        <Users size={17} />
+                        <span>
+                          {ended ? "Potvrdiť skutočnú účasť" : "Pozvaní hráči"}
+                          <small>
+                            {roster.length} hráčov
+                            {ended
+                              ? ` · potvrdených ${roster.filter((m) => m.attended !== null).length}`
+                              : ""}
+                          </small>
+                        </span>
+                        <ChevronRight size={17} />
+                      </summary>
+                      {roster.map((member) => (
+                        <div className="club-member" key={member.player_id}>
+                          <PlayerAvatar
+                            name={member.player?.display_name || "Hráč"}
+                          />
+                          <div>
+                            <strong>
+                              {member.player?.display_name || "Hráč"}
+                            </strong>
+                            <span>
+                              {responses.find((r) => r.id === member.response)
+                                ?.label || "Bez odpovede"}
+                              {member.attended === true
+                                ? " · účasť potvrdená"
+                                : member.attended === false
+                                  ? " · neprišiel/a"
+                                  : ""}
+                            </span>
+                          </div>
+                          {ended && (
+                            <div className="club-response">
+                              <button
+                                className="btn-secondary"
+                                aria-pressed={member.attended === true}
+                                disabled={busy}
+                                onClick={() =>
+                                  void run(async () => {
+                                    const { error } = await supabase!.rpc(
+                                      "confirm_club_attendance",
+                                      {
+                                        p_training: training.id,
+                                        p_player: member.player_id,
+                                        p_attended: true,
+                                      },
+                                    );
+                                    if (error) throw error;
+                                  })
+                                }
+                              >
+                                Bol/a
+                              </button>
+                              <button
+                                className="btn-secondary"
+                                aria-pressed={member.attended === false}
+                                disabled={busy}
+                                onClick={() =>
+                                  void run(async () => {
+                                    const { error } = await supabase!.rpc(
+                                      "confirm_club_attendance",
+                                      {
+                                        p_training: training.id,
+                                        p_player: member.player_id,
+                                        p_attended: false,
+                                      },
+                                    );
+                                    if (error) throw error;
+                                  })
+                                }
+                              >
+                                Nebol/a
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </details>
+                  </>
                 )}
-                {mine.attended === true && (
-                  <button
-                    className="btn-primary practice-wide"
-                    disabled={logged || busy}
-                    onClick={() => {
-                      if (logged) return;
-                      addActivity(
-                        {
-                          category: "tréning",
-                          date: training.training_date,
-                          startTime: training.start_time.slice(0, 5),
-                          durationMinutes: training.duration_minutes,
-                          focusDrills: training.focus_drills,
-                          location: training.location,
-                          visibility: "private",
-                          addEquipmentWear: !!activeRacket,
-                          racketId: activeRacket?.id,
-                          sourceEventId: `club-${training.id}`,
-                        },
-                        `club-${training.id}`,
-                      );
-                      setNotice(
-                        "Absolvovaný tréning je v denníku. Trvanie a vyhodnotenie môžeš doplniť cez Upraviť.",
-                      );
-                    }}
-                  >
-                    <CalendarCheck size={18} />
-                    {logged
-                      ? "Zapísané v denníku"
-                      : "Zapísať absolvovaný tréning"}
-                  </button>
+                {mine && (
+                  <>
+                    <div className="attendance-your-response">
+                      <strong>Tvoja odpoveď</strong>
+                      <span>
+                        {responses.find((r) => r.id === mine.response)?.label ||
+                          "Zatiaľ si neodpovedal/a"}
+                      </span>
+                    </div>
+                    <div
+                      className="club-response"
+                      role="group"
+                      aria-label={`Odpoveď na ${training.title}`}
+                    >
+                      {responses.map((r) => (
+                        <button
+                          key={r.id}
+                          className="btn-secondary"
+                          aria-pressed={mine.response === r.id}
+                          disabled={busy || deadlinePassed}
+                          onClick={() =>
+                            void run(async () => {
+                              const { error } = await supabase!.rpc(
+                                "respond_club_training",
+                                { p_training: training.id, p_response: r.id },
+                              );
+                              if (error) throw error;
+                            })
+                          }
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                    {ended && mine.attended === null && (
+                      <p className="practice-muted">
+                        Čaká sa na potvrdenie dochádzky trénerom.
+                      </p>
+                    )}
+                    {mine.attended === false && (
+                      <p className="practice-muted">
+                        Tréner zaznamenal neúčasť.
+                      </p>
+                    )}
+                    {mine.attended === true && (
+                      <button
+                        className="btn-primary practice-wide"
+                        disabled={logged || busy}
+                        onClick={() => {
+                          if (logged) return;
+                          addActivity(
+                            {
+                              category: "tréning",
+                              date: training.training_date,
+                              startTime: training.start_time.slice(0, 5),
+                              durationMinutes: training.duration_minutes,
+                              focusDrills: training.focus_drills,
+                              location: training.location,
+                              visibility: "private",
+                              addEquipmentWear: !!activeRacket,
+                              racketId: activeRacket?.id,
+                              sourceEventId: `club-${training.id}`,
+                            },
+                            `club-${training.id}`,
+                          );
+                          setNotice(
+                            "Absolvovaný tréning je v denníku. Trvanie a vyhodnotenie môžeš doplniť cez Upraviť.",
+                          );
+                        }}
+                      >
+                        <CalendarCheck size={18} />
+                        {logged
+                          ? "Zapísané v denníku"
+                          : "Zapísať absolvovaný tréning"}
+                      </button>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </article>
-        );
-      })}
+              </article>
+            );
+          })}
+        </>
+      )}
     </section>
   );
 }
