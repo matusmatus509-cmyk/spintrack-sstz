@@ -1,3 +1,4 @@
+import { LocationField } from "./LocationField";
 import { PlayerAvatar } from "./PlayerAvatar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -66,7 +67,7 @@ export function ClubTrainingPanel({
   onFindFriends?: () => void;
 }) {
   const { user, friends } = useCommunity();
-  const { activities, addActivity, activeRacket } = useApp();
+  const { activities, addActivity, activeRacket, rememberLocation } = useApp();
   const [trainings, setTrainings] = useState<ClubTraining[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState("");
@@ -268,6 +269,7 @@ export function ClubTrainingPanel({
                 p_players: form.players,
               });
               if (error) throw error;
+              rememberLocation(form.location);
               setCreating(false);
               setScope("upcoming");
               setForm({ ...form, players: [] });
@@ -293,14 +295,10 @@ export function ClubTrainingPanel({
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </label>
-          <label>
-            Miesto
-            <input
-              maxLength={200}
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
-          </label>
+          <LocationField
+            value={form.location}
+            onChange={(value) => setForm({ ...form, location: value })}
+          />
           <div className="practice-grid">
             <label>
               Dátum

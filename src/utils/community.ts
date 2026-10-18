@@ -1,3 +1,4 @@
+import { mergeLocationHistory } from "./locations.ts";
 import { normalizeDiaryDate, occurrenceTime } from "./diary.ts";
 import type { ActivityRecord } from "../types/index";
 import type { SharedActivityData } from "../types/community";
@@ -53,6 +54,7 @@ export const emptyAccountData = () => ({
   rackets: [],
   activeRacketId: "",
   activities: [],
+  savedLocations: [],
   ignoredMerges: [],
   trainingSessions: [],
   matches: [],
@@ -134,6 +136,7 @@ export function mergeLocalData(
   local: Record<string, any>,
 ) {
   const merged = { ...local, ...current };
+  merged.savedLocations = mergeLocationHistory(current.savedLocations, local.savedLocations, (current.activities || []).map((a: any) => a.location), localActivities(local).map((a: any) => a.location));
   for (const key of [
     "blades",
     "rubbers",

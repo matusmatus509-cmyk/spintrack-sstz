@@ -1,0 +1,88 @@
+.saved-location-field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.saved-location-field > label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.saved-location-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+}
+.saved-location-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.saved-location-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.saved-location-suggestions .saved-location-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.5;
+}
+.saved-location-chip svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.saved-location-chip span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.saved-location-suggestions .saved-location-chip[aria-pressed="true"] {
+  background: var(--selection);
+  border-color: var(--accent-tt-green);
+  color: var(--accent-tt-green);
+}
+.saved-location-chip[aria-pressed="true"] svg {
+  color: inherit;
+}
+.saved-location-field .saved-location-more {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--accent-tt-green);
+  min-height: 40px;
+  padding: 5px 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: left;
+}
+.saved-location-field .saved-location-hint {
+  font-size: 0.68rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}

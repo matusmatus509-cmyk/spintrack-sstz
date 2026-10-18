@@ -1,3 +1,4 @@
+import { LocationField } from "./LocationField";
 import { newActivityId } from '../utils/activityId';
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -33,7 +34,6 @@ interface AddActivityModalProps {
   editActivity?: ActivityRecord | null;
   defaultDate?: string;
   defaultPlanned?: boolean;
-  repeatActivity?: ActivityRecord | null;
   completePlanned?: boolean;
 }
 
@@ -136,7 +136,6 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   editActivity = null,
   defaultDate,
   defaultPlanned = false,
-  repeatActivity = null,
   completePlanned = false,
 }) => {
   const community = useCommunity();
@@ -160,13 +159,6 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       );
       nextForm.date = defaultDate || localDate();
       nextForm.planned = defaultPlanned || nextForm.date > localDate();
-      if (repeatActivity && !editActivity) {
-        nextForm.location = repeatActivity.location;
-        nextForm.drills = [...repeatActivity.focusDrills];
-        nextForm.trainingPartners = repeatActivity.trainingPartners || community.friends.filter(f => repeatActivity.trainingPartnerIds?.includes(f.id)).map(f => f.display_name).join(", ");
-        nextForm.racketId = rackets.some(r => r.id === repeatActivity.racketId) ? repeatActivity.racketId! : nextForm.racketId;
-        nextForm.duration = repeatActivity.durationMinutes || 60;
-      }
       if (editActivity) {
         const [ownScore = "", opponentScore = ""] = (editActivity.matchScore || "").split(":");
         setForm({
@@ -209,10 +201,10 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       }
       setCustomDrill("");
       setError("");
-      setInvitees((editActivity?.trainingPartnerIds || repeatActivity?.trainingPartnerIds || []).filter(id => community.friends.some(friend => friend.id === id)));
+      setInvitees((editActivity?.trainingPartnerIds || []).filter(id => community.friends.some(friend => friend.id === id)));
       localId.current = newActivityId();
     }
-  }, [isOpen, defaultCategory, activeRacket?.id, editActivity, defaultDate, defaultPlanned, repeatActivity, completePlanned]);
+  }, [isOpen, defaultCategory, activeRacket?.id, editActivity, defaultDate, defaultPlanned, completePlanned]);
   const field = <K extends keyof typeof form>(
     key: K,
     value: (typeof form)[K],
@@ -374,7 +366,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
         <header className="activity-header">
           <div>
             <span className="activity-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
-            <h2 id="activity-title">{completePlanned ? "Dokončiť tréning" : repeatActivity ? "Zopakovať tréning" : editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
+            <h2 id="activity-title">{completePlanned ? "Dokončiť tréning" : editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
           </div>
           <button
             type="button"
@@ -445,22 +437,16 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
                   />
                 </label>
                 <label>
-                  Miesto
+                  Začiatok (voliteľné)
                   <input
-                    placeholder="Herňa, mesto alebo športová hala"
-                    value={form.location}
-                    onChange={(e) => field("location", e.target.value)}
+                    type="time"
+                    value={form.startTime}
+                    onChange={(e) => field("startTime", e.target.value)}
                   />
                 </label>
               </div>
-              <label>
-                Začiatok (voliteľné)
-                <input
-                  type="time"
-                  value={form.startTime}
-                  onChange={(e) => field("startTime", e.target.value)}
-                />
-              </label>
+              <LocationField value={form.location} onChange={value => field("location", value)} />
+
               {["turnaj", "podujatie"].includes(form.category) && (
                 <label>
                   Názov {form.category === "turnaj" ? "turnaja" : "podujatia"}

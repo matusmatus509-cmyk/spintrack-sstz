@@ -1,3 +1,4 @@
+import { mergeLocationHistory } from '../utils/locations';
 import { mergeCandidates, mergeMatchNotes, matchDay } from '../utils/matchMerge';
 import { compareOccurrenceDesc, normalizeDiaryDate, occurrenceTime } from '../utils/diary';
 import { newActivityId } from '../utils/activityId';
@@ -50,6 +51,8 @@ interface AppContextType {
   getRubberHealth: (rubber: Rubber) => { percent: number; status: 'excellent' | 'good' | 'worn' | 'critical'; remainingHours: number };
 
   // Activities & Diary
+  savedLocations: string[];
+  rememberLocation: (location: string) => void;
   activities: ActivityRecord[];
   addActivity: (activity: Omit<ActivityRecord, 'id' | 'createdAt'>, localId?: string) => string;
   updateActivity: (id: string, updates: Partial<ActivityRecord>) => void;
@@ -201,6 +204,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     createdAt: s.date || new Date().toISOString()
   })) : defaultActivities);
 
+  const [savedLocations, setSavedLocations] = useState<string[]>(() => mergeLocationHistory(
+    saved?.savedLocations,
+    [...initialActivities].sort(compareOccurrenceDesc).map(activity => activity.location),
+    (saved?.trainingSessions || []).map((session: TrainingSession) => session.location),
+  ));
+  const rememberLocation = (location: string) => {
+    if (location.trim()) setSavedLocations(previous => mergeLocationHistory([location], previous));
+  };
   const [activities, setActivities] = useState<ActivityRecord[]>(initialActivities);
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>(saved?.trainingSessions || defaultSessions);
   const [matches, setMatches] = useState<MatchRecord[]>(saved?.matches || defaultMatches);
@@ -236,6 +247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       rackets,
       activeRacketId,
       activities,
+      savedLocations,
       trainingSessions,
       matches,
       doublesMatches,
@@ -266,6 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     rackets,
     activeRacketId,
     activities,
+    savedLocations,
     trainingSessions,
     matches,
     doublesMatches,
@@ -419,6 +432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   // Training Sessions
   const addTrainingSession = (sessionData: Omit<TrainingSession, 'id'>) => {
+    rememberLocation(sessionData.location);
     const id = `session-${Date.now()}`;
     const newSession: TrainingSession = { ...sessionData, id };
     setTrainingSessions(prev => [newSession, ...prev]);
@@ -515,6 +529,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   // Activities CRUD
   const addActivity = (activityData: Omit<ActivityRecord, 'id' | 'createdAt'>, localId?: string): string => {
+    rememberLocation(activityData.location);
     const id = localId || newActivityId();
     const newActivity: ActivityRecord = {
       ...activityData,
@@ -612,6 +627,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     const existing = activities.find(activity => activity.id === id);
     if (!existing) return;
     const updated = { ...existing, ...updates };
+    rememberLocation(updated.location);
     setActivities(prev => prev.map(activity => activity.id === id ? updated : activity));
     if (existing.category === 'tréning' || updated.category === 'tréning') {
       const session: TrainingSession = {
@@ -961,6 +977,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       rackets,
       activeRacketId,
       activities,
+      savedLocations,
       trainingSessions,
       matches,
       doublesMatches,
@@ -986,6 +1003,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       if (data.rackets) setRackets(data.rackets);
       if (data.activeRacketId !== undefined) setActiveRacketId(data.activeRacketId);
       if (data.activities) setActivities(data.activities);
+      if (data.savedLocations !== undefined || data.activities || data.trainingSessions) {
+        setSavedLocations(mergeLocationHistory(data.savedLocations, (data.activities || []).map((a: ActivityRecord) => a.location), (data.trainingSessions || []).map((a: TrainingSession) => a.location)));
+      }
       if (data.ignoredMerges) setIgnoredMerges(data.ignoredMerges);
       if (data.trainingSessions) setTrainingSessions(data.trainingSessions);
       if (data.matches) setMatches(data.matches);
@@ -1060,6 +1080,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         updateOpponent,
         getOpponent,
         sstzProfile,
+        rememberLocation,
+        savedLocations,
         localSaveError,
         matchMergeCandidates,
         resolveMatchMerge,

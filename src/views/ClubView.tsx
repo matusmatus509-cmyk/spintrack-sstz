@@ -1,3 +1,4 @@
+import { LocationField } from "../components/LocationField";
 import { PlayerAvatar } from "../components/PlayerAvatar";
 import {
   ShieldCheck,
@@ -45,7 +46,7 @@ function check(error: { message: string } | null) {
 
 export function ClubView() {
   const { user } = useCommunity();
-  const { activities } = useApp();
+  const { activities, rememberLocation } = useApp();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [rows, setRows] = useState<ClubActivity[]>([]);
@@ -232,6 +233,7 @@ export function ClubView() {
       p_scheduled: scheduled,
       p_tags: tags,
     });
+    if (scheduled) rememberLocation(location);
     setTags([]);
   };
   const entryPanel = (
@@ -731,14 +733,10 @@ export function ClubView() {
                             }
                           />
                         </label>
-                        <label>
-                          Miesto
-                          <input
-                            maxLength={200}
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                          />
-                        </label>
+                        <LocationField
+                          value={location}
+                          onChange={setLocation}
+                        />
                         <label>
                           Náplň tréningu
                           <textarea

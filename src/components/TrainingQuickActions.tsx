@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Repeat2, CheckCheck, Target } from "lucide-react";
+import { CheckCheck, Target } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import type { ActivityRecord } from "../types";
 import { AddActivityModal } from "./AddActivityModal";
@@ -7,10 +7,7 @@ import { trainingHasEnded } from "../utils/training";
 
 export function TrainingQuickActions() {
   const { activities } = useApp();
-  const [selection, setSelection] = useState<{
-    activity: ActivityRecord;
-    complete: boolean;
-  } | null>(null);
+  const [selection, setSelection] = useState<ActivityRecord | null>(null);
   const [today, setToday] = useState(() => new Date());
   useEffect(() => {
     const update = () => setToday(new Date());
@@ -29,9 +26,6 @@ export function TrainingQuickActions() {
           `${a.date}T${a.startTime || "00:00"}`,
         ) || b.createdAt.localeCompare(a.createdAt),
     );
-  const last = ordered.find(
-    (a) => !a.planned && new Date(`${a.date}T00:00:00`) <= today,
-  );
   const due = ordered.filter((a) => trainingHasEnded(a, today));
   const goal = ordered.find(
     (a) =>
@@ -39,15 +33,15 @@ export function TrainingQuickActions() {
       new Date(`${a.date}T00:00:00`) <= today &&
       a.reflection?.nextGoal,
   )?.reflection?.nextGoal;
-  if (!last && !due.length && !goal) return null;
+  if (!due.length && !goal) return null;
   return (
     <section className="practice-panel" aria-label="Rýchly zápis tréningu">
       <div className="practice-heading">
         <div>
           <span>TVOJ ĎALŠÍ KROK</span>
-          <h2>Tréning bez vypĺňania</h2>
+          <h2>Ďalší krok v tréningu</h2>
         </div>
-        <Repeat2 size={22} />
+        <Target size={22} />
       </div>
       {goal && (
         <div className="practice-callout">
@@ -58,19 +52,6 @@ export function TrainingQuickActions() {
           </div>
         </div>
       )}
-      {last && (
-        <button
-          className="btn-primary practice-wide"
-          onClick={() => setSelection({ activity: last, complete: false })}
-        >
-          <Repeat2 size={18} /> Zopakovať tréning
-        </button>
-      )}
-      {last && (
-        <p className="practice-muted">
-          Predvyplníme miesto, cvičenia, spoluhráčov aj raketu.
-        </p>
-      )}
       {due.map((a) => (
         <div className="practice-due" key={a.id}>
           <div>
@@ -80,10 +61,7 @@ export function TrainingQuickActions() {
               {a.durationMinutes} min
             </span>
           </div>
-          <button
-            className="btn-secondary"
-            onClick={() => setSelection({ activity: a, complete: true })}
-          >
+          <button className="btn-secondary" onClick={() => setSelection(a)}>
             <CheckCheck size={18} /> Absolvované
           </button>
         </div>
@@ -91,11 +69,8 @@ export function TrainingQuickActions() {
       <AddActivityModal
         isOpen={!!selection}
         onClose={() => setSelection(null)}
-        editActivity={selection?.complete ? selection.activity : null}
-        repeatActivity={
-          selection && !selection.complete ? selection.activity : null
-        }
-        completePlanned={selection?.complete}
+        editActivity={selection}
+        completePlanned
       />
     </section>
   );

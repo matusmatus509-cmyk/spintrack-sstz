@@ -85,7 +85,7 @@ Tabuľky `club_trainings` a `club_training_members` povoľujú čítanie iba org
 
 ## Rýchly denník a spoľahlivá synchronizácia
 
-Na hlavnej obrazovke, v denníku a kalendári sa dá zopakovať posledný absolvovaný tréning. Skopíruje sa miesto, cvičenia, spoluhráči a existujúca raketa; nový záznam začína dnes a súkromne, bez minulého vyhodnotenia. Starší plán sa dokončí cez **Absolvované** po jeho skončení. Bez zadaného začiatku sa ponúkne až na konci dňa.
+Pri novom zázname sa údaje z posledného tréningu nekopírujú. Použité miesta sa ukladajú do návrhov pod poľom **Miesto** a pri ďalšom zápise sa vyberú jedným ťuknutím. Nové miesto pribudne po uložení aktivity alebo klubového tréningu. Návrhy čerpajú aj zo starších záznamov a zostanú uložené aj po zmazaní aktivity; patria k príslušnému denníku a zálohe účtu. Starší plán sa dokončí cez **Absolvované** po jeho skončení. Bez zadaného začiatku sa ponúkne až na konci dňa.
 
 Tri nepovinné otázky pri dokončenej aktivite sa ukladajú súkromne. Najnovší cieľ z tréningu je viditeľný na hlavnej obrazovke aj v novom tréningu. Vyhodnotenie a mená spoluhráčov sa neposielajú do verejného zdieľania.
 
