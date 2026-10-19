@@ -60,30 +60,38 @@ const card=(id,date='24.10.2026')=>`<div class="card card-hover grd-trn__wrap"><
 const catalogue=(cards,total,pages)=>`${cards}<div>${total} turnajov</div><ul class="pagination"><a href="/turnaje?page=${pages}">last</a></ul>`;
 const response=html=>({text:async()=>html});
 const {collectTournamentCatalogue,createRecommendationService}=await import('../server/tournamentRecommendations.js');
-test('scans beyond 25 pages and past events, with at most three concurrent requests',async()=>{
- const visited=[]; let active=0,maxActive=0;
+test('only follows upcoming pages and stops on a mixed page without reading the archive',async()=>{
+ const visited=[];
  const result=await collectTournamentCatalogue(async url=>{
-  const page=Number(new URL(url).searchParams.get('page'));visited.push(page);active++;maxActive=Math.max(maxActive,active);
-  await new Promise(resolve=>setTimeout(resolve,1));active--;
-  return response(catalogue(card(`event-${page}`,page===27?'24.10.2026':'01.01.2025'),27,27));
+  const page=Number(new URL(url).searchParams.get('page'));visited.push(page);
+  assert.equal(new URL(url).searchParams.get('sorting'),'date-desc');
+  if(page>2)throw new Error('archive must not be requested');
+  return response(catalogue(page===1?card('a','25.10.2026'):card('b','24.10.2026')+card('today','19.10.2026')+card('old','18.10.2026'),1423,24));
  },'2026-10-19');
- assert.equal(result.scannedCount,27);assert.equal(result.pageCount,27);assert.equal(result.events.length,1);assert.equal(result.events[0].id,'event-27');assert.equal(visited.length,27);assert.equal(maxActive,3);
+ assert.deepEqual(visited,[1,2]);assert.equal(result.scannedCount,3);assert.equal(result.pageCount,2);assert.deepEqual(result.events.map(e=>e.id),['today','b','a']);
 });
-test('recovers duplicate date boundaries with another page size and deduplicates events',async()=>{
+test('no upcoming tournaments ends on the first page even with a large archive',async()=>{
+ let calls=0;
+ const result=await collectTournamentCatalogue(async()=>{calls++;return response(catalogue(card('old','18.10.2026'),1423,24));},'2026-10-19');
+ assert.equal(calls,1);assert.equal(result.scannedCount,0);assert.deepEqual(result.events,[]);
+});
+test('recovers duplicate future boundaries without scanning old pages',async()=>{
+ const visited=[];
  const result=await collectTournamentCatalogue(async url=>{
-  const u=new URL(url),size=u.searchParams.get('onpage'),page=u.searchParams.get('page');
-  return response(catalogue(card(size==='60'?'a':page==='1'?'a':'b'),2,2));
+  const u=new URL(url),size=u.searchParams.get('onpage'),page=Number(u.searchParams.get('page'));visited.push([size,page]);
+  assert.ok(page<=2);
+  return response(catalogue(size==='60'?card('a')+(page===2?card('old','18.10.2026'):''):card('a')+card('b')+card('old','18.10.2026'),1423,24));
  },'2026-10-19');
- assert.equal(result.scannedCount,2);assert.equal(result.pageCount,4);assert.deepEqual(result.events.map(e=>e.id),['a','b']);
+ assert.equal(result.scannedCount,2);assert.deepEqual(visited,[['60',1],['60',2],['48',1]]);
 });
-test('rejects failed or missing pages and reports incomplete unique coverage honestly',async()=>{
+test('rejects unreadable dates, missing event links, incorrect source sorting and failed upcoming pages',async()=>{
+ await assert.rejects(()=>collectTournamentCatalogue(async()=>response(catalogue(card('a').replace('href="/turnaj/a"','href="/invalid"'),1,1)),'2026-10-19'),/neúplné údaje/);
+ await assert.rejects(()=>collectTournamentCatalogue(async()=>response(catalogue(card('a','32.10.2026'),1,1)),'2026-10-19'),/nečitateľný dátum/);
+ await assert.rejects(()=>collectTournamentCatalogue(async()=>response(catalogue(card('old','18.10.2026')+card('a'),2,1)),'2026-10-19'),/poradie/);
  await assert.rejects(()=>collectTournamentCatalogue(async url=>{
   if(new URL(url).searchParams.get('page')==='2')throw new Error('offline');
-  return response(catalogue(card('a'),2,2));
+  return response(catalogue(card('a'),1423,24));
  },'2026-10-19'),/offline/);
- const partial=await collectTournamentCatalogue(async()=>response(catalogue(card('a'),2,2)),'2026-10-19');
- assert.equal(partial.missingCount,1);assert.equal(partial.scannedCount,1);assert.equal(partial.catalogueCount,2);
- await assert.rejects(()=>collectTournamentCatalogue(async()=>response(catalogue(card('a'),3,2)),'2026-10-19'),/neúplné/);
 });
 test('returns every suitable tournament, shares catalogue cache, and manual refresh scans anew',async()=>{
  let scans=0,rules=0;
@@ -93,11 +101,28 @@ test('returns every suitable tournament, shares catalogue cache, and manual refr
   const path=new URL(url).pathname;
   if(path.endsWith('/rebricky'))return response('<h2>Rebríčky</h2>Slovenský rebríček - Dorastenci');
   if(path.startsWith('/hraci/'))return response(profile);
-  if(path==='/turnaje'){scans++;await new Promise(resolve=>setTimeout(resolve,2));return response(catalogue(Array.from({length:12},(_,i)=>card(`event-${i}`)).join(''),12,1));}
+  if(path==='/turnaje'){scans++;await new Promise(resolve=>setTimeout(resolve,2));const page=Number(new URL(url).searchParams.get('page'));const offset=(page-1)*60;return response(catalogue(Array.from({length:Math.min(60,137-offset)},(_,i)=>card(`event-${offset+i}`)).join('')+(page===3?card('old','18.10.2026'):''),1423,24));}
   return response(detail);
  }});
  const [first,second]=await Promise.all([service('123'),service('456')]);
- assert.equal(first.tournaments.length,12);assert.equal(second.tournaments.length,12);assert.equal(first.scannedCount,12);assert.equal(scans,1);assert.equal(rules,12);
- await service('123');assert.equal(scans,1);
- await service('123',{refresh:true});assert.equal(scans,2);assert.equal(rules,24);
+ assert.equal(first.tournaments.length,137);assert.equal(second.tournaments.length,137);assert.equal(first.scannedCount,137);assert.equal(scans,3);assert.equal(rules,137);
+ await service('123');assert.equal(scans,3);
+ await service('123',{refresh:true});assert.equal(scans,6);assert.equal(rules,274);
+});
+
+test('shared deadline covers the profile, list, categories and propositions and permits retry',async()=>{
+ const profile='<h2>Základné informácie</h2>'+['Hráč','Test Player','Rok narodenia','2011','Licencia','30.06.2031'].map(v=>`<p>${v}</p>`).join('');
+ const ranks='<h2>Rebríčky</h2>Slovenský rebríček - Dorastenci';
+ const detail='<div class="card-header"><h5>Dorastenci</h5></div><p><span>Veková kategória:</span>Dorastenci</p><p><span>Typ:</span>singles</p><p><span>Pohlavie:</span>Muži</p>';
+ for(const phase of ['profile','list','categories','rules']) {
+  let blocked=true,aborted=false;
+  const stall=signal=>new Promise((resolve,reject)=>{signal.addEventListener('abort',()=>{aborted=true;reject(signal.reason);},{once:true});});
+  const service=createRecommendationService({timeoutMs:250,now:()=>new Date('2026-10-19T09:00:00Z'),readRules:async(_url,{signal})=>blocked&&phase==='rules'?stall(signal):'',readSource:async(url,{signal})=>{
+   const path=new URL(url).pathname;
+   if(blocked&&((phase==='profile'&&path==='/hraci/123')||(phase==='list'&&path==='/turnaje')||(phase==='categories'&&path==='/turnaj/a')))return stall(signal);
+   return response(path.endsWith('/rebricky')?ranks:path.startsWith('/hraci/')?profile:path==='/turnaje'?catalogue(card('a')+card('old','18.10.2026'),1423,24):detail);
+  }});
+  const start=performance.now();await assert.rejects(()=>service('123'),/do 15 sekúnd/);assert.ok(performance.now()-start<500,phase);assert.equal(aborted,true,phase);
+  blocked=false;const recovered=await service('123',{refresh:true});assert.equal(recovered.tournaments.length,1,phase);
+ }
 });

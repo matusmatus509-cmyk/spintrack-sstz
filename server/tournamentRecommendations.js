@@ -4,10 +4,10 @@ const PORTAL = 'https://turnaje.sstz.sk';
 const norm = s => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const text = s => String(s || '').replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/<style\b[\s\S]*?<\/style>/gi, '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&#0*39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
 const iso = s => { const m = s?.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/); if (!m) return ''; const result = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; const parsed = new Date(`${result}T12:00:00Z`); return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10) === result ? result : ''; };
-async function load(url) {
+async function load(url, {signal} = {}) {
   const u = new URL(url);
   if (!['turnaje.sstz.sk','www.sstz.sk'].includes(u.hostname) || u.protocol !== 'https:') throw new Error('Neplatný zdroj SSTZ.');
-  const response = await fetch(u, {redirect:'error', headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36', 'Accept-Language':'sk-SK'}, signal:AbortSignal.timeout(20000)});
+  const response = await fetch(u, {redirect:'error', headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36', 'Accept-Language':'sk-SK'}, signal:signal ? AbortSignal.any([signal,AbortSignal.timeout(14000)]) : AbortSignal.timeout(14000)});
   if (!response.ok) throw new Error(`SSTZ neodpovedá (HTTP ${response.status}). Skús obnoviť turnaje neskôr.`);
   return response;
 }
@@ -72,8 +72,10 @@ export function eligibleCategories(event, player, categories, rules = '', today 
     return min !== null && player.birthYear >= min;
   }).map(category => ({...category, reason:`Ročník ${player.birthYear} · ${category.label} · otvorená účasť`, minimumBirthYear:minimumYear(category.age,event.date,rules)}));
 }
-async function propositions(url) {
-  const response = await load(url);
+async function propositions(url, options = {}, depth = 0) {
+  options.signal?.throwIfAborted();
+  if (depth > 2) throw new Error("Nečitateľné propozície turnaja.");
+  const response = await load(url, options);
   if (new URL(url).pathname.endsWith('.pdf')) {
     if (Number(response.headers.get('content-length')) > 8_000_000) throw new Error('Príliš veľké propozície.');
     const bytes = new Uint8Array(await response.arrayBuffer());
@@ -85,111 +87,134 @@ async function propositions(url) {
     try {
       if (doc.numPages > 20) throw new Error('Príliš dlhé propozície.');
       const lines=[];
-      for(let i=1;i<=doc.numPages;i++) { const page=await doc.getPage(i); const content=await page.getTextContent(); lines.push(content.items.map(item=>item.str+(item.hasEOL?'\n':' ')).join('')); }
+      for(let i=1;i<=doc.numPages;i++) { options.signal?.throwIfAborted(); const page=await doc.getPage(i); const content=await page.getTextContent(); lines.push(content.items.map(item=>item.str+(item.hasEOL?'\n':' ')).join('')); }
       return lines.join('\n');
     } finally {await task.destroy();}
   }
   const html=await response.text();
   const pdf=html.match(/href="([^"?#]+\.pdf)"/);
-  return pdf ? propositions(new URL(pdf[1],PORTAL).href) : text(html.split('min-vh-100')[1] || '');
+  return pdf ? propositions(new URL(pdf[1],PORTAL).href, options, depth+1) : text(html.split('min-vh-100')[1] || '');
 }
-// Scan the whole catalogue; older or invalid dates never terminate pagination.
-export async function collectTournamentCatalogue(readPage = load, today = new Date().toLocaleDateString('sv-SE', {timeZone:'Europe/Bratislava'})) {
-  const firstUrl = `${PORTAL}/turnaje?onpage=60&sorting=date-desc&page=1`;
-  const parse = html => {
-    const cards = html.split(/<div class="card card-hover grd-trn__wrap[^>]*>/).slice(1);
-    const events = parseUpcoming(html, today);
-    const ids = cards.map(block => block.match(/href="\/turnaj\/([^"?#/]+)"[^>]*>\s*<h3[^>]*>/)?.[1]);
-    if (ids.some(id => !id)) throw new Error('SSTZ vrátilo nečitateľný turnaj. Úplnosť zoznamu sa nedá potvrdiť.');
-    const totals = [...html.matchAll(/>([\d\s\u00a0]+)\s+turnaj(?:ov|e)?\s*</gi)].map(m => Number(m[1].replace(/\s/g, '')));
-    if (new Set(totals).size > 1) throw new Error('SSTZ zmenilo počet turnajov počas načítania. Skús obnoviť zoznam.');
-    const pages = [...html.matchAll(/<ul\b[^>]*class="[^"]*pagination[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi)].flatMap(m => [...m[1].matchAll(/href="([^"]+)"/g)].flatMap(link => {
-      try {
-        const url = new URL(link[1].replace(/&amp;/g, '&'), PORTAL);
-        const page = Number(url.searchParams.get('page') || 1);
-        return url.origin === PORTAL && url.pathname === '/turnaje' && Number.isSafeInteger(page) && page > 0 ? [page] : [];
-      } catch { return []; }
-    }));
-    const unreadable = cards.flatMap((block,index) => !iso(text(block.match(/icon-calendar[\s\S]*?<\/svg>([\s\S]*?)<\/div>/)?.[1])) ? [ids[index]] : []);
-    return {ids, events, total:totals[0] ?? null, lastPage:Math.max(1, ...pages), unreadable};
-  };
-  const scan = async (pageSize, sorting = "date-desc") => {
-    const startUrl = new URL(firstUrl); startUrl.searchParams.set('onpage', String(pageSize)); startUrl.searchParams.set('sorting', sorting);
-    const first = parse(await (await readPage(startUrl.href)).text());
-    const pageCount = Math.max(first.lastPage, first.total == null ? 1 : Math.ceil(first.total / pageSize));
-    if (pageCount > 1000 || (pageCount > 1 && first.total == null)) throw new Error('SSTZ neposkytlo overiteľné stránkovanie celého zoznamu.');
-    const rows = [first];
-    for (let page = 2; page <= pageCount; page += 3) {
-      const batch = await Promise.all(Array.from({length:Math.min(3, pageCount-page+1)}, async (_, index) => {
-        const url = new URL(startUrl); url.searchParams.set('page', String(page+index));
-        const result = parse(await (await readPage(url.href)).text());
-        if (result.total !== first.total || result.lastPage > pageCount) throw new Error('Počet turnajov sa počas načítania zmenil. Obnov zoznam.');
-        if (!result.ids.length) throw new Error('SSTZ vrátilo prázdnu stranu pred koncom zoznamu.');
-        return result;
+// Read the upcoming section first and stop at the upcoming/past boundary. The
+// published total includes the archive and must never drive this scan or its UI.
+export async function collectTournamentCatalogue(readPage = load, today = new Date().toLocaleDateString('sv-SE', {timeZone:'Europe/Bratislava'}), {signal} = {}) {
+  const events = new Map();
+  let pageCount = 0;
+  let duplicate = false;
+  const scan = async pageSize => {
+    let pastSeen = false;
+    for (let page = 1; ; page++) {
+      signal?.throwIfAborted();
+      const url = new URL('/turnaje', PORTAL);
+      url.search = new URLSearchParams({onpage:String(pageSize),sorting:'date-desc',page:String(page)}).toString();
+      const html = await (await readPage(url.href, {signal})).text();
+      pageCount++;
+      const upcoming = parseUpcoming(html, today);
+      const cards = html.split(/<div class="card card-hover grd-trn__wrap[^>]*>/).slice(1);
+      const dates = cards.map(block => iso(text(block.match(/icon-calendar[\s\S]*?<\/svg>([\s\S]*?)<\/div>/)?.[1])));
+      if (dates.some(date => !date)) throw new Error('SSTZ vrátilo nečitateľný dátum. Nadchádzajúce turnaje sa nedajú úplne overiť.');
+      for (const date of dates) {
+        // SSTZ pins upcoming events first (ascending), followed by its archive.
+        if (date < today) pastSeen = true;
+        else if (pastSeen) throw new Error('SSTZ zmenilo poradie termínov. Skús obnoviť nadchádzajúce turnaje.');
+      }
+      if (upcoming.length !== dates.filter(date=>date >= today).length) throw new Error('SSTZ vrátilo neúplné údaje nadchádzajúceho turnaja.');
+      for (const event of upcoming) {
+        if (pageSize === 60 && events.has(event.id)) duplicate = true;
+        events.set(event.id,event);
+      }
+      // A mixed boundary page is normal: never follow it into the archive.
+      if (dates.some(date => date < today)) return;
+      const pages = [...html.matchAll(/<ul\b[^>]*class="[^"]*pagination[^"]*"[^>]*>([\s\S]*?)<\/ul>/gi)].flatMap(m => [...m[1].matchAll(/href="([^"]+)"/g)].flatMap(link => {
+        try {
+          const next = new URL(link[1].replace(/&amp;/g,'&'),PORTAL);
+          const n = Number(next.searchParams.get('page') || 1);
+          return next.origin === PORTAL && next.pathname === '/turnaje' && Number.isSafeInteger(n) && n > page ? [n] : [];
+        } catch { return []; }
       }));
-      rows.push(...batch);
+      if (!pages.length) return;
+      if (!cards.length) throw new Error('SSTZ vrátilo prázdnu stranu pred koncom nadchádzajúcich turnajov.');
     }
-    if (first.total !== null && rows.reduce((sum,row) => sum+row.ids.length,0) !== first.total) throw new Error('SSTZ vrátilo neúplné stránky zoznamu.');
-    return {rows, total:first.total, pageCount};
   };
-  const first = await scan(60);
-  let rows = first.rows;
-  let pageCount = first.pageCount;
-  let ids = new Set(rows.flatMap(row => row.ids));
-  // Equal-date ordering on SSTZ can repeat boundary rows. A different supported
-  // page size recovers those boundaries; verify unique coverage before claiming success.
-  if (first.total !== null && ids.size !== first.total) {
-    const recovery = await scan(48, 'date-asc');
-    if (recovery.total !== first.total) throw new Error('Počet turnajov sa počas načítania zmenil. Obnov zoznam.');
-    rows = [...rows,...recovery.rows];
-    pageCount += recovery.pageCount;
-    ids = new Set(rows.flatMap(row => row.ids));
-  }
-  const missingCount = first.total === null ? 0 : Math.max(0, first.total - ids.size);
-  const events = [...new Map(rows.flatMap(row => row.events).map(event => [event.id,event])).values()];
-  return {events,scannedCount:ids.size,catalogueCount:first.total ?? ids.size,missingCount,pageCount,unreadableCount:new Set(rows.flatMap(row => row.unreadable)).size};
+  await scan(60);
+  if (duplicate) await scan(48);
+  return {events:[...events.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)),scannedCount:events.size,pageCount,unreadableCount:0};
 }
 
-export function createRecommendationService({readSource = load, readRules = propositions, now = () => new Date()} = {}) {
+const timeoutMessage = 'SSTZ nestihlo overiť turnaje do 15 sekúnd. Skús obnoviť zoznam.';
+async function withinDeadline(operation, milliseconds) {
+  const controller = new AbortController();
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(()=>operation(controller.signal)),
+      new Promise((_,reject)=>{timer=setTimeout(()=>{const error=new Error(timeoutMessage);controller.abort(error);reject(error);},milliseconds);}),
+    ]);
+  } finally { clearTimeout(timer); controller.abort(); }
+}
+
+export function createRecommendationService({readSource = load, readRules = propositions, now = () => new Date(), timeoutMs = 14000} = {}) {
   let cache;
   let inFlight;
+  const snapshot = (today, refresh) => {
+    if (!refresh && cache?.today === today && now().getTime()-cache.at <= 300000) return Promise.resolve(cache);
+    if (inFlight?.today === today) return inFlight.promise;
+    const job = {today,promise:null};
+    job.promise = withinDeadline(async signal => {
+      const catalogue = await collectTournamentCatalogue(readSource,today,{signal});
+      const details = [];
+      let unavailable = 0;
+      let cursor = 0;
+      // Bounded parallelism keeps the complete upcoming set fast without
+      // dropping later matches or limiting the number of recommendations.
+      await Promise.all(Array.from({length:Math.min(6,catalogue.events.length)},async()=>{
+        while (cursor < catalogue.events.length) {
+          signal.throwIfAborted();
+          const event = catalogue.events[cursor++];
+          if (!event.registrationUrl) continue;
+          try {
+            const [detail,rules] = await Promise.all([
+              readSource(event.url,{signal}).then(response=>response.text()),
+              readRules(event.propositionUrl,{signal}),
+            ]);
+            signal.throwIfAborted();
+            const categories = parseCategories(detail);
+            if (!categories.length) throw new Error('Kategórie turnaja sa nedajú overiť.');
+            details.push({...event,categories,rules});
+          } catch (error) {
+            signal.throwIfAborted();
+            unavailable++;
+            console.warn(`SSTZ turnaj ${event.id}: ${error.message}`);
+          }
+        }
+      }));
+      signal.throwIfAborted();
+      const result = {today,at:now().getTime(),details,unavailable,total:catalogue.events.length,scannedCount:catalogue.scannedCount,pageCount:catalogue.pageCount,catalogueCheckedAt:now().toISOString()};
+      cache = result;
+      return result;
+    }, Math.max(1,timeoutMs-100)).finally(()=>{if(inFlight===job)inFlight=null;});
+    inFlight = job;
+    return job.promise;
+  };
   return async function recommendations(playerId, {refresh = false} = {}) {
     if (!/^\d{1,10}$/.test(playerId)) throw new Error('Najprv pripoj svoj profil hráča zo sstz.sk v sekcii Turnaje.');
-    const today=now().toLocaleDateString('sv-SE',{timeZone:'Europe/Bratislava'});
-    const [profile,ranks]=await Promise.all([readSource(`https://www.sstz.sk/hraci/${playerId}`),readSource(`https://www.sstz.sk/hraci/${playerId}/rebricky`)]);
-    const player=parsePlayerEligibility(await profile.text(),await ranks.text());
-    if (!player.name || !player.birthYear) throw new Error('SSTZ profil neobsahuje overiteľný ročník hráča.');
-    if (refresh || !cache || cache.today !== today || now().getTime()-cache.at>300000) {
-      if (!inFlight || inFlight.today !== today) {
-        const job = {today, promise:null};
-        job.promise = (async () => {
-          const catalogue = await collectTournamentCatalogue(readSource, today);
-          const details=[]; let unavailable=catalogue.unreadableCount;
-          for (let i=0;i<catalogue.events.length;i+=3) {
-            await Promise.all(catalogue.events.slice(i,i+3).map(async event=>{
-              try {
-                const detail=await readSource(event.url);
-                const categories=parseCategories(await detail.text());
-                if (!categories.length) throw new Error('Kategórie turnaja sa nedajú overiť.');
-                const rules=await readRules(event.propositionUrl);
-                details.push({...event,categories,rules});
-              } catch (error) {unavailable++; console.warn(`SSTZ turnaj ${event.id}: ${error.message}`);}
-            }));
-          }
-          const result = {today,at:now().getTime(),details,unavailable,total:catalogue.events.length,scannedCount:catalogue.scannedCount,pageCount:catalogue.pageCount,catalogueCount:catalogue.catalogueCount,missingCount:catalogue.missingCount,catalogueCheckedAt:now().toISOString()};
-          cache=result;
-          return result;
-        })().finally(() => {if(inFlight===job) inFlight=null;});
-        inFlight=job;
-      }
-      await inFlight.promise;
-    }
-    const nowTime=now().toLocaleTimeString('sv-SE',{timeZone:'Europe/Bratislava',hour12:false});
-    const tournaments=cache.details.flatMap(event=>{
-      const categories=eligibleCategories(event,player,event.categories,event.rules,today,nowTime);
-      return categories.length ? [{id:event.id,title:event.title,date:event.date,url:event.url,registrationUrl:event.registrationUrl,propositionUrl:event.propositionUrl,categories}] : [];
-    }).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
-    return {player,tournaments,checkedAt:now().toISOString(),catalogueCheckedAt:cache.catalogueCheckedAt,scannedCount:cache.scannedCount,pageCount:cache.pageCount,catalogueCount:cache.catalogueCount,missingCount:cache.missingCount,checkedCount:cache.total,unavailableCount:cache.unavailable,sourceUrl:PORTAL+'/turnaje',note:'Zobrazujeme všetky overené vhodné mládežnícke kategórie s otvorenou účasťou podľa ročníka, pohlavia a platnosti licencie. Pri každom turnaji sa kontrolujú propozície. Uzavreté regionálne, školské a kvalifikačné súťaže ani neoverené podmienky sa neodporúčajú. Pridanie do kalendára nie je registrácia.'};
+    return withinDeadline(async signal => {
+      const today=now().toLocaleDateString('sv-SE',{timeZone:'Europe/Bratislava'});
+      const [profile,ranks,source]=await Promise.all([
+        readSource(`https://www.sstz.sk/hraci/${playerId}`,{signal}).then(response=>response.text()),
+        readSource(`https://www.sstz.sk/hraci/${playerId}/rebricky`,{signal}).then(response=>response.text()),
+        snapshot(today,refresh),
+      ]);
+      signal.throwIfAborted();
+      const player=parsePlayerEligibility(profile,ranks);
+      if (!player.name || !player.birthYear) throw new Error('SSTZ profil neobsahuje overiteľný ročník hráča.');
+      const nowTime=now().toLocaleTimeString('sv-SE',{timeZone:'Europe/Bratislava',hour12:false});
+      const tournaments=source.details.flatMap(event=>{
+        const categories=eligibleCategories(event,player,event.categories,event.rules,today,nowTime);
+        return categories.length ? [{id:event.id,title:event.title,date:event.date,url:event.url,registrationUrl:event.registrationUrl,propositionUrl:event.propositionUrl,categories}] : [];
+      }).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+      return {player,tournaments,checkedAt:now().toISOString(),catalogueCheckedAt:source.catalogueCheckedAt,scannedCount:source.scannedCount,pageCount:source.pageCount,checkedCount:source.total,unavailableCount:source.unavailable,sourceUrl:PORTAL+'/turnaje?sorting=date-desc',note:'Kontrolujeme iba nadchádzajúce turnaje SSTZ. Zobrazujeme všetky overené vhodné mládežnícke kategórie s otvorenou účasťou podľa ročníka, pohlavia a platnosti licencie. Pri každom turnaji sa kontrolujú propozície. Uzavreté regionálne, školské a kvalifikačné súťaže ani neoverené podmienky sa neodporúčajú. Pridanie do kalendára nie je registrácia.'};
+    },timeoutMs);
   };
 }
 export const recommendations = createRecommendationService();

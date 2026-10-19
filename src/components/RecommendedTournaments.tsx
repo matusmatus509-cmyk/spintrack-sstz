@@ -38,8 +38,6 @@ interface Result {
   checkedAt: string;
   catalogueCheckedAt?: string;
   scannedCount?: number;
-  catalogueCount?: number;
-  missingCount?: number;
   pageCount?: number;
   checkedCount: number;
   unavailableCount: number;
@@ -80,6 +78,13 @@ export function RecommendedTournaments() {
     }
     const controller = new AbortController();
     setLoading(true);
+    const timer = window.setTimeout(() => {
+      controller.abort();
+      setError(
+        "SSTZ nestihlo overiť turnaje do 15 sekúnd. Skús obnoviť zoznam.",
+      );
+      setLoading(false);
+    }, 14500);
     fetch(
       `/api/sstz/tournaments/recommendations/${encodeURIComponent(tournamentProfile.id)}${refresh ? "?refresh=1" : ""}`,
       { signal: controller.signal, cache: "no-store" },
@@ -108,9 +113,13 @@ export function RecommendedTournaments() {
           );
       })
       .finally(() => {
+        window.clearTimeout(timer);
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [tournamentProfile?.id, refresh]);
   const savedFor = (id: string) =>
     activities.find((activity) => activity.sourceEventId === id);
@@ -172,8 +181,8 @@ export function RecommendedTournaments() {
         )}
       </header>
       <p className="recommendations-intro">
-        Prejdeme celý zoznam SSTZ a ponúkneme všetky turnaje s overenou vhodnou
-        kategóriou pre tvoj profil.
+        Pozrieme iba nadchádzajúce turnaje SSTZ a ponúkneme všetky overené
+        vhodné možnosti pre tvoj profil.
       </p>
       {!tournamentProfile && (
         <div className="recommendations-empty">
@@ -195,11 +204,13 @@ export function RecommendedTournaments() {
           <RefreshCw size={19} className="sync-spinner" />
           <div>
             <strong>
-              {data ? "Aktualizujem celý zoznam…" : "Hľadám tvoje turnaje…"}
+              {data
+                ? "Aktualizujem nadchádzajúce turnaje…"
+                : "Hľadám tvoje turnaje…"}
             </strong>
             <p>
-              Prechádzam všetky stránky a overujem kategórie aj propozície. Môže
-              to chvíľu trvať.
+              Overujem kategórie a propozície nadchádzajúcich turnajov.
+              Načítanie trvá najviac 15 sekúnd.
             </p>
           </div>
         </div>
@@ -243,26 +254,19 @@ export function RecommendedTournaments() {
                   "sk-SK",
                 )}
               </strong>
-              <span>prejdených turnajov</span>
+              <span>nadchádzajúcich turnajov</span>
             </div>
             <div>
-              <strong>{data.checkedCount}</strong>
-              <span>nadchádzajúcich</span>
+              <strong>
+                {Math.max(0, data.checkedCount - data.unavailableCount)}
+              </strong>
+              <span>overených</span>
             </div>
             <div>
               <strong>{data.tournaments.length}</strong>
               <span>vhodných pre teba</span>
             </div>
           </div>
-          {!!data.missingCount && (
-            <p className="recommendations-warning" role="status">
-              Prešli sme všetky stránky. SSTZ však opakuje niektoré záznamy:
-              overili sme {data.scannedCount} z {data.catalogueCount}{" "}
-              jedinečných turnajov. Pri {data.missingCount} turnajoch sa úplnosť
-              nedá potvrdiť ani po opakovanej kontrole. Zoznam môže byť neúplný;
-              skús ho neskôr obnoviť.
-            </p>
-          )}
           {data.unavailableCount > 0 && (
             <p className="recommendations-warning">
               Pri {data.unavailableCount} turnajoch sa nepodarilo overiť všetky
