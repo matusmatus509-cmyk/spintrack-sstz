@@ -348,6 +348,7 @@ export function CommunityView({
   };
   const [feedScope, setFeedScope] = useState<"all" | "friends">("all");
   const [query, setQuery] = useState("");
+  const [feedQuery, setFeedQuery] = useState("");
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [searched, setSearched] = useState(false);
   const [busy, setBusy] = useState("");
@@ -448,6 +449,17 @@ export function CommunityView({
     .filter(
       (row) =>
         row.visibility !== "private" &&
+        `${row.author.display_name} ${row.payload.title || ""} ${row.payload.location || ""} ${(row.payload.focusDrills || []).join(" ")}`
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .toLocaleLowerCase("sk")
+          .includes(
+            feedQuery
+              .normalize("NFD")
+              .replace(/\p{Diacritic}/gu, "")
+              .toLocaleLowerCase("sk")
+              .trim(),
+          ) &&
         (feedScope === "all" || friendsIds.has(row.owner_id)),
     );
   const myActivities = [...activities].sort(compareOccurrenceDesc);
@@ -701,31 +713,45 @@ export function CommunityView({
       )}
       {(tab === "feed" || tab === "mine") && (
         <>
-          {(incoming.length > 0 || pending.length > 0) && (
-            <button
-              className="social-attention"
-              onClick={() =>
-                selectTab(pending.length ? "invitations" : "friends")
-              }
-            >
-              <span className="social-attention-icon">
-                <Inbox size={20} />
-              </span>
-              <span>
-                <strong>
-                  {pending.length
-                    ? `Nové pozvánky: ${pending.length}`
-                    : `Žiadosti o priateľstvo: ${incoming.length}`}
-                </strong>
-                <small>
-                  {pending.length
-                    ? "Pozri, kto ťa pozýva k stolu."
-                    : "Niekto sa s tebou chce spojiť."}
-                </small>
-              </span>
-              <ChevronRight size={19} />
-            </button>
-          )}
+          <div className="social-pending-list">
+            {(
+              [
+                {
+                  count: pending.length,
+                  tab: "invitations",
+                  title: "Nové pozvánky",
+                  hint: "Pozri, kto ťa pozýva k stolu.",
+                  Icon: Inbox,
+                },
+                {
+                  count: incoming.length,
+                  tab: "friends",
+                  title: "Žiadosti o priateľstvo",
+                  hint: "Niekto sa s tebou chce spojiť.",
+                  Icon: Users,
+                },
+              ] as const
+            )
+              .filter((item) => item.count > 0)
+              .map((item) => (
+                <button
+                  className="social-attention"
+                  key={item.tab}
+                  onClick={() => selectTab(item.tab)}
+                >
+                  <span className="social-attention-icon">
+                    <item.Icon size={20} />
+                  </span>
+                  <span>
+                    <strong>
+                      {item.title}: {item.count}
+                    </strong>
+                    <small>{item.hint}</small>
+                  </span>
+                  <ChevronRight size={19} />
+                </button>
+              ))}
+          </div>
           <div className="social-section-intro">
             <h2>Zo života hráčov</h2>
             <p>Tréningy, zápasy a pokroky vašej partie.</p>
@@ -787,11 +813,42 @@ export function CommunityView({
       {tab === "clubs" && <ClubView key={account.user.id} />}
       {tab === "feed" && (
         <>
+          <label className="social-search-field">
+            <Search size={18} />
+            <input
+              aria-label="Hľadať v aktivitách komunity"
+              placeholder="Hráč, miesto alebo tréning"
+              value={feedQuery}
+              onChange={(event) => setFeedQuery(event.target.value)}
+            />
+            {feedQuery && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setFeedQuery("")}
+              >
+                Zrušiť
+              </button>
+            )}
+          </label>
+          {feedQuery && (
+            <p role="status" className="practice-muted">
+              Nájdené aktivity: {feed.length}
+            </p>
+          )}
           {!feed.length && !account.socialLoading && (
             <section className="glass-panel community-empty">
               <Globe size={26} />
-              <h2>Zatiaľ žiadne aktivity</h2>
-              <p>Pridaj si priateľov alebo zdieľaj prvý tréning.</p>
+              <h2>
+                {feedQuery
+                  ? "Nenašli sme žiadnu aktivitu"
+                  : "Zatiaľ žiadne aktivity"}
+              </h2>
+              <p>
+                {feedQuery
+                  ? "Skús iné meno, miesto alebo vyber všetky aktivity."
+                  : "Pridaj si priateľov alebo zdieľaj prvý tréning."}
+              </p>
               <button
                 className="btn-secondary"
                 onClick={() => selectTab("friends")}

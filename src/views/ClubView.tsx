@@ -15,6 +15,8 @@ import {
   ChevronRight,
   Settings2,
   MessageSquare,
+  MapPin,
+  Clock3,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCommunity } from "../context/CommunityContext";
@@ -62,12 +64,31 @@ export function ClubView() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
+  const composerRef = useRef<HTMLDetailsElement>(null);
+  const inviteRef = useRef<HTMLDetailsElement>(null);
+  const [quickTarget, setQuickTarget] = useState<"compose" | "invite" | null>(
+    null,
+  );
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [revision, setRevision] = useState(0);
   const [limit, setLimit] = useState(30);
   const [past, setPast] = useState(false);
   const [mode, setMode] = useState<"schedule" | "activities" | "members">(
     "schedule",
   );
+  useEffect(() => {
+    if (!quickTarget || loading) return;
+    const target =
+      quickTarget === "invite" ? inviteRef.current : composerRef.current;
+    if (target) {
+      target.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target
+        .querySelector<HTMLElement>("input, select, button")
+        ?.focus({ preventScroll: true });
+      setQuickTarget(null);
+    }
+  }, [quickTarget, mode, loading]);
   const [tags, setTags] = useState<string[]>([]);
   const [activityId, setActivityId] = useState("");
   const [title, setTitle] = useState("Spoločný tréning");
@@ -111,10 +132,14 @@ export function ClubView() {
             ? postQuery.lt("activity_date", calendarDate(new Date()))
             : postQuery.gte("activity_date", calendarDate(new Date()));
         const [posts, codes] = await Promise.all([
-          postQuery
-            .order("activity_date", { ascending: mode === "schedule" && !past })
-            .order("id")
-            .limit(limit),
+          mode === "members"
+            ? Promise.resolve({ data: [], error: null })
+            : postQuery
+                .order("activity_date", {
+                  ascending: mode === "schedule" && !past,
+                })
+                .order("id")
+                .limit(limit),
           supabase
             .from("club_invite_codes")
             .select("code")
@@ -139,6 +164,7 @@ export function ClubView() {
         setNotes(comments.data as unknown as ClubNote[]);
         setCode(codes.data?.code || "");
         setError("");
+        setUpdatedAt(new Date());
       } catch (e) {
         if (active) setError(communityError(e));
       } finally {
@@ -187,6 +213,25 @@ export function ClubView() {
   const roster = members.filter((m) => m.club_id === selected);
   const myRole = roster.find((m) => m.user_id === user?.id)?.role;
   const coach = myRole === "owner" || myRole === "coach";
+  const nextTraining =
+    mode === "schedule" && !past
+      ? [...rows]
+          .filter(
+            (row) =>
+              new Date(
+                `${row.activity_date}T${row.payload.startTime || "23:59"}`,
+              ).getTime() +
+                (row.payload.durationMinutes || 0) * 60000 >
+              Date.now(),
+          )
+          .sort(
+            (a, b) =>
+              -compareOccurrenceDesc(
+                { id: a.id, ...a.payload },
+                { id: b.id, ...b.payload },
+              ),
+          )[0]
+      : undefined;
   const tagPicker = (
     <fieldset className="club-tags">
       <legend>Označiť členov (voliteľné)</legend>
@@ -409,6 +454,44 @@ export function ClubView() {
             </button>
           </header>
           <div
+            className="club-quick-actions"
+            role="group"
+            aria-label="Rýchle akcie klubu"
+          >
+            <button
+              className="btn-primary"
+              disabled={busy}
+              onClick={() => {
+                setMode(coach ? "schedule" : "activities");
+                setPast(false);
+                setQuickTarget("compose");
+              }}
+            >
+              <Plus size={17} />
+              {coach ? "Nový tréning" : "Zdieľať aktivitu"}
+            </button>
+            {myRole === "owner" && (
+              <button
+                className="btn-secondary"
+                disabled={busy}
+                onClick={() => {
+                  setMode("members");
+                  setQuickTarget("invite");
+                }}
+              >
+                <Users size={17} />
+                Pozvať hráčov
+              </button>
+            )}
+          </div>
+          <p className="club-update-time" role="status">
+            {loading
+              ? "Obnovujem klub…"
+              : updatedAt
+                ? `Aktualizované ${updatedAt.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" })}`
+                : ""}
+          </p>
+          <div
             className="social-segments club-mode-nav"
             role="group"
             aria-label="Sekcie klubu"
@@ -435,10 +518,64 @@ export function ClubView() {
               </button>
             ))}
           </div>
+          {nextTraining && !loading && (
+            <section
+              className="club-next-training"
+              aria-label="Najbližšie v klube"
+            >
+              <div className="club-next-top">
+                <span>
+                  <CalendarDays size={15} /> NAJBLIŽŠIE V KLUBE
+                </span>
+                <span>
+                  {new Date(
+                    `${nextTraining.activity_date}T12:00:00`,
+                  ).toLocaleDateString("sk-SK", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
+              </div>
+              <p className="club-next-title">
+                {nextTraining.payload.title || "Spoločný tréning"}
+              </p>
+              <div className="club-next-meta">
+                {nextTraining.payload.startTime && (
+                  <span>
+                    <Clock3 size={15} />
+                    {nextTraining.payload.startTime.slice(0, 5)}
+                    {nextTraining.payload.durationMinutes
+                      ? ` · ${nextTraining.payload.durationMinutes} min`
+                      : ""}
+                  </span>
+                )}
+                {nextTraining.payload.location && (
+                  <span>
+                    <MapPin size={15} />
+                    {nextTraining.payload.location}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById(`club-post-${nextTraining.id}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                Zobraziť tréning <ChevronRight size={17} />
+              </button>
+            </section>
+          )}
           {mode === "members" ? (
             <>
               {myRole === "owner" && (
-                <details className="glass-panel community-card club-invite-card">
+                <details
+                  ref={inviteRef}
+                  className="glass-panel community-card club-invite-card"
+                >
                   <summary>
                     <span className="social-summary-icon">
                       <Users size={19} />
@@ -661,7 +798,10 @@ export function ClubView() {
                 </div>
               )}
               {(mode === "activities" || coach) && (
-                <details className="glass-panel community-card club-composer">
+                <details
+                  ref={composerRef}
+                  className="glass-panel community-card club-composer"
+                >
                   <summary>
                     <span className="social-summary-icon">
                       <Plus size={20} />
@@ -811,7 +951,11 @@ export function ClubView() {
                       ),
                 )
                 .map((row) => (
-                  <article className="glass-panel community-card" key={row.id}>
+                  <article
+                    id={`club-post-${row.id}`}
+                    className="glass-panel community-card club-post"
+                    key={row.id}
+                  >
                     <div className="community-person">
                       <PlayerAvatar name={row.author.display_name} />
                       <div>

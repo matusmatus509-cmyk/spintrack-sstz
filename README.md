@@ -122,3 +122,7 @@ Prehľad obsahuje výsledky, najbližší neodohraný zápas od dnešného dňa,
 Aplikácia používa výhradne mobilné rozloženie so šírkou najviac 480 px. Spodná navigácia zostáva vo všetkých sekciách; stredné tlačidlo **Pridať** otvorí zápis aktivity. SSTZ a ďalšie sekcie nájdeš v **Viac**. Formuláre majú dotykové ovládanie, minimálne 16 px písmo a panely rešpektujú bezpečné okraje displeja.
 
 Mobilný domov má kompaktný súhrn, program, rozbaľovaciu výstroj s kondíciou FH/BH a posledné aktivity pred podrobnými grafmi. Horná lišta zobrazuje aktuálnu sekciu s návratom na prehľad. Plávajúca spodná navigácia necháva hlavné akcie dostupné palcom.
+
+Odporúčané turnaje prechádzajú všetky zverejnené stránky SSTZ bez zastavenia pri starších termínoch. Pri opakovaných záznamoch medzi stránkami nasleduje kontrola v opačnom poradí s inou veľkosťou strán. Aplikácia zobrazí všetky overené vhodné turnaje bez pevného limitu, rozsah kontroly a prípadnú neúplnosť zdroja. Výsledky sa dajú vyhľadávať a filtrovať podľa uloženia v kalendári; obnovenie vynúti novú kontrolu. Katalóg a propozície sa medzi požiadavkami zdieľajú päť minút, podmienky hráča sa vyhodnocujú znova.
+
+Kluby majú rýchle akcie na tréning, zdieľanie a pozvanie hráčov podľa oprávnení. Rozpis zvýrazňuje najbližší tréning; dochádzka umožňuje hľadanie podľa názvu, miesta a ISO dátumu a po skončení oddeľuje skutočnú účasť od RSVP. Komunita zobrazuje súčasne čakajúce pozvánky aj žiadosti o priateľstvo a umožňuje hľadať v načítaných aktivitách.

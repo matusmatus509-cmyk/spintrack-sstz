@@ -55,3 +55,49 @@ test('upcoming list requires official dates and green registration link, drops p
  assert.equal(rows.length,2);assert.ok(rows[0].registrationUrl);assert.equal(rows[1].registrationUrl,'');
  assert.throws(()=>parseUpcoming('<html>unavailable</html>','2026-10-11'));
 });
+
+const card=(id,date='24.10.2026')=>`<div class="card card-hover grd-trn__wrap"><a href="/turnaj/${id}"><h3>${id} Open</h3></a><svg class="icon-calendar"></svg>${date}</div><a class="text-success" href="/turnaj/${id}/registration">Registrácia</a>`;
+const catalogue=(cards,total,pages)=>`${cards}<div>${total} turnajov</div><ul class="pagination"><a href="/turnaje?page=${pages}">last</a></ul>`;
+const response=html=>({text:async()=>html});
+const {collectTournamentCatalogue,createRecommendationService}=await import('../server/tournamentRecommendations.js');
+test('scans beyond 25 pages and past events, with at most three concurrent requests',async()=>{
+ const visited=[]; let active=0,maxActive=0;
+ const result=await collectTournamentCatalogue(async url=>{
+  const page=Number(new URL(url).searchParams.get('page'));visited.push(page);active++;maxActive=Math.max(maxActive,active);
+  await new Promise(resolve=>setTimeout(resolve,1));active--;
+  return response(catalogue(card(`event-${page}`,page===27?'24.10.2026':'01.01.2025'),27,27));
+ },'2026-10-19');
+ assert.equal(result.scannedCount,27);assert.equal(result.pageCount,27);assert.equal(result.events.length,1);assert.equal(result.events[0].id,'event-27');assert.equal(visited.length,27);assert.equal(maxActive,3);
+});
+test('recovers duplicate date boundaries with another page size and deduplicates events',async()=>{
+ const result=await collectTournamentCatalogue(async url=>{
+  const u=new URL(url),size=u.searchParams.get('onpage'),page=u.searchParams.get('page');
+  return response(catalogue(card(size==='60'?'a':page==='1'?'a':'b'),2,2));
+ },'2026-10-19');
+ assert.equal(result.scannedCount,2);assert.equal(result.pageCount,4);assert.deepEqual(result.events.map(e=>e.id),['a','b']);
+});
+test('rejects failed or missing pages and reports incomplete unique coverage honestly',async()=>{
+ await assert.rejects(()=>collectTournamentCatalogue(async url=>{
+  if(new URL(url).searchParams.get('page')==='2')throw new Error('offline');
+  return response(catalogue(card('a'),2,2));
+ },'2026-10-19'),/offline/);
+ const partial=await collectTournamentCatalogue(async()=>response(catalogue(card('a'),2,2)),'2026-10-19');
+ assert.equal(partial.missingCount,1);assert.equal(partial.scannedCount,1);assert.equal(partial.catalogueCount,2);
+ await assert.rejects(()=>collectTournamentCatalogue(async()=>response(catalogue(card('a'),3,2)),'2026-10-19'),/neúplné/);
+});
+test('returns every suitable tournament, shares catalogue cache, and manual refresh scans anew',async()=>{
+ let scans=0,rules=0;
+ const profile='<h2>Základné informácie</h2>'+['Hráč','Test Player','Rok narodenia','2011','Licencia','30.06.2031'].map(v=>`<p>${v}</p>`).join('');
+ const detail='<div class="card-header"><h5>Dorastenci</h5></div><p><span>Veková kategória:</span>Dorastenci</p><p><span>Typ:</span>singles</p><p><span>Pohlavie:</span>Muži</p>';
+ const service=createRecommendationService({now:()=>new Date('2026-10-19T09:00:00Z'),readRules:async()=>{rules++;return '';},readSource:async url=>{
+  const path=new URL(url).pathname;
+  if(path.endsWith('/rebricky'))return response('<h2>Rebríčky</h2>Slovenský rebríček - Dorastenci');
+  if(path.startsWith('/hraci/'))return response(profile);
+  if(path==='/turnaje'){scans++;await new Promise(resolve=>setTimeout(resolve,2));return response(catalogue(Array.from({length:12},(_,i)=>card(`event-${i}`)).join(''),12,1));}
+  return response(detail);
+ }});
+ const [first,second]=await Promise.all([service('123'),service('456')]);
+ assert.equal(first.tournaments.length,12);assert.equal(second.tournaments.length,12);assert.equal(first.scannedCount,12);assert.equal(scans,1);assert.equal(rules,12);
+ await service('123');assert.equal(scans,1);
+ await service('123',{refresh:true});assert.equal(scans,2);assert.equal(rules,24);
+});

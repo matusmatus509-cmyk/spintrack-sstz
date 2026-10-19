@@ -1,32 +1,416 @@
-.recommendations-panel { border:1px solid #facc1535; border-radius:20px; padding:22px; background:linear-gradient(135deg,#facc150d,transparent 60%),var(--bg-card); }
-.recommendations-heading,.recommendations-title { display:flex; align-items:center; gap:12px; }
-.recommendations-heading { justify-content:space-between; }
-.recommendations-title h2 { margin:4px 0 0; font-size:1.25rem; letter-spacing:-.03em; }
-.recommendations-icon { display:grid; place-items:center; width:44px; height:44px; border-radius:13px; background:#facc1524; color:var(--accent-tt-amber); flex-shrink:0; }
-.recommendations-refresh { border:1px solid var(--border-subtle); background:transparent; color:var(--text-main); border-radius:10px; min-width:40px; min-height:40px; cursor:pointer; }
-.recommendations-intro,.recommendations-footnote { color:var(--text-muted); font-size:.8rem; line-height:1.6; }
-.recommendations-intro { margin:16px 0; }
-.recommendations-profile { display:flex; flex-wrap:wrap; gap:7px; margin:16px 0; }
-.recommendations-profile span { padding:6px 10px; border-radius:8px; background:#ffffff08; font-size:.72rem; color:var(--text-muted); }
-.recommendations-profile span:first-child { color:var(--text-main); font-weight:700; }
-.recommendations-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:14px; }
-.recommended-tournament { display:flex; gap:16px; border:1px solid #facc1535; border-left:4px solid var(--accent-tt-amber); border-radius:14px; padding:18px; background:#facc150a; min-width:0; }
-.recommended-date { display:flex; flex-direction:column; align-items:center; gap:5px; padding-top:5px; min-width:60px; color:var(--accent-tt-amber); }
-.recommended-date span:first-child { font-size:1rem; font-weight:800; }
-.recommended-date span:last-child { font-size:.65rem; color:var(--text-muted); }
-.recommended-content { min-width:0; flex:1; }
-.recommended-label { display:flex; align-items:center; gap:5px; color:var(--accent-tt-green); font-size:.65rem; font-weight:600; }
-.recommended-content h3 { font-size:1rem; line-height:1.45; margin:9px 0 14px; overflow-wrap:anywhere; }
-.recommended-category { display:flex; flex-direction:column; gap:6px; font-size:.7rem; color:var(--text-muted); }
-.recommended-category select { max-width:100%; background:var(--bg-card); color:var(--accent-tt-amber); border:1px solid #facc1540; border-radius:8px; min-height:38px; padding:8px; }
-.recommended-content p { color:var(--text-muted); font-size:.68rem; line-height:1.5; }
-.recommended-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:16px; }
-.recommended-actions button { display:flex; align-items:center; justify-content:center; gap:7px; background:var(--accent-tt-amber); color:#171b0e; border:0; border-radius:9px; padding:10px 12px; min-height:40px; font-size:.73rem; font-weight:700; cursor:pointer; }
-.recommended-actions button:disabled { background:#34e6a018; color:var(--accent-tt-green); cursor:default; }
-.recommended-actions a,.recommendations-empty a,.recommendations-footnote a { display:inline-flex; align-items:center; gap:5px; color:var(--accent-tt-amber); font-size:.73rem; }
-.recommendations-empty { padding:22px 14px; border:1px dashed var(--border-subtle); border-radius:12px; color:var(--text-muted); font-size:.82rem; line-height:1.6; }
-.recommendations-empty h3 { color:var(--text-main); font-size:.95rem; margin:0 0 8px; }
-.recommendations-empty p { margin:0 0 12px; }
-.recommendations-footnote { font-size:.68rem; margin:16px 0 0; }
-.recommendations-notice { display:flex; align-items:center; gap:8px; font-size:.78rem; line-height:1.6; color:var(--accent-tt-green); }
-@media(max-width:640px) { .recommendations-panel { padding:16px; } .recommendations-title h2 { font-size:1.1rem; } .recommended-tournament { padding:14px; gap:10px; } .recommended-date { min-width:48px; } .recommended-actions button { width:100%; } }
+.recommendations-panel {
+  display: grid;
+  gap: 15px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  padding: 18px;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--accent-tt-amber) 5%, var(--bg-card)),
+    var(--bg-card) 65%
+  );
+  min-width: 0;
+}
+.recommendations-heading,
+.recommendations-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.recommendations-heading {
+  justify-content: space-between;
+}
+.recommendations-title > div {
+  min-width: 0;
+}
+.recommendations-title .eyebrow {
+  font-size: 0.53rem;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+}
+.recommendations-title h2 {
+  margin: 5px 0 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.045em;
+  line-height: 1.3;
+}
+.recommendations-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 48px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--accent-tt-amber) 12%, var(--bg-card));
+  color: var(--accent-tt-amber);
+  flex-shrink: 0;
+}
+.recommendations-refresh {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-radius: 13px;
+  width: 40px;
+  min-width: 40px;
+  min-height: 44px;
+}
+.recommendations-intro {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.77rem;
+  line-height: 1.75;
+}
+.recommendations-profile {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+.recommendations-profile strong {
+  font-size: 0.84rem;
+}
+.recommendations-profile > span {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.recommendations-scan {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--border-subtle);
+  border-radius: 15px;
+  padding: 12px 3px;
+  background: var(--bg-card);
+}
+.recommendations-scan > div {
+  display: grid;
+  gap: 5px;
+  text-align: center;
+  padding: 0 4px;
+}
+.recommendations-scan > div + div {
+  border-left: 1px solid var(--border-subtle);
+}
+.recommendations-scan strong {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+.recommendations-scan span {
+  font-size: 0.56rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.recommendations-scan > div:last-child strong {
+  color: var(--accent-tt-green);
+}
+.recommendations-results-heading {
+  display: grid;
+  gap: 5px;
+}
+.recommendations-results-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.89rem;
+}
+.recommendations-results-heading h3 > span {
+  background: var(--selection);
+  color: var(--accent-tt-green);
+  border-radius: 7px;
+  padding: 4px 6px;
+  font-size: 0.62rem;
+}
+.recommendations-results-heading small {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+.recommendations-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  background: var(--bg-card);
+  min-width: 0;
+}
+.recommendations-search svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.recommendations-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  background: transparent;
+  border: 0;
+  color: var(--text-main);
+  padding: 10px 0;
+  font: inherit;
+  font-size: 16px;
+}
+.recommendations-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 0.69rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.recommendations-toggle input {
+  width: 19px;
+  height: 19px;
+  min-height: 19px;
+  flex-shrink: 0;
+  accent-color: var(--accent-tt-green);
+}
+.recommendations-grid {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.recommended-tournament {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 15px;
+  background: var(--bg-card);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.recommended-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.recommended-card-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+.recommended-date {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: 8px 5px;
+  width: 48px;
+  flex: 0 0 48px;
+  border: 1px solid
+    color-mix(in srgb, var(--accent-tt-amber) 20%, var(--border-subtle));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--accent-tt-amber) 5%, var(--bg-card));
+  color: var(--accent-tt-amber);
+}
+.recommended-date strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.05em;
+}
+.recommended-date span {
+  font-size: 0.65rem;
+}
+.recommended-date small {
+  font-size: 0.52rem;
+  color: var(--text-muted);
+}
+.recommended-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-tt-green);
+  font-size: 0.54rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.recommended-label > svg {
+  flex-shrink: 0;
+}
+.recommended-card-heading h3 {
+  font-size: 1rem;
+  letter-spacing: -0.035em;
+  line-height: 1.45;
+  margin: 6px 0;
+}
+.recommended-weekday {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+.recommended-category {
+  display: grid;
+  gap: 6px;
+  font-size: 0.67rem;
+  color: var(--text-muted);
+}
+.recommended-category select {
+  width: 100%;
+  min-width: 0;
+  color: var(--text-main);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 11px;
+  min-height: 44px;
+  padding: 9px;
+}
+.recommended-tournament .recommended-chosen-category {
+  margin: 0;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+.recommended-tournament .recommended-eligibility {
+  margin: -5px 0 0;
+  font-size: 0.64rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.recommended-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 14px;
+}
+.recommended-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px;
+  background: var(--action-primary);
+  color: var(--on-primary);
+  border: 0;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: normal;
+}
+.recommended-actions button:disabled {
+  background: var(--selection);
+  color: var(--accent-tt-green);
+}
+.recommended-actions a,
+.recommendations-empty a,
+.recommendations-footnote a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 38px;
+  color: var(--accent-tt-amber);
+  font-size: 0.69rem;
+  text-decoration: none;
+  line-height: 1.6;
+}
+.recommendations-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 20px 14px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 16px;
+  color: var(--text-muted);
+  font-size: 0.77rem;
+  line-height: 1.7;
+}
+.recommendations-empty h3 {
+  color: var(--text-main);
+  font-size: 0.93rem;
+  margin: 0;
+}
+.recommendations-empty p {
+  margin: 0;
+}
+.recommendations-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 17px;
+  background: var(--selection);
+  color: var(--accent-tt-green);
+}
+.recommendations-loading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+.recommendations-loading > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.recommendations-loading strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 0.77rem;
+}
+.recommendations-loading p {
+  margin: 5px 0 0;
+  font-size: 0.68rem;
+  line-height: 1.7;
+}
+.recommendations-warning,
+.recommendations-error {
+  padding: 12px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--accent-tt-amber) 8%, var(--bg-card));
+  color: var(--accent-tt-amber);
+  font-size: 0.72rem;
+  line-height: 1.7;
+  margin: 0;
+}
+.recommendations-error {
+  color: var(--accent-tt-red);
+  background: color-mix(in srgb, var(--accent-tt-red) 7%, var(--bg-card));
+}
+.recommendations-error p {
+  margin: 0 0 8px;
+}
+.recommendations-details {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 5px;
+}
+.recommendations-details summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.recommendations-details p,
+.recommendations-footnote {
+  font-size: 0.64rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+  margin: 0;
+}
+.recommendations-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.72rem;
+  line-height: 1.75;
+  color: var(--accent-tt-green);
+  background: var(--selection);
+  padding: 12px;
+  border-radius: 13px;
+  margin: 0;
+}
+.recommendations-notice svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}

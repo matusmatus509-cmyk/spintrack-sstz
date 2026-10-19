@@ -12,6 +12,7 @@ import {
   ChevronRight,
   CheckCircle2,
   ClipboardCheck,
+  Search,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useCommunity } from "../context/CommunityContext";
@@ -77,6 +78,7 @@ export function ClubTrainingPanel({
   const [creating, setCreating] = useState(false);
   const [scope, setScope] = useState<"upcoming" | "todo" | "past">("upcoming");
   const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
   const [tick, setTick] = useState(Date.now());
   const version = useRef(0);
   const [form, setForm] = useState({
@@ -181,7 +183,18 @@ export function ClubTrainingPanel({
     );
   };
   const actionCount = trainings.filter(needsAction).length;
+  const searchKey = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLocaleLowerCase("sk")
+      .trim();
   const visibleTrainings = trainings
+    .filter((t) =>
+      searchKey(`${t.title} ${t.location} ${t.training_date}`).includes(
+        searchKey(query),
+      ),
+    )
     .filter((t) =>
       scope === "todo"
         ? needsAction(t)
@@ -460,7 +473,30 @@ export function ClubTrainingPanel({
               </button>
             ))}
           </div>
-          {!loading && !error && !visibleTrainings.length && (
+          <label className="social-search-field attendance-search">
+            <Search size={18} />
+            <input
+              aria-label="Hľadať tréning"
+              placeholder="Názov, miesto alebo dátum"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setQuery("")}
+              >
+                Zrušiť
+              </button>
+            )}
+          </label>
+          {query && !visibleTrainings.length && (
+            <p role="status" className="practice-muted">
+              Nenašli sme tréning pre „{query}“. Skús iné slovo alebo obdobie.
+            </p>
+          )}
+          {!query && !loading && !error && !visibleTrainings.length && (
             <div className="community-empty attendance-empty">
               <span className="social-empty-icon">
                 {scope === "todo" ? (
@@ -568,22 +604,65 @@ export function ClubTrainingPanel({
                 </p>
                 {coach && (
                   <>
-                    <div className="club-counts">
-                      {responses.map((r) => (
-                        <span key={r.id}>
+                    {ended && (
+                      <div className="attendance-progress">
+                        <div>
+                          <strong>Skutočná dochádzka</strong>
+                          <span>
+                            {roster.filter((m) => m.attended !== null).length} /{" "}
+                            {roster.length} overených
+                          </span>
+                        </div>
+                        <progress
+                          aria-label="Overená dochádzka"
+                          max={roster.length || 1}
+                          value={
+                            roster.filter((m) => m.attended !== null).length
+                          }
+                        />
+                        <div className="attendance-result-counts">
+                          <span>
+                            <strong>
+                              {roster.filter((m) => m.attended === true).length}
+                            </strong>{" "}
+                            Prišli
+                          </span>
+                          <span>
+                            <strong>
+                              {
+                                roster.filter((m) => m.attended === false)
+                                  .length
+                              }
+                            </strong>{" "}
+                            Neprišli
+                          </span>
+                          <span>
+                            <strong>
+                              {roster.filter((m) => m.attended === null).length}
+                            </strong>{" "}
+                            Na potvrdenie
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {!ended && (
+                      <div className="club-counts">
+                        {responses.map((r) => (
+                          <span key={r.id}>
+                            <strong>
+                              {roster.filter((m) => m.response === r.id).length}
+                            </strong>
+                            {r.label}
+                          </span>
+                        ))}
+                        <span>
                           <strong>
-                            {roster.filter((m) => m.response === r.id).length}
+                            {roster.filter((m) => !m.response).length}
                           </strong>
-                          {r.label}
+                          Bez odpovede
                         </span>
-                      ))}
-                      <span>
-                        <strong>
-                          {roster.filter((m) => !m.response).length}
-                        </strong>
-                        Bez odpovede
-                      </span>
-                    </div>
+                      </div>
+                    )}
                     <details
                       className="attendance-roster"
                       open={ended && roster.some((m) => m.attended === null)}

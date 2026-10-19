@@ -46,7 +46,7 @@ app.get('/api/sstz/search', async (req, res) => {
 
 app.get('/api/sstz/tournaments/recommendations/:id', async (req, res) => {
   if (!/^\d{1,10}$/.test(req.params.id)) return res.status(400).json({ error: 'Neplatné SSTZ ID hráča.' });
-  try { res.set('Cache-Control', 'no-store'); res.json(await recommendations(req.params.id)); }
+  try { res.set('Cache-Control', 'no-store'); res.json(await recommendations(req.params.id, {refresh:req.query.refresh === '1'})); }
   catch (err) { res.status(502).json({ error: err.message || 'Odporúčania SSTZ sa nepodarilo načítať.' }); }
 });
 
