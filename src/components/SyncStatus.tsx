@@ -3,6 +3,7 @@ import { CheckCircle2, LoaderCircle, AlertCircle, X } from 'lucide-react';
 import { SyncKind, useApp } from '../context/AppContext';
 
 const labels: Record<SyncKind, string> = {
+  account: 'Ligy a turnaje SSTZ',
   player: 'Ligové zápasy',
   schedule: 'Liga a rozpis',
   tournaments: 'Turnaje',

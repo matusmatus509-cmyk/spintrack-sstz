@@ -1,3 +1,4 @@
+import {loadSstzAccountImport, sstzNameKey, type SstzPlayerChoice} from '../utils/sstzAccountImport';
 import { mergeLocationHistory } from '../utils/locations';
 import { mergeCandidates, mergeMatchNotes, matchDay } from '../utils/matchMerge';
 import { compareOccurrenceDesc, normalizeDiaryDate, occurrenceTime } from '../utils/diary';
@@ -23,7 +24,7 @@ import { parseTournamentImport, replaceTournamentMatches } from '../utils/tourna
 import { emptyAccountData } from '../utils/community';
 import { INITIAL_BADGES } from '../data/gearCatalog';
 
-export type SyncKind = 'player' | 'schedule' | 'tournaments';
+export type SyncKind = 'player' | 'schedule' | 'tournaments' | 'account';
 export interface SyncJob {
   state: 'loading' | 'success' | 'error';
   message: string;
@@ -88,6 +89,7 @@ interface AppContextType {
   selectedClubId: string;
   isSstzLoading: boolean;
   sstzError: string | null;
+  syncSstzAccount: (choice: SstzPlayerChoice, showProgress?: boolean) => Promise<boolean>;
   syncSstzPlayer: (playerId: string, allSeasons?: boolean, showProgress?: boolean) => Promise<boolean>;
   syncTeamSchedule: (leagueSlug: string, clubId?: string, showProgress?: boolean) => Promise<boolean>;
   importAllSstzMatchesToDiary: () => number;
@@ -223,8 +225,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const [tournamentProfile, setTournamentProfile] = useState<SSTZTournamentProfile | null>(saved?.tournamentProfile || null);
   const [ignoredMerges, setIgnoredMerges] = useState<string[]>(saved?.ignoredMerges || []);
   const [syncJobs, setSyncJobs] = useState<Partial<Record<SyncKind, SyncJob>>>({});
-  const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController; showProgress: boolean }>());
-  const isTournamentLoading = syncJobs.tournaments?.state === 'loading';
+  const runningSyncs = useRef(new Map<SyncKind, { promise: Promise<boolean>; controller: AbortController; showProgress: boolean; key?: string }>());
+  const isTournamentLoading = syncJobs.tournaments?.state === 'loading' || syncJobs.account?.state === 'loading';
   const [tournamentError, setTournamentError] = useState<string | null>(null);
   const [teamSchedule, setTeamSchedule] = useState<TeamScheduleMatch[]>(saved?.teamSchedule || []);
   const [selectedLeagueSlug, setSelectedLeagueSlug] = useState<string>(saved?.selectedLeagueSlug || '');
@@ -234,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const [scheduleConnected, setScheduleConnected] = useState(Boolean(saved?.scheduleConnected ?? saved?.teamSchedule?.length));
 
   // Loading & error states
-  const isSstzLoading = syncJobs.player?.state === 'loading' || syncJobs.schedule?.state === 'loading';
+  const isSstzLoading = syncJobs.player?.state === 'loading' || syncJobs.schedule?.state === 'loading' || syncJobs.account?.state === 'loading';
   const [sstzError, setSstzError] = useState<string | null>(null);
 
   const [localSaveError, setLocalSaveError] = useState(false);
@@ -691,6 +693,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   const applySstzPayload = (data: any) => {
     if (!data) return;
 
+    const preserveLeagueNotes = !sstzProfile || sstzProfile.id === String(data.id);
     const profile: SSTZProfile = {
       id: data.id.toString(),
       name: data.name || `Hráč #${data.id}`,
@@ -745,7 +748,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
       setMatches(prev => {
         const nonSstz = prev.filter(p => p.source !== 'SSTZ');
-        const previous = new Map(prev.filter(p => p.source === 'SSTZ').map(p => [p.id, p]));
+        const previous = new Map((preserveLeagueNotes ? prev.filter(p => p.source === 'SSTZ') : []).map(p => [p.id, p]));
         const combined = [...importedMatches.map(match => {
           const old = previous.get(match.id);
           return old ? { ...match, notes: old.notes, tacticsNote: old.tacticsNote, racketId: old.racketId, sourceActivityId: old.sourceActivityId } : match;
@@ -764,7 +767,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       }));
       setDoublesMatches(prev => {
         const nonSstz = prev.filter(p => p.source !== 'SSTZ');
-        const previous = new Map(prev.filter(p => p.source === 'SSTZ').map(p => [p.id, p]));
+        const previous = new Map((preserveLeagueNotes ? prev.filter(p => p.source === 'SSTZ') : []).map(p => [p.id, p]));
         return [...importedDoubles.map(match => {
           const old = previous.get(match.id);
           return old ? { ...match, notes: old.notes } : match;
@@ -780,14 +783,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     kind: SyncKind, message: string, successMessage: string,
     task: (signal: AbortSignal) => Promise<void>,
     showProgress = true,
+    key?: string,
   ): Promise<boolean> => {
+    if ((kind === 'player' || kind === 'tournaments') && runningSyncs.current.has('account')) return runningSyncs.current.get('account')!.promise;
     const existing = runningSyncs.current.get(kind);
     if (existing) {
       if (showProgress && !existing.showProgress) {
         existing.showProgress = true;
         setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt: Date.now() } }));
-        if (kind === 'tournaments') setTournamentError(null);
-        else setSstzError(null);
+        if (kind === 'tournaments' || kind === 'account') setTournamentError(null);
+        if (kind !== 'tournaments') setSstzError(null);
       }
       return existing.promise;
     }
@@ -795,14 +800,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     const startedAt = Date.now();
     if (showProgress) {
       setSyncJobs(previous => ({ ...previous, [kind]: { state: 'loading', message, startedAt } }));
-      if (kind === 'tournaments') setTournamentError(null);
-      else setSstzError(null);
+      if (kind === 'tournaments' || kind === 'account') setTournamentError(null);
+      if (kind !== 'tournaments') setSstzError(null);
     }
     const promise = (async () => {
       try {
         await task(AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]));
-        if (kind === 'tournaments') setTournamentError(null);
-        else setSstzError(null);
+        if (kind === 'tournaments' || kind === 'account') setTournamentError(null);
+        if (kind !== 'tournaments') setSstzError(null);
         if (runningSyncs.current.get(kind)?.showProgress) {
           setSyncJobs(previous => ({ ...previous, [kind]: { state: 'success', message: successMessage, startedAt, finishedAt: Date.now() } }));
         } else {
@@ -817,16 +822,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
           return false;
         }
         const detail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
-        if (kind === 'tournaments') setTournamentError(detail);
-        else setSstzError(detail);
+        if (kind === 'tournaments' || kind === 'account') setTournamentError(detail);
+        if (kind !== 'tournaments') setSstzError(detail);
         setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
         return false;
       } finally {
+        controller.abort();
         runningSyncs.current.delete(kind);
       }
     })();
-    runningSyncs.current.set(kind, { promise, controller, showProgress });
+    runningSyncs.current.set(kind, { promise, controller, showProgress, key });
     return promise;
+  };
+
+  const applyTournamentImport = (
+    imported: ReturnType<typeof parseTournamentImport>,
+  ) => {
+    setMatches((previous) =>
+      replaceTournamentMatches(previous, imported.matches),
+    );
+    setDoublesMatches((previous) =>
+      replaceTournamentMatches(previous, imported.doublesMatches),
+    );
+    setTournamentProfile({
+      ...imported.profile,
+      lastImportCount:
+        imported.matches.filter((m) => !matches.some((old) => old.id === m.id))
+          .length +
+        imported.doublesMatches.filter(
+          (m) => !doublesMatches.some((old) => old.id === m.id),
+        ).length,
+    });
+  };
+
+  const syncSstzAccount = async (
+    choice: SstzPlayerChoice,
+    showProgress = true,
+  ): Promise<boolean> => {
+    const key = `${choice.registryId || ""}:${choice.leagueId || ""}`;
+    const previousAccount = runningSyncs.current.get("account");
+    if (previousAccount && (!showProgress || previousAccount.key === key))
+      return runSync(
+        "account",
+        "Načítavam ligy aj turnaje…",
+        "Ligy aj turnaje sú aktualizované.",
+        async () => {},
+        showProgress,
+        key,
+      );
+    if (previousAccount) {
+      previousAccount.controller.abort();
+      await previousAccount.promise;
+    }
+    return runSync(
+      "account",
+      "Načítavam ligy aj turnaje zo všetkých dostupných sezón…",
+      "Dostupné ligové a turnajové zápasy sú aktualizované.",
+      async (signal) => {
+        const previous = ["player", "tournaments"]
+          .map((kind) => runningSyncs.current.get(kind as SyncKind))
+          .filter(Boolean);
+        previous.forEach((job) => job!.controller.abort());
+        await Promise.all(previous.map((job) => job!.promise));
+        signal.throwIfAborted();
+        const untouchedProfile =
+          choice.registryId && !choice.leagueId
+            ? sstzProfile
+            : choice.leagueId && !choice.registryId
+              ? tournamentProfile
+              : null;
+        if (
+          untouchedProfile &&
+          sstzNameKey(untouchedProfile.name) !== sstzNameKey(choice.name)
+        )
+          throw new Error(
+            "Pre iného hráča sa našiel iba jeden zdroj. Najprv odpoj predchádzajúci profil, aby sa nezmiešali histórie rôznych hráčov.",
+          );
+        const imported = await loadSstzAccountImport(
+          choice,
+          async (url) => {
+            const response = await fetch(url, { signal, cache: "no-store" });
+            if (
+              !(response.headers.get("content-type") || "").includes(
+                "application/json",
+              )
+            )
+              throw new Error("SSTZ import zatiaľ nie je dostupný na serveri.");
+            const data = await response.json();
+            if (!response.ok)
+              throw new Error(data.error || "Spoločný import SSTZ zlyhal.");
+            return data;
+          },
+          signal,
+        );
+        signal.throwIfAborted();
+        // Both sources are validated before either history is changed. Functional
+        // updates preserve the other source, manual entries and personal notes.
+        if (imported.league) applySstzPayload(imported.league);
+        if (imported.tournaments) applyTournamentImport(imported.tournaments);
+      },
+      showProgress,
+      key,
+    );
   };
 
   const syncSstzTournaments = (playerId: string, showProgress = true): Promise<boolean> => runSync(
@@ -840,9 +937,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       if (!response.ok) throw new Error(data.error || 'Nepodarilo sa načítať turnaje zo SSTZ.');
       const imported = parseTournamentImport(data, playerId);
       signal.throwIfAborted();
-      setMatches(previous => replaceTournamentMatches(previous, imported.matches));
-      setDoublesMatches(previous => replaceTournamentMatches(previous, imported.doublesMatches));
-      setTournamentProfile({...imported.profile, lastImportCount: imported.matches.filter(m => !matches.some(old => old.id === m.id)).length + imported.doublesMatches.filter(m => !doublesMatches.some(old => old.id === m.id)).length});
+      applyTournamentImport(imported);
     }, showProgress,
   );
 
@@ -892,8 +987,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   refreshConnected.current = () => {
     if (!navigator.onLine || Date.now() - lastAutoRefresh.current < 60000) return;
     lastAutoRefresh.current = Date.now();
-    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
-    if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
+    if (sstzProfile && tournamentProfile) void syncSstzAccount({name:tournamentProfile.name,registryId:tournamentProfile.id,leagueId:sstzProfile.id},false);
+    else {
+      if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
+      if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
+    }
     if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined, false);
   };
   useEffect(() => {
@@ -938,6 +1036,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   };
 
   const disconnectSstz = () => {
+    runningSyncs.current.get('account')?.controller.abort();
+    runningSyncs.current.get('tournaments')?.controller.abort();
+    setTournamentProfile(null);
+    setTournamentError(null);
+    setSstzError(null);
     runningSyncs.current.get('player')?.controller.abort();
     runningSyncs.current.get('schedule')?.controller.abort();
     setScheduleConnected(false);
@@ -1096,6 +1199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         isSstzLoading,
         sstzError,
         syncSstzPlayer,
+        syncSstzAccount,
         syncTeamSchedule,
         importAllSstzMatchesToDiary,
         addScheduleMatchToMatches,

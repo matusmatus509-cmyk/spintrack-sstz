@@ -91,7 +91,11 @@ npm run dev
 
 ## Import celej kariéry SSTZ
 
-V SSTZ Hub vyhľadaj ľubovoľného hráča a pripoj jeho profil. Import automaticky prejde všetky sezóny dostupné na SSTZ a všetky hráčove ligové záložky v každej sezóne: súbežné ligy, družstvá, nadstavby aj kvalifikácie. Na obnovenie použi „Celá kariéra (všetky ligy)“.
+V sekcii **SSTZ** alebo **Turnaje** zadaj meno do spoločného vyhľadávania a vyber **Importovať ligy aj turnaje**. Jeden výber načíta ligové aj turnajové dvojhry a štvorhry zo všetkých dostupných sezón. Rovnaký formulár obnoví obe histórie tlačidlom **Obnoviť všetky zápasy**. Nie je potrebné samostatne pripájať turnajový profil.
+
+Identifikátory na sstz.sk a stolnytenis.info sa nesmú zamieňať. Výsledky sa spoja iba pri jednoznačnej zhode celého mena na oboch zdrojoch. Pri menovcoch si používateľ vyberie ligový profil v tom istom formulári; aplikácia nevyberie prvý výsledok automaticky. Ak hráč existuje iba v jednom zdroji, formulár to uvedie a ponúkne import dostupnej histórie. Výpadok vyhľadávania sa neprezentuje ako chýbajúci profil.
+
+Obe histórie sa načítajú a overia pred uložením. Ak niektorý požadovaný zdroj zlyhá alebo vráti neúplné údaje, zostanú obe pôvodné histórie zachované. Opakovaný import zachováva vlastné poznámky, raketu a ručné zápisy. Priebeh importu ostáva viditeľný aj po prepnutí sekcie. Odpojenie zruší obe prepojenia, ale nevymaže históriu. Import celej kariéry môže trvať dlhšie; samostatné odporúčania nadchádzajúcich turnajov majú naďalej vlastný limit 15 sekúnd.
 
 Zoznam sezón sa načítava zo SSTZ; nie je obmedzený pevne zadanými rokmi. História zahŕňa dvojhry, štvorhry a kontumácie. Ak niektorú sezónu alebo ligu nemožno stiahnuť alebo sa nepodarí overiť počet zápasov, import vypíše chybu a ponechá predchádzajúcu históriu. Starý snapshot sa neprezentuje ako úspešná živá synchronizácia.
 

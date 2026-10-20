@@ -47,7 +47,7 @@ export const NAV_TABS = [
     id: 'sstz' as NavTab,
     label: 'SSTZ',
     icon: Shield,
-    description: 'Ligy a celá kariéra',
+    description: 'Import líg aj turnajov',
   },
   {
     id: 'diary' as NavTab,

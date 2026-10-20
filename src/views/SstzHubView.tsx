@@ -1,3 +1,4 @@
+import { SstzImportPanel } from '../components/SstzImportPanel';
 import { ImportHealth } from '../components/ImportHealth';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
@@ -20,26 +21,15 @@ import { LeagueData } from '../types';
 export const SstzHubView: React.FC = () => {
   const {
     sstzProfile,
-    syncSstzPlayer,
     syncTeamSchedule,
     teamSchedule,
     selectedLeagueSlug,
     selectedClubId,
     isSstzLoading,
     sstzError,
-    disconnectSstz,
     matches,
     doublesMatches
   } = useApp();
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{
-    players: { id: string; name: string; url: string }[];
-    clubs: { clubId: string; leagueSlug: string; name: string; url: string }[];
-    leagues: { leagueSlug: string; name: string; url: string }[];
-  }>({ players: [], clubs: [], leagues: [] });
-  const [isSearching, setIsSearching] = useState(false);
 
   // All 39 regions & 126 Slovak leagues
   const [allLeagues, setAllLeagues] = useState<any[]>([]);
@@ -96,34 +86,6 @@ export const SstzHubView: React.FC = () => {
       });
   }, [currLeagueSlug]);
 
-  // Debounced search
-  useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      setSearchResults({ players: [], clubs: [], leagues: [] });
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsSearching(true);
-      fetch(`/api/sstz/search?q=${encodeURIComponent(searchQuery)}`)
-        .then(res => res.json())
-        .then(data => {
-          setSearchResults(data);
-          setIsSearching(false);
-        })
-        .catch(err => {
-          console.error('Search error:', err);
-          setIsSearching(false);
-        });
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleSelectPlayer = async (playerId: string) => {
-    await syncSstzPlayer(playerId, true);
-  };
-
   const handleImportSchedule = async (onlyClub: boolean = true) => {
     if (!currLeagueSlug) return;
     const clubToImport = onlyClub ? currClubId : undefined;
@@ -150,7 +112,6 @@ export const SstzHubView: React.FC = () => {
   return (
     <div className="page-view sstz-view animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
-      <ImportHealth />
       {/* Top Compact Header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
@@ -163,31 +124,13 @@ export const SstzHubView: React.FC = () => {
             </span>
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '2px', marginBottom: '0' }}>
-            Ligy a moja kariéra
+            SSTZ · Moja kariéra
           </h1>
         </div>
 
-        {sstzProfile && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => syncSstzPlayer(sstzProfile.id, true)}
-              disabled={isSstzLoading}
-              className="btn-primary"
-              style={{ padding: '6px 12px', fontSize: '0.74rem' }}
-              title="Stiahne kompletnú históriu všetkých reálnych ligových zápasov"
-            >
-              <Trophy size={12} /> Celá kariéra (všetky ligy)
-            </button>
-            <button
-              onClick={disconnectSstz}
-              className="btn-secondary"
-              style={{ padding: '6px 10px', fontSize: '0.74rem', color: 'var(--accent-tt-red)' }}
-            >
-              Odpojiť
-            </button>
-          </div>
-        )}
       </div>
+      <SstzImportPanel />
+      <ImportHealth />
 
       {sstzError && (
         <div style={{
@@ -311,88 +254,7 @@ export const SstzHubView: React.FC = () => {
             </a>
           </div>
         </div>
-      ) : (
-        /* Player Search Box if not connected */
-        <div className="glass-panel" style={{ padding: '24px 20px', borderRadius: 'var(--radius-lg)' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px' }}>
-            1. Vyhľadaj sa na portáli SSTZ (stolnytenis.info)
-          </h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '16px' }}>
-            Zadaj svoje priezvisko alebo meno. Systém nájde tvoj profil v oficiálnom registri SSTZ a stiahne tvoju reálnu úspešnosť a všetky odohrané zápasy so setmi a bodmi.
-          </p>
-
-          <div style={{ position: 'relative', maxWidth: '500px' }}>
-            <input
-              type="text"
-              placeholder="Napr. Očovan, Novák, Oráč, Baláž..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 42px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-main)',
-                fontSize: '0.95rem'
-              }}
-            />
-            <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-          </div>
-
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '12px' }}>
-            Import zahŕňa všetky dostupné sezóny, všetky ligy aj nadstavby, v ktorých hráč nastúpil.
-          </p>
-
-          {isSearching && (
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '12px' }}>
-              Prehľadávam register SSTZ...
-            </div>
-          )}
-
-          {searchResults.players.length > 0 && (
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
-                Nájdení hráči v registri SSTZ ({searchResults.players.length})
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '280px', overflowY: 'auto' }}>
-                {searchResults.players.map(p => (
-                  <div
-                    key={p.id}
-                    onClick={() => handleSelectPlayer(p.id)}
-                    style={{
-                      padding: '12px 16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid var(--surface-tint)',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--bg-card)',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card)'}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Users size={16} color="var(--accent-tt-green)" />
-                      <strong style={{ fontSize: '0.95rem' }}>{p.name}</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>SSTZ ID: #{p.id}</span>
-                    </div>
-
-                    <button
-                      className="btn-primary"
-                      style={{ padding: '6px 14px', fontSize: '0.78rem' }}
-                    >
-                      Prepojiť profil
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      ) : null}
 
       {/* SEASONS BREAKDOWN SECTION */}
       {sstzProfile && sstzProfile.seasonsBreakdown && sstzProfile.seasonsBreakdown.length > 0 && (

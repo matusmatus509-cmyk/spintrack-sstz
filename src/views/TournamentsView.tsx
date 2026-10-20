@@ -1,3 +1,4 @@
+import { SstzImportPanel } from '../components/SstzImportPanel';
 import { compareOccurrenceDesc } from '../utils/diary';
 import { RecommendedTournaments } from '../components/RecommendedTournaments';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,27 +13,12 @@ import {
 import { useApp } from '../context/AppContext';
 import { SetBreakdown } from '../components/SetBreakdown';
 
-interface PlayerResult {
-  id: string;
-  name: string;
-  clubName?: string;
-}
-
 export const TournamentsView: React.FC = () => {
   const {
     tournamentProfile,
     matches,
     doublesMatches,
-    isTournamentLoading,
-    tournamentError,
-    syncSstzTournaments,
   } = useApp();
-  const [query, setQuery] = useState('');
-  const [players, setPlayers] = useState<PlayerResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState('');
-  const [searched, setSearched] = useState(false);
-  const [notice, setNotice] = useState('');
   const [season, setSeason] = useState('all');
   const [event, setEvent] = useState('all');
   const [type, setType] = useState('all');
@@ -40,66 +26,6 @@ export const TournamentsView: React.FC = () => {
   const [page, setPage] = useState(1);
   const historyRef = useRef<HTMLDivElement>(null);
   const pageSize = 12;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setPlayers([]);
-    setSearchError('');
-    setSearched(false);
-    setSearching(false);
-    const trimmed = query.trim();
-    if (trimmed.length < 2) return () => controller.abort();
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      try {
-        // Accept official profile URLs/IDs as well as names. IDs on the two SSTZ sites differ.
-        const id = trimmed.match(
-          /^(?:https:\/\/(?:www\.)?sstz\.sk\/hraci\/)?(\d+)(?:\/turnaje)?\/?$/,
-        )?.[1];
-        if (id) {
-          setPlayers([{ id, name: `Hráč SSTZ #${id}` }]);
-          return;
-        }
-        const response = await fetch(
-          `/api/sstz/tournaments/search?q=${encodeURIComponent(trimmed)}`,
-          { signal: controller.signal },
-        );
-        if (
-          !(response.headers.get('content-type') || '').includes(
-            'application/json',
-          )
-        )
-          throw new Error(
-            'Vyhľadávanie turnajových hráčov zatiaľ nie je dostupné na serveri.',
-          );
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.error || 'Vyhľadávanie hráčov zlyhalo.');
-        if (!Array.isArray(data.players))
-          throw new Error('SSTZ vrátilo neplatné výsledky vyhľadávania.');
-        setPlayers(
-          data.players.filter(
-            (p: PlayerResult) =>
-              /^\d+$/.test(String(p.id)) && typeof p.name === 'string',
-          ),
-        );
-      } catch (error) {
-        if (!controller.signal.aborted)
-          setSearchError(
-            error instanceof Error ? error.message : 'Vyhľadávanie zlyhalo.',
-          );
-      } finally {
-        if (!controller.signal.aborted) {
-          setSearching(false);
-          setSearched(true);
-        }
-      }
-    }, 350);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [query]);
 
   const allMatches = useMemo(
     () =>
@@ -141,18 +67,6 @@ export const TournamentsView: React.FC = () => {
     [season, event, type, opponent, allMatches.length, tournamentProfile?.id],
   );
 
-  const importPlayer = async (id: string) => {
-    setNotice('');
-    if (await syncSstzTournaments(String(id))) {
-      setSeason('all');
-      setEvent('all');
-      setType('all');
-      setOpponent('');
-      setQuery('');
-      setPage(1);
-      setNotice('Turnajové zápasy boli importované.');
-    }
-  };
   const changePage = (next: number) => {
     setPage(next);
     requestAnimationFrame(() =>
@@ -171,69 +85,7 @@ export const TournamentsView: React.FC = () => {
         <Trophy size={28} color="var(--accent-tt-green)" aria-hidden="true" />
       </div>
       <RecommendedTournaments />
-      <section
-        className="glass-panel tournament-panel"
-        aria-labelledby="tournament-search-title"
-      >
-        <h2 id="tournament-search-title">Vyhľadaj hráča SSTZ</h2>
-        <p className="tournament-muted">
-          Zadaj meno, ID alebo odkaz na hráča zo sstz.sk.
-        </p>
-        <label className="tournament-field" htmlFor="tournament-player-search">
-          <span>Meno alebo odkaz hráča</span>
-          <div className="tournament-search">
-            <Search size={18} aria-hidden="true" />
-            <input
-              id="tournament-player-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Meno hráča alebo https://www.sstz.sk/hraci/…"
-              autoComplete="off"
-            />
-          </div>
-        </label>
-        {searching && <p role="status">Hľadám hráčov…</p>}
-        {searchError && (
-          <p role="alert" className="tournament-error">
-            {searchError}
-          </p>
-        )}
-        {!searching && searched && !searchError && !players.length && (
-          <p role="status" className="tournament-muted">
-            Žiadny hráč sa nenašiel. Skús iné meno alebo odkaz na jeho profil.
-          </p>
-        )}
-        <div className="tournament-player-results">
-          {players.map((player) => (
-            <div className="tournament-player" key={player.id}>
-              <div>
-                <strong>{player.name}</strong>
-                <p className="tournament-muted">
-                  {player.clubName || `SSTZ ID ${player.id}`}
-                </p>
-              </div>
-              <button
-                className="btn-primary"
-                disabled={isTournamentLoading}
-                onClick={() => importPlayer(player.id)}
-              >
-                <Download size={16} />
-                Importovať zápasy
-              </button>
-            </div>
-          ))}
-        </div>
-        {isTournamentLoading && (
-          <p role="status">Načítavam históriu turnajových zápasov…</p>
-        )}
-        {tournamentError && (
-          <p role="alert" className="tournament-error">
-            {tournamentError}
-          </p>
-        )}
-        {notice && <p role="status">{notice}</p>}
-      </section>
+      <SstzImportPanel />
       {tournamentProfile && (
         <section
           className="glass-panel tournament-panel"
@@ -244,14 +96,7 @@ export const TournamentsView: React.FC = () => {
               <h2>{tournamentProfile.name}</h2>
               <p className="tournament-muted">{tournamentProfile.clubName}</p>
             </div>
-            <button
-              className="btn-secondary"
-              disabled={isTournamentLoading}
-              onClick={() => importPlayer(tournamentProfile.id)}
-            >
-              <RefreshCw size={16} />
-              Obnoviť turnaje
-            </button>
+
           </div>
           <div className="tournament-metrics">
             <div>

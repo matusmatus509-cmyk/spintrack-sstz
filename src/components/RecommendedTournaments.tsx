@@ -196,8 +196,8 @@ export function RecommendedTournaments() {
           </span>
           <h3>Najprv spoznajme tvoj profil</h3>
           <p>
-            Pripoj turnajový profil SSTZ nižšie. Podľa ročníka a podmienok
-            účasti nájdeme tvoje možnosti.
+            Pripoj svoj profil SSTZ nižšie. Jedným importom načítame ligy aj
+            turnaje a podľa ročníka nájdeme tvoje možnosti.
           </p>
           <a href="#tournament-search-title">
             Nájsť môj SSTZ profil <ArrowRight size={16} />
