@@ -26,18 +26,18 @@ test('no recommendations with unknown gender or birth year, expired licence, clo
  assert.deepEqual(eligibleCategories(event,player,categories,'Prihlášky do 11.10.2026, 18:00','2026-10-11','18:01'),[]);
  assert.equal(eligibleCategories(event,player,categories,'Prihlášky do 11.10.2026, 18:00','2026-10-11','17:59').length,1);
 });
-test('propositions override standard birth-year rule, sex and unknown future seasons are respected',()=>{
+test('propositions override age rules, unknown categories stay conditional and seasons roll forward',()=>{
  assert.deepEqual(eligible(event,player,categories,'Dorastenci – 2012 a mladší'),[]);
  assert.deepEqual(eligible(event,{...player,gender:'female'}),[]);
- assert.deepEqual(eligible(event,player,[{label:'Open',age:'Neznáma',gender:'male',singles:true}]),[]);
- assert.equal(minimumYear('Dorastenci','2027-07-01'),null);
+ const unknown=eligible(event,player,[{label:'Open',age:'Neznáma',gender:'male',singles:true}]);assert.equal(unknown[0].eligibility,'conditional');assert.equal(unknown[0].ageVerified,false);
+ assert.equal(minimumYear('Dorastenci','2027-07-01'),2009);
  assert.equal(minimumYear('Dorastenci','2027-07-01','Dorastenci 2009 a mladší'),2009);
  assert.deepEqual(eligible(event,player,categories,'Do 50. miesta v rebríčku'),[]);
 });
-test('explicit unrestricted licence condition admits a non-Open tournament, not a closed regional tournament',()=>{
+test('explicit participation admits an unfamiliar title and unknown regional affiliation stays conditional',()=>{
  const rules='Turnaja sa môžu zúčastniť hráči s platným registračným preukazom';
  assert.deepEqual(eligible({...event,title:'Podtatranský pohár mládeže'},player,categories,rules).map(c=>c.label),['Dorastenci']);
- assert.deepEqual(eligible({...event,title:'Krajský turnaj Oravy'},player,categories,rules),[]);
+ assert.equal(eligible({...event,title:'Krajský turnaj Oravy'},player,categories,rules)[0].eligibility,'conditional');
 });
 test('parses official structured profile and category fields, never infers sex from a name',()=>{
  const html='<h2>Základné informácie</h2>'+['Hráč','Test Player','Rok narodenia','2011','Licencia','30.06.2031','Aktuálny klub','Test Club'].map((v,i)=>`<p class="${i%2?'value':'label'}">${v}</p>`).join('');
@@ -130,9 +130,9 @@ test('shared deadline covers the profile, list, categories and propositions and 
 const {readFileSync}=await import('node:fs');
 const sbtmRules=readFileSync(new URL('./fixtures/sbtm-dorast-2026.txt',import.meta.url),'utf8');
 const sbtmEvent={...event,title:'Stredoslovenský bodovací turnaj mládeže (SBTM) – dorastenky a dorastenci',date:'2026-10-25'};
-const sbtmEligible=(p=player,rules=sbtmRules,today='2026-10-20',time='12:00')=>eligibleCategories(sbtmEvent,p,categories,rules,today,time);
+const sbtmEligible=(p=player,rules=sbtmRules,today='2026-10-20',time='12:00')=>eligibleCategories(sbtmEvent,p,categories.filter(c=>c.label==='Dorastenci'),rules,today,time);
 test('published SBTM dorast policy recommends a 2011 player without applying younger-player ranking limits',()=>{
- const result=sbtmEligible();assert.deepEqual(result.map(c=>c.label),['Dorastenci']);assert.equal(result[0].eligibility,'conditional');assert.ok(result[0].conditions.some(c=>c.includes('ZA + BB')));assert.ok(!result[0].conditions.some(c=>/do (8|16)\./.test(c)));
+ const result=sbtmEligible();assert.deepEqual(result.map(c=>c.label),['Dorastenci']);assert.equal(result[0].eligibility,'conditional');assert.ok(result[0].conditions.some(c=>c.includes('Žilinský kraj')&&c.includes('Banskobystrický kraj')));assert.ok(!result[0].conditions.some(c=>/do (8|16)\./.test(c)));
  const local=sbtmEligible({...player,region:'BB'});assert.equal(local.length,1);assert.ok(!local[0].conditions.some(c=>c.includes('Over si kraj')));
  assert.equal(sbtmEligible({...player,region:'Žilinský kraj'}).length,1);
  assert.deepEqual(sbtmEligible({...player,region:'BA'}),[]);
@@ -143,7 +143,8 @@ test('SBTM keeps age, sex, licence, deadline and genuine nomination constraints'
  assert.deepEqual(sbtmEligible({...player,licenseUntil:'2026-10-24'}),[]);
  assert.deepEqual(sbtmEligible({...player,gender:null}),[]);
  assert.deepEqual(sbtmEligible(player,sbtmRules+' Nominovaní hráči.'),[]);
- assert.deepEqual(sbtmEligible(player,sbtmRules.replace('ZA a BB kraja','BA a TT kraja')),[]);
+ assert.equal(sbtmEligible(player,sbtmRules.replace('ZA a BB kraja','BA a TT kraja'))[0].eligibility,'conditional');
+ assert.deepEqual(sbtmEligible({...player,region:'BB'},sbtmRules.replace('ZA a BB kraja','BA a TT kraja')),[]);
  assert.equal(sbtmEligible(player,sbtmRules,'2026-10-24','17:59').length,1);
  assert.deepEqual(sbtmEligible(player,sbtmRules,'2026-10-24','18:00'),[]);
  assert.deepEqual(sbtmEligible(player,sbtmRules,'2026-10-25','12:00'),[]);
@@ -154,4 +155,91 @@ test('SBTM makes top-16/top-8 conditions explicit only for players moving up and
  assert.deepEqual(sbtmEligible({...player,birthYear:2016}),[]);
  const women=[{label:'Dorastenky',age:'Dorastenky',gender:'female',singles:true}];
  assert.equal(eligibleCategories(sbtmEvent,{...player,gender:'female'},women,sbtmRules,'2026-10-20','12:00').length,1);
+});
+
+test('category policies apply across every standard age band and both genders without a named tournament exception',()=>{
+ const groups=[['Najmladší žiaci',2016,2017],['Mladší žiaci',2014,2015],['Starší žiaci',2012,2013],['Dorastenci',2008,2011]];
+ for(const [age,min,ownYear] of groups)for(const gender of ['male','female']) {
+  const label=`Nová kategória ${age} ${gender}`;
+  const category={label,age,gender,singles:true};
+  const rules=`${age} ${min} a mladší. Účasť je otvorená. Turnaj je určený pre hráčov a hráčky klubov PO a KE kraja.`;
+  const e={...event,title:'Nový regionálny pohár',date:'2026-10-25'};
+  const get=p=>eligibleCategories(e,{...player,birthYear:ownYear,gender,...p},[category],rules,'2026-10-20','12:00');
+  assert.equal(get({region:'PO'})[0].label,label);
+  assert.equal(get({region:'KE'})[0].eligibility,'verified');
+  assert.equal(get({region:null})[0].eligibility,'conditional');
+  assert.deepEqual(get({region:'BB'}),[]);
+  assert.deepEqual(get({birthYear:min-1}),[]);
+  assert.deepEqual(get({gender:gender==='male'?'female':'male'}),[]);
+ }
+});
+test('an added U17 category, custom birth-year band and subsequent seasons use the new published data',()=>{
+ const e={...event,title:'Nový mládežnícky pohár',date:'2027-10-25'};
+ const cs=[{label:'Nová súťaž U17',age:'U17',gender:'male',singles:true},{label:'Rozvojová kategória',age:'Rozvojová kategória',gender:'male',singles:true}];
+ const rules='Účasť je otvorená. Rozvojová kategória: ročníky 2013 až 2015.';
+ const result=eligibleCategories(e,{...player,birthYear:2014},cs,rules,'2027-10-20','12:00');
+ assert.deepEqual(result.map(c=>c.label),cs.map(c=>c.label));assert.equal(result[0].minimumBirthYear,2011);assert.equal(result[1].maximumBirthYear,2015);
+ assert.deepEqual(eligibleCategories(e,{...player,birthYear:2016},[cs[1]],rules,'2027-10-20','12:00'),[]);
+ assert.equal(minimumYear('U17','2028-10-25','U17 – 2013 a mladší'),2013);
+ assert.equal(minimumYear('Dorastenci','2028-10-25'),2010);
+ const unknown=eligibleCategories(e,player,[{label:'Nová neznáma kategória',age:'Nová neznáma kategória',gender:'male',singles:true}],rules,'2027-10-20','12:00')[0];
+ assert.equal(unknown.ageVerified,false);assert.equal(unknown.eligibility,'conditional');assert.equal(unknown.minimumBirthYear,null);
+});
+test('younger-player ranking conditions are read from current propositions for any category and any region',()=>{
+ const rules=sbtmRules.replace('ZA a BB kraja','PO a KE kraja').replaceAll('ZA+BB','PO+KE').replace('do 16. miesta','do 24. miesta').replace('8. miesta','12. miesta');
+ const e={...event,title:'Východoslovenský pohár mladšieho žiactva',date:'2026-10-25'};
+ const category={label:'Mladšie žiačky',age:'Mladšie žiačky',gender:'female',singles:true};
+ const get=birthYear=>eligibleCategories(e,{...player,birthYear,gender:'female',region:'PO'},[category],rules,'2026-10-20','12:00');
+ assert.equal(get(2014).length,1);assert.ok(!get(2014)[0].conditions.some(c=>c.includes('Ako mladší')));
+ assert.ok(get(2016)[0].conditions.some(c=>c.includes('do 24. miesta')));
+ assert.deepEqual(get(2013),[]);
+});
+test('a newly published category appears on refresh and is evaluated independently for different players',async()=>{
+ let added=false;
+ const detail=(label,age)=>`<div class="card-header"><h5>${label}</h5></div><p><span>Veková kategória:</span>${age}</p><p><span>Typ:</span>singles</p><p><span>Pohlavie:</span>Muži</p>`;
+ const service=createRecommendationService({now:()=>new Date('2026-10-20T10:00:00Z'),readRules:async()=> 'Účasť je otvorená.',readSource:async url=>{
+  const path=new URL(url).pathname;
+  if(path.endsWith('/rebricky'))return response('<h2>Rebríčky</h2>Slovenský rebríček - Dorastenci');
+  if(path.startsWith('/hraci/'))return response('<h2>Základné informácie</h2>'+['Hráč','Test Player','Rok narodenia',path.endsWith('/111')?'2011':'2016','Licencia','30.06.2031'].map(v=>`<p>${v}</p>`).join(''));
+  if(path==='/turnaje')return response(catalogue(card('new-event')+card('old','18.10.2026'),1423,24));
+  return response(detail('Najmladší žiaci','Najmladší žiaci')+(added?detail('Nová kategória U17','U17'):''));
+ }});
+ assert.equal((await service('111')).tournaments.length,0);
+ added=true;
+ const first=await service('111',{refresh:true});assert.deepEqual(first.tournaments[0].categories.map(c=>c.label),['Nová kategória U17']);
+ const second=await service('222');assert.deepEqual(second.tournaments[0].categories.map(c=>c.label),['Najmladší žiaci','Nová kategória U17']);
+});
+
+test('new category names use structured gender and discipline rather than a list of tournament labels',()=>{
+ const html='<div class="card-header"><h5>Nová séria U17</h5></div><p><span>Veková kategória:</span>U17</p><p><span>Typ:</span>Dvojhra</p><p><span>Pohlavie:</span>Dievčatá</p>';
+ const parsed=parseCategories(html);assert.equal(parsed[0].gender,'female');assert.equal(parsed[0].singles,true);
+ const profile='<h2>Základné informácie</h2>'+['Hráč','Test Player','Rok narodenia','2014','Licencia','30.06.2031','Pohlavie','Žena'].map(v=>`<p>${v}</p>`).join('');
+ const p=parsePlayerEligibility(profile,'');assert.equal(p.gender,'female');
+ assert.equal(eligibleCategories({...event,title:'Nová séria'},p,parsed,'Účasť je otvorená.','2026-10-20','12:00').length,1);
+});
+
+test('separate category sections retain their own regions, age ranges and nomination conditions',()=>{
+ const cs=[{label:'Séria A',age:'Séria A',gender:'male',singles:true},{label:'Séria B',age:'Séria B',gender:'male',singles:true}];
+ const rules='Účasť je otvorená.\nSéria A: ročníky 2010 až 2012. Turnaj je určený pre hráčov klubov ZA kraja.\nSéria B: ročníky 2010 až 2012. Turnaj je určený pre hráčov klubov KE kraja.\nVšeobecné podmienky:\nPlatný registračný preukaz.';
+ const result=eligibleCategories({...event,title:'Nové série'}, {...player,region:'ZA'},cs,rules,'2026-10-20','12:00');
+ assert.deepEqual(result.map(c=>c.label),['Séria A']);
+ const withNomination=rules.replace('KE kraja.','ZA kraja. Nominovaní hráči.');
+ assert.deepEqual(eligibleCategories({...event,title:'Nové série'}, {...player,region:'ZA'},cs,withNomination,'2026-10-20','12:00').map(c=>c.label),['Séria A']);
+});
+
+test('published veteran age bands never become generic candidates for a youth player',()=>{
+ const cs=[{label:'M40-49',age:'Veteráni',gender:'male',singles:true},{label:'M80+',age:'Veteráni',gender:'male',singles:true}];
+ const e={...event,title:'Nový veteránsky turnaj'};
+ assert.deepEqual(eligibleCategories(e,player,cs,'Účasť je otvorená.','2026-10-20','12:00'),[]);
+ const older=eligibleCategories(e,{...player,birthYear:1980},cs,'Účasť je otvorená.','2026-10-20','12:00');
+ assert.deepEqual(older.map(c=>c.label),['M40-49']);assert.equal(older[0].minimumBirthYear,1977);assert.equal(older[0].maximumBirthYear,1986);
+ assert.deepEqual(eligibleCategories(e,{...player,birthYear:1940},cs,'Účasť je otvorená.','2026-10-20','12:00').map(c=>c.label),['M80+']);
+});
+
+test('an explicit regional restriction is evaluated as a region rule rather than a generic exclusion',()=>{
+ const cs=[{label:'U17',age:'U17',gender:'male',singles:true}];
+ for(const wording of ['Len pre hráčov klubov ZA a BB kraja.','Výhradne pre hráčov klubov Žilinského a Banskobystrického kraja.']) {
+  const get=region=>eligibleCategories({...event,title:'Nový pohár'}, {...player,region},cs,wording,'2026-10-20','12:00');
+  assert.equal(get('BB').length,1);assert.deepEqual(get('KE'),[]);assert.equal(get(null)[0].eligibility,'conditional');
+ }
 });

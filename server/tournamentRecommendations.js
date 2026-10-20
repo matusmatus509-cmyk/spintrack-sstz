@@ -1,3 +1,5 @@
+import {participationPolicy, categoryParticipation, rulesForCategory} from './tournamentEligibility.js';
+export {minimumYear} from './tournamentEligibility.js';
 import * as http from 'node:http';
 if (typeof http.setGlobalProxyFromEnv === 'function') http.setGlobalProxyFromEnv();
 const PORTAL = 'https://turnaje.sstz.sk';
@@ -28,7 +30,9 @@ export function parsePlayerEligibility(html, ranks) {
   const rankText = norm(text(ranks.split('Rebríčky</h')[1] || ''));
   const male = /slovensky rebricek - (dorastenci|juniori|muzi|(?:najmladsi|mladsi|starsi) ziaci)/.test(rankText);
   const female = /slovensky rebricek - (dorastenky|juniorky|zeny|(?:najmladsie|mladsie|starsie) ziacky)/.test(rankText);
-  return { name:value('Hráč'), birthYear:Number(value('Rok narodenia')) || null, club:value('Aktuálny klub'), licenseUntil:iso(value('Licencia')), gender:male !== female ? (male ? 'male':'female') : null, region:null };
+  const explicitGender = norm(value('Pohlavie'));
+  const gender = /^(muz|muzi|muzske|chlapec|chlapci)$/.test(explicitGender) ? 'male' : /^(zena|zeny|zenske|dievca|dievcata)$/.test(explicitGender) ? 'female' : male !== female ? (male ? 'male':'female') : null;
+  return { name:value('Hráč'), birthYear:Number(value('Rok narodenia')) || null, club:value('Aktuálny klub'), licenseUntil:iso(value('Licencia')), gender, region:null };
 }
 export function parseCategories(html) {
   return html.split(/<div class="card-header">/).slice(1).flatMap(block => {
@@ -36,41 +40,12 @@ export function parseCategories(html) {
     const age = text(block.match(/Veková kategória:<\/span>([\s\S]*?)<\/p>/)?.[1]);
     const gender = norm(text(block.match(/Pohlavie:<\/span>([\s\S]*?)<\/p>/)?.[1]));
     const type = norm(text(block.match(/Typ:<\/span>([\s\S]*?)<\/p>/)?.[1]));
-    return label && age ? [{label, age, gender:gender === 'muzi' ? 'male' : gender === 'zeny' ? 'female' : gender === 'zmiesane' ? 'mixed' : null, singles:type.includes('singles')}] : [];
+    return label && age ? [{label, age, gender:/^(muzi|muz|muzske|chlapci)$/.test(gender) ? 'male' : /^(zeny|zena|zenske|dievcata)$/.test(gender) ? 'female' : /^(zmiesane|mixed|muzi a zeny|chlapci a dievcata)$/.test(gender) ? 'mixed' : null, singles:/singles|dvojhra|jednotliv/.test(type)}] : [];
   });
-}
-// Published SSTZ 2026/27 year limits. After this season, require explicit limits in propositions.
-// https://turnaje.sstz.sk/data/files/propozicie_1pspm_pstz-2026_27-2000-1791564739.pdf
-export function minimumYear(category, date, rules = '') {
-  const label = norm(category);
-  const line = norm(rules).match(new RegExp(`\\b${label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b[^\\n]{0,70}?\\b((?:19|20)\\d{2})\\s*(?:a|i)\\s*mlad`));
-  if (line) return Number(line[1]);
-  if (date < '2026-07-01' || date >= '2027-07-01') return null;
-  if (/najmlads/.test(label)) return 2016;
-  if (/mlads/.test(label)) return 2014;
-  if (/stars.*zi/.test(label)) return 2012;
-  if (/dorast/.test(label)) return 2008;
-  return null;
 }
 export function eligibleCategories(event, player, categories, rules = '', today = new Date().toLocaleDateString('sv-SE', {timeZone:'Europe/Bratislava'}), nowTime = new Date().toLocaleTimeString('sv-SE', {timeZone:'Europe/Bratislava', hour12:false})) {
   if (!event.registrationUrl || event.date < today || !player.birthYear || !player.gender || !player.licenseUntil || player.licenseUntil < event.date) return [];
   const publishedRules = norm(rules).replace(/\s+/g,' ');
-  // This published SBTM policy admits the age group itself without a ranking
-  // limit. Its top-16/top-8 clauses apply only to younger players moving up.
-  const sbtm = /\bsbtm\b|stredoslovensky bodovaci turnaj/.test(norm(event.title)) &&
-    /turnaj je urceny pre hracov a hracky klubov za a bb kraja/.test(publishedRules);
-  const stepUpParagraph = /pre mladsie kategorie ale plati,[\s\S]*?o jednu vekovu kategoriu vyssie,[\s\S]*?do\s*16\.\s*miesta[\s\S]*?o dve vekove kategorie vyssie,[\s\S]*?do\s*8\.\s*miesta[\s\S]*?vo svojej vekovej kategorii\s*\./;
-  const stepUp = sbtm && stepUpParagraph.test(publishedRules);
-  const generalRules = stepUp ? publishedRules.replace(stepUpParagraph,'') : publishedRules;
-  const conditions = norm(event.title)+' '+generalRules;
-  const open = /\bopen\b/.test(norm(event.title));
-  const publicParticipation = /turnaja sa mozu zucastnit (?:len )?hraci s platnym registracnym preukazom/.test(publishedRules);
-  if (!open && !sbtm && (!publicParticipation || /krajsk|regionu|oblastn|orav|stredoslovensk|vychodoslovensk|\bsbtm\b|\bvspm\b/.test(norm(event.title)))) return [];
-  if (/skolsk|majstrovstv|pozvank|nominovan|kvalifik|len pre|vyhradne|iba pre|rebric.{0,40}(?:do |nad |prvych|top|[0-9])|vykonnostn|bodov.{0,20}limit|(?:do|nad|top|prvych).{0,30}\d.{0,30}rebric/.test(conditions)) return [];
-  const region = norm(player.region).trim();
-  const allowedRegion = ['za','bb','zilinsky','zilinsky kraj','banskobystricky','banskobystricky kraj'].includes(region);
-  const otherRegion = ['ba','tt','tn','nr','po','ke','bratislavsky kraj','trnavsky kraj','trenciansky kraj','nitriansky kraj','presovsky kraj','kosicky kraj'].includes(region);
-  if (sbtm && otherRegion) return [];
   // Propositions also publish the time BEFORE the date (18,00 hod.24.10. 2026).
   const deadlineSection = publishedRules.replace(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/g,'$1.$2.$3').match(/(?:uzavierka|prihlasky|do terminu)(.{0,200})/i)?.[1];
   const deadline = deadlineSection?.match(/(\d{1,2}\.\d{1,2}\.\d{4})/);
@@ -82,25 +57,17 @@ export function eligibleCategories(event, player, categories, rules = '', today 
     const deadlineTime = time && Number(time[1]) < 24 && Number(time[2]) < 60 ? `${time[1].padStart(2,'0')}:${time[2]}` : null;
     if (!deadlineDate || deadlineDate < today || (deadlineDate === today && deadlineTime && deadlineTime <= nowTime)) return [];
   }
-  return categories.filter(category => {
-    if (!category.singles || !category.gender || (category.gender !== 'mixed' && category.gender !== player.gender)) return false;
-    const min = minimumYear(category.age,event.date,rules);
-    // Adult/veteran/unknown categories need an explicit age rule; never assume youth may enter.
-    return min !== null && player.birthYear >= min;
-  }).flatMap(category => {
-    const minimumBirthYear = minimumYear(category.age,event.date,rules);
-    const participationConditions = [];
-    if (sbtm) {
-      if (!publicParticipation || !/dorast/.test(norm(category.age))) return [];
-      if (!allowedRegion) participationConditions.push('Účasť je pre hráčov klubov Žilinského a Banskobystrického kraja (ZA + BB). Over si kraj svojho klubu.');
-      if (stepUp && player.birthYear >= minimumBirthYear+4) {
-        if (player.birthYear >= minimumBirthYear+8) return [];
-        const place = player.birthYear >= minimumBirthYear+6 ? 8 : 16;
-        participationConditions.push(`Ako mladší hráč potrebuješ byť do ${place}. miesta medzi hráčmi ZA + BB v SR rebríčku svojej vekovej kategórie.`);
-      }
-      if (/hraci s cudzou statnou prislusnostou/.test(publishedRules)) participationConditions.push('Hráči s cudzou štátnou príslušnosťou potrebujú zaradenie do SR rebríčka príslušnej kategórie.');
-    }
-    return [{...category,reason:`Ročník ${player.birthYear} · ${category.label} · ${sbtm ? 'podmienky SBTM' : 'otvorená účasť'}`,minimumBirthYear,eligibility:participationConditions.length ? 'conditional':'verified',conditions:participationConditions}];
+  return categories.flatMap(category => {
+    if (!category.singles || !category.gender || (category.gender !== 'mixed' && category.gender !== player.gender)) return [];
+    const scopedRules = rulesForCategory(category,categories,rules);
+    const policy = participationPolicy(scopedRules,event.title);
+    const conditions = norm(event.title)+' '+policy.generalRules;
+    const open = /\bopen\b/.test(norm(event.title));
+    if (!open && policy.regionalTitle && !policy.allowedRegions.length && !policy.publicParticipation) return [];
+    if (/skolsk|majstrovstv|pozvank|nominovan|kvalifik|len pre|vyhradne|iba pre|rebric.{0,40}(?:do |nad |prvych|top|[0-9])|vykonnostn|bodov.{0,20}limit|(?:do|nad|top|prvych).{0,30}\d.{0,30}rebric/.test(conditions)) return [];
+    const participation = categoryParticipation(category,player,categories,event,scopedRules,policy);
+    if (!participation) return [];
+    return [{...category,reason:`Ročník ${player.birthYear} · ${category.label}`,minimumBirthYear:participation.minimumBirthYear,maximumBirthYear:participation.maximumBirthYear,ageVerified:participation.known,eligibility:participation.eligibility,conditions:participation.conditions}];
   });
 }
 async function propositions(url, options = {}, depth = 0) {
@@ -244,7 +211,7 @@ export function createRecommendationService({readSource = load, readRules = prop
         const categories=eligibleCategories(event,player,event.categories,event.rules,today,nowTime);
         return categories.length ? [{id:event.id,title:event.title,date:event.date,url:event.url,registrationUrl:event.registrationUrl,propositionUrl:event.propositionUrl,categories}] : [];
       }).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
-      return {player,tournaments,checkedAt:now().toISOString(),catalogueCheckedAt:source.catalogueCheckedAt,scannedCount:source.scannedCount,pageCount:source.pageCount,checkedCount:source.total,unavailableCount:source.unavailable,sourceUrl:PORTAL+'/turnaje?sorting=date-desc',note:'Kontrolujeme iba nadchádzajúce turnaje SSTZ. Zobrazujeme vhodné mládežnícke kategórie podľa ročníka, pohlavia a platnosti licencie. Pri regionálnom SBTM uvádzame podmienky príslušnosti ku klubu a prípadného štartu mladšieho hráča. Pri každom turnaji sa kontrolujú propozície. Podmienečné možnosti sú označené a ich účasť si over v propozíciách. Školské, nominačné a iné neoveriteľné obmedzenia sa neodporúčajú. Pridanie do kalendára nie je registrácia.'};
+      return {player,tournaments,checkedAt:now().toISOString(),catalogueCheckedAt:source.catalogueCheckedAt,scannedCount:source.scannedCount,pageCount:source.pageCount,checkedCount:source.total,unavailableCount:source.unavailable,sourceUrl:PORTAL+'/turnaje?sorting=date-desc',note:'Kontrolujeme iba nadchádzajúce turnaje SSTZ. Kategórie vyhodnocujeme z aktuálnych údajov každého turnaja a jeho propozícií podľa ročníka, pohlavia a platnosti licencie. Regionálne a rebríčkové podmienky uvádzame pri konkrétnej kategórii. Pri každom turnaji sa kontrolujú propozície. Podmienečné možnosti sú označené a ich účasť si over v propozíciách. Školské, nominačné a iné neoveriteľné obmedzenia sa neodporúčajú. Pridanie do kalendára nie je registrácia.'};
     },timeoutMs);
   };
 }

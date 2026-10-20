@@ -16,7 +16,9 @@ import "../views/RecommendedTournaments.css";
 interface Category {
   label: string;
   reason: string;
-  minimumBirthYear: number;
+  minimumBirthYear: number | null;
+  maximumBirthYear?: number | null;
+  ageVerified?: boolean;
   eligibility?: "verified" | "conditional";
   conditions?: string[];
 }
@@ -362,7 +364,9 @@ export function RecommendedTournaments() {
                           <Check size={13} />
                         )}
                         {category?.eligibility === "conditional"
-                          ? "Vhodný ročník · over podmienky"
+                          ? category.ageVerified === false
+                            ? "Over vek a podmienky účasti"
+                            : "Vhodný ročník · over podmienky"
                           : "Overená vhodná kategória"}
                       </span>
                       <h3>{event.title}</h3>
@@ -395,8 +399,17 @@ export function RecommendedTournaments() {
                   <p className="recommended-chosen-category">{chosen}</p>
                   {category && (
                     <p className="recommended-eligibility">
-                      Ročník {category.minimumBirthYear} a mladší · overená
-                      licencia
+                      {category.ageVerified === false
+                        ? "Vekové podmienky si over v propozíciách"
+                        : category.minimumBirthYear !== null &&
+                            category.maximumBirthYear != null
+                          ? `Ročníky ${category.minimumBirthYear} – ${category.maximumBirthYear}`
+                          : category.maximumBirthYear != null
+                            ? `Ročník ${category.maximumBirthYear} a starší`
+                            : category.minimumBirthYear !== null
+                              ? `Ročník ${category.minimumBirthYear} a mladší`
+                              : "Bez vekového obmedzenia"}{" "}
+                      · overená licencia
                     </p>
                   )}
                   {!!category?.conditions?.length && (
