@@ -414,3 +414,28 @@
   flex-shrink: 0;
   margin-top: 3px;
 }
+
+.recommended-label.recommended-conditional {
+  color: var(--accent-tt-amber);
+}
+.recommended-conditions {
+  padding: 13px;
+  border: 1px solid
+    color-mix(in srgb, var(--accent-tt-amber) 25%, var(--border-subtle));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-tt-amber) 6%, var(--bg-card));
+  font-size: 0.72rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+.recommended-conditions > strong {
+  font-size: 0.73rem;
+}
+.recommended-conditions ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.recommended-conditions li + li {
+  margin-top: 7px;
+}

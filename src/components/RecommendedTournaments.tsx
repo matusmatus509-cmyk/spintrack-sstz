@@ -8,6 +8,7 @@ import {
   Search,
   ListChecks,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import "../views/RecommendedTournaments.css";
@@ -16,6 +17,8 @@ interface Category {
   label: string;
   reason: string;
   minimumBirthYear: number;
+  eligibility?: "verified" | "conditional";
+  conditions?: string[];
 }
 interface Tournament {
   id: string;
@@ -181,8 +184,8 @@ export function RecommendedTournaments() {
         )}
       </header>
       <p className="recommendations-intro">
-        Pozrieme iba nadchádzajúce turnaje SSTZ a ponúkneme všetky overené
-        vhodné možnosti pre tvoj profil.
+        Pozrieme iba nadchádzajúce turnaje SSTZ. Pri vhodných kategóriách
+        uvedieme aj regionálne a ďalšie podmienky účasti.
       </p>
       {!tournamentProfile && (
         <div className="recommendations-empty">
@@ -290,7 +293,7 @@ export function RecommendedTournaments() {
             <>
               <div className="recommendations-results-heading">
                 <h3>
-                  Všetky vhodné turnaje <span>{data.tournaments.length}</span>
+                  Možnosti pre teba <span>{data.tournaments.length}</span>
                 </h3>
                 <small>Od najbližšieho termínu</small>
               </div>
@@ -350,9 +353,17 @@ export function RecommendedTournaments() {
                       <small>{date.getFullYear()}</small>
                     </time>
                     <div>
-                      <span className="recommended-label">
-                        <Check size={13} />
-                        Overená vhodná kategória
+                      <span
+                        className={`recommended-label ${category?.eligibility === "conditional" ? "recommended-conditional" : ""}`}
+                      >
+                        {category?.eligibility === "conditional" ? (
+                          <Info size={13} />
+                        ) : (
+                          <Check size={13} />
+                        )}
+                        {category?.eligibility === "conditional"
+                          ? "Vhodný ročník · over podmienky"
+                          : "Overená vhodná kategória"}
                       </span>
                       <h3>{event.title}</h3>
                       <span className="recommended-weekday">
@@ -387,6 +398,16 @@ export function RecommendedTournaments() {
                       Ročník {category.minimumBirthYear} a mladší · overená
                       licencia
                     </p>
+                  )}
+                  {!!category?.conditions?.length && (
+                    <div className="recommended-conditions">
+                      <strong>Podmienky účasti</strong>
+                      <ul>
+                        {category.conditions.map((condition) => (
+                          <li key={condition}>{condition}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                   <div className="recommended-actions">
                     <button

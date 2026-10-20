@@ -126,3 +126,32 @@ test('shared deadline covers the profile, list, categories and propositions and 
   blocked=false;const recovered=await service('123',{refresh:true});assert.equal(recovered.tournaments.length,1,phase);
  }
 });
+
+const {readFileSync}=await import('node:fs');
+const sbtmRules=readFileSync(new URL('./fixtures/sbtm-dorast-2026.txt',import.meta.url),'utf8');
+const sbtmEvent={...event,title:'Stredoslovenský bodovací turnaj mládeže (SBTM) – dorastenky a dorastenci',date:'2026-10-25'};
+const sbtmEligible=(p=player,rules=sbtmRules,today='2026-10-20',time='12:00')=>eligibleCategories(sbtmEvent,p,categories,rules,today,time);
+test('published SBTM dorast policy recommends a 2011 player without applying younger-player ranking limits',()=>{
+ const result=sbtmEligible();assert.deepEqual(result.map(c=>c.label),['Dorastenci']);assert.equal(result[0].eligibility,'conditional');assert.ok(result[0].conditions.some(c=>c.includes('ZA + BB')));assert.ok(!result[0].conditions.some(c=>/do (8|16)\./.test(c)));
+ const local=sbtmEligible({...player,region:'BB'});assert.equal(local.length,1);assert.ok(!local[0].conditions.some(c=>c.includes('Over si kraj')));
+ assert.equal(sbtmEligible({...player,region:'Žilinský kraj'}).length,1);
+ assert.deepEqual(sbtmEligible({...player,region:'BA'}),[]);
+ assert.deepEqual(sbtmEligible({...player,region:'Nitriansky kraj'}),[]);
+});
+test('SBTM keeps age, sex, licence, deadline and genuine nomination constraints',()=>{
+ assert.deepEqual(sbtmEligible({...player,birthYear:2007}),[]);
+ assert.deepEqual(sbtmEligible({...player,licenseUntil:'2026-10-24'}),[]);
+ assert.deepEqual(sbtmEligible({...player,gender:null}),[]);
+ assert.deepEqual(sbtmEligible(player,sbtmRules+' Nominovaní hráči.'),[]);
+ assert.deepEqual(sbtmEligible(player,sbtmRules.replace('ZA a BB kraja','BA a TT kraja')),[]);
+ assert.equal(sbtmEligible(player,sbtmRules,'2026-10-24','17:59').length,1);
+ assert.deepEqual(sbtmEligible(player,sbtmRules,'2026-10-24','18:00'),[]);
+ assert.deepEqual(sbtmEligible(player,sbtmRules,'2026-10-25','12:00'),[]);
+});
+test('SBTM makes top-16/top-8 conditions explicit only for players moving up and excludes a three-band jump',()=>{
+ for(const year of [2012,2013])assert.ok(sbtmEligible({...player,birthYear:year})[0].conditions.some(c=>c.includes('do 16. miesta')));
+ for(const year of [2014,2015])assert.ok(sbtmEligible({...player,birthYear:year})[0].conditions.some(c=>c.includes('do 8. miesta')));
+ assert.deepEqual(sbtmEligible({...player,birthYear:2016}),[]);
+ const women=[{label:'Dorastenky',age:'Dorastenky',gender:'female',singles:true}];
+ assert.equal(eligibleCategories(sbtmEvent,{...player,gender:'female'},women,sbtmRules,'2026-10-20','12:00').length,1);
+});
