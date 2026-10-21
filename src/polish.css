@@ -382,3 +382,68 @@ button:disabled {
   clip: auto;
   white-space: normal;
 }
+.recap-reveal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: #071710d9;
+  backdrop-filter: blur(16px);
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px
+    max(24px, env(safe-area-inset-bottom));
+}
+.recap-reveal {
+  width: 100%;
+  max-width: 420px;
+  margin-block: auto;
+  color: var(--text-main);
+  background: var(--bg-primary);
+  padding: 20px;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  outline: none;
+}
+.recap-reveal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.recap-reveal-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--accent-tt-green);
+  font-weight: 750;
+}
+.recap-reveal h1 {
+  font-size: 1.8rem;
+  line-height: 1.15;
+  letter-spacing: -0.05em;
+}
+.recap-reveal > p,
+.recap-reveal > small {
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 0.78rem;
+}
+.recap-reveal > small {
+  text-align: center;
+}
+.recap-reveal .recap-card {
+  padding: 20px;
+}
+@media (max-width: 350px) {
+  .recap-reveal {
+    padding: 14px;
+  }
+  .recap-reveal-backdrop {
+    padding-inline: 10px;
+  }
+}

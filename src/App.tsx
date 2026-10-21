@@ -1,3 +1,4 @@
+import { RecapReveal } from './components/RecapReveal';
 import { RecapsView } from './views/RecapsView';
 import { ThemeProvider } from './context/ThemeContext';
 import React, { useState, useEffect } from 'react';
@@ -86,6 +87,7 @@ const AppContent: React.FC = () => {
         </main>
       </div>
 
+      {currentTab === 'dashboard' && !isSettingsOpen && !showAddActivity && <RecapReveal onArchive={() => selectTab('recaps')} />}
       <SyncStatus />
 
       {/* Settings Modal */}

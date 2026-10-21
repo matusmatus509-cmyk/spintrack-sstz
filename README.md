@@ -135,6 +135,6 @@ Odporúčania vyhodnocujú kategórie z aktuálnych detailov a propozícií vše
 
 ## Mesačné a ročné zhrnutia
 
-Sekcia **Viac → Zhrnutia** obsahuje všetky ukončené mesiace od prvej zaznamenanej aktivity a ukončené roky. Na hlavnej obrazovke sa automaticky zobrazí posledný mesiac; v januári aj predchádzajúci rok. Hranice období používajú časové pásmo Europe/Bratislava.
+Sekcia **Viac → Zhrnutia** obsahuje všetky ukončené mesiace od prvej zaznamenanej aktivity a ukončené roky. Nové zhrnutie sa pri otvorení aplikácie ponúkne v samostatnej zatvárateľnej kartičke; v januári aj predchádzajúci rok. Po zatvorení sa znova automaticky neotvára. Hlavný prehľad neobsahuje kartičky ani odkaz na zhrnutia; archív je dostupný cez Viac → Zhrnutia. Stav prezretia sa ukladá s denníkom. Hranice období používajú časové pásmo Europe/Bratislava.
 
 Kartičky obsahujú skutočný zapísaný čas dokončených tréningov, dvojhry aj štvorhry, výhry, prehry, ligové zápasy, počet pomenovaných líg, turnaje, aktívne dni a tréningový graf. Prepojená aktivita a jej zápas sa nepočítajú dvakrát. Plánované aktivity sú vylúčené. Archív sa ukladá s dátami denníka (aj v exporte a pri synchronizácii účtu); pri načítaní alebo oprave histórie sa prepočíta z pôvodných záznamov. Prázdne mesiace medzi aktívnymi obdobiami zostávajú dostupné.

@@ -35,6 +35,8 @@ export interface SyncJob {
 
 interface AppContextType {
   recaps: Recap[];
+  seenRecaps: string[];
+  markRecapsSeen: (ids: string[]) => void;
   // Equipment
   rackets: RacketSetup[];
   activeRacket: RacketSetup | undefined;
@@ -243,6 +245,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   const [localSaveError, setLocalSaveError] = useState(false);
 
+  const [seenRecaps, setSeenRecaps] = useState<string[]>(() => Array.isArray(saved?.seenRecaps) ? saved.seenRecaps.filter((id: unknown) => typeof id === 'string') : []);
+  const markRecapsSeen = (ids: string[]) => setSeenRecaps(previous => [...new Set([...previous, ...ids])]);
   const [recapMonth, setRecapMonth] = useState(currentMonth);
   useEffect(() => {
     const update = () => setRecapMonth(currentMonth());
@@ -263,6 +267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activities,
       savedLocations,
       recaps,
+      seenRecaps,
       trainingSessions,
       matches,
       doublesMatches,
@@ -295,6 +300,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     activities,
     savedLocations,
     recaps,
+    seenRecaps,
     trainingSessions,
     matches,
     doublesMatches,
@@ -1096,6 +1102,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activities,
       savedLocations,
       recaps,
+      seenRecaps,
       trainingSessions,
       matches,
       doublesMatches,
@@ -1121,6 +1128,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       if (data.rackets) setRackets(data.rackets);
       if (data.activeRacketId !== undefined) setActiveRacketId(data.activeRacketId);
       if (data.activities) setActivities(data.activities);
+      if (Array.isArray(data.seenRecaps)) setSeenRecaps(data.seenRecaps.filter((id: unknown) => typeof id === 'string'));
       if (data.savedLocations !== undefined || data.activities || data.trainingSessions) {
         setSavedLocations(mergeLocationHistory(data.savedLocations, (data.activities || []).map((a: ActivityRecord) => a.location), (data.trainingSessions || []).map((a: TrainingSession) => a.location)));
       }
@@ -1165,6 +1173,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     <AppContext.Provider
       value={{
         recaps,
+        seenRecaps,
+        markRecapsSeen,
         rackets,
         activeRacket,
         activeRacketId,

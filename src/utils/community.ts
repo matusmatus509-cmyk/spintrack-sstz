@@ -55,6 +55,7 @@ export const emptyAccountData = () => ({
   activeRacketId: "",
   activities: [],
   savedLocations: [],
+  seenRecaps: [],
   ignoredMerges: [],
   trainingSessions: [],
   matches: [],
