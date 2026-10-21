@@ -1,3 +1,4 @@
+import { RecapsView } from './views/RecapsView';
 import { ThemeProvider } from './context/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import type { ActivityCategory } from './types';
@@ -79,6 +80,7 @@ const AppContent: React.FC = () => {
 
           {(currentTab === 'performance' || currentTab === 'matches') && <MatchInsightsView key={currentTab} mode={currentTab} onNavigate={selectTab} />}
 
+          {currentTab === 'recaps' && <RecapsView />}
           {currentTab === 'stats' && <StatsView />}
           {currentTab === 'community' && <CommunityView onNavigate={selectTab} />}
         </main>

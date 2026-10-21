@@ -20,6 +20,7 @@ import {
 import { useDialog } from '../hooks/useDialog';
 
 export type NavTab =
+  | 'recaps'
   | 'community'
   | 'performance'
   | 'matches'
@@ -37,6 +38,7 @@ interface NavigationProps {
   onAddActivity: () => void;
 }
 export const NAV_TABS = [
+  { id: 'recaps' as NavTab, label: 'Zhrnutia', icon: BarChart3, description: 'Tvoje mesiace a roky pri stole' },
   {
     id: 'dashboard' as NavTab,
     label: 'Prehľad',

@@ -1,3 +1,5 @@
+import { currentMonth } from '../utils/recaps';
+import { RecapCard } from '../components/RecapCard';
 import { TrainingQuickActions } from '../components/TrainingQuickActions';
 import React, { useMemo } from "react";
 import { useCommunity } from "../context/CommunityContext";
@@ -36,6 +38,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenQuickLog,
 }) => {
   const {
+    recaps,
     matches,
     doublesMatches,
     activities,
@@ -103,6 +106,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </header>
 
+      {recaps.find(r => r.kind === 'month') ? <RecapCard recap={recaps.find(r => r.kind === 'month')!} compact onOpen={() => onNavigate('recaps')} /> : <button className="recap-invitation" onClick={() => onNavigate('recaps')}><span><strong>Tvoj príbeh pri stole</strong><small>Mesačné a ročné zhrnutia na jednom mieste</small></span><ChevronRight size={20} /></button>}
+      {currentMonth().endsWith('-01') && recaps.find(r => r.kind === 'year') && <RecapCard recap={recaps.find(r => r.kind === 'year')!} compact onOpen={() => onNavigate('recaps')} />}
       <TrainingQuickActions />
       <section
         className="home-metrics"

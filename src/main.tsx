@@ -6,6 +6,7 @@ import './theme.css';
 import './index.css';
 import './design.css';
 import './mobile.css';
+import './polish.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

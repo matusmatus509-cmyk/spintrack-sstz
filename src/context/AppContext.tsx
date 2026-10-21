@@ -1,3 +1,4 @@
+import { buildRecaps, currentMonth, type Recap } from '../utils/recaps';
 import {loadSstzAccountImport, sstzNameKey, type SstzPlayerChoice} from '../utils/sstzAccountImport';
 import { mergeLocationHistory } from '../utils/locations';
 import { mergeCandidates, mergeMatchNotes, matchDay } from '../utils/matchMerge';
@@ -33,6 +34,7 @@ export interface SyncJob {
 }
 
 interface AppContextType {
+  recaps: Recap[];
   // Equipment
   rackets: RacketSetup[];
   activeRacket: RacketSetup | undefined;
@@ -241,6 +243,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
 
   const [localSaveError, setLocalSaveError] = useState(false);
 
+  const [recapMonth, setRecapMonth] = useState(currentMonth);
+  useEffect(() => {
+    const update = () => setRecapMonth(currentMonth());
+    const timer = window.setInterval(update, 60000);
+    window.addEventListener('focus', update);
+    document.addEventListener('visibilitychange', update);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', update); document.removeEventListener('visibilitychange', update); };
+  }, []);
+  const recaps = useMemo(() => buildRecaps(activities, matches, doublesMatches, recapMonth), [activities, matches, doublesMatches, recapMonth]);
+
   // Persist to localStorage
   useEffect(() => {
     const dataToSave = {
@@ -250,6 +262,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activeRacketId,
       activities,
       savedLocations,
+      recaps,
       trainingSessions,
       matches,
       doublesMatches,
@@ -281,6 +294,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     activeRacketId,
     activities,
     savedLocations,
+    recaps,
     trainingSessions,
     matches,
     doublesMatches,
@@ -1081,6 +1095,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activeRacketId,
       activities,
       savedLocations,
+      recaps,
       trainingSessions,
       matches,
       doublesMatches,
@@ -1149,6 +1164,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   return (
     <AppContext.Provider
       value={{
+        recaps,
         rackets,
         activeRacket,
         activeRacketId,

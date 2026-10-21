@@ -132,3 +132,9 @@ Odporúčané turnaje kontrolujú iba nadchádzajúce termíny zo SSTZ: číta s
 Kluby majú rýchle akcie na tréning, zdieľanie a pozvanie hráčov podľa oprávnení. Rozpis zvýrazňuje najbližší tréning; dochádzka umožňuje hľadanie podľa názvu, miesta a ISO dátumu a po skončení oddeľuje skutočnú účasť od RSVP. Komunita zobrazuje súčasne čakajúce pozvánky aj žiadosti o priateľstvo a umožňuje hľadať v načítaných aktivitách.
 
 Odporúčania vyhodnocujú kategórie z aktuálnych detailov a propozícií všetkých nadchádzajúcich turnajov, bez výnimky podľa názvu turnaja alebo konkrétneho hráča. Platí to pre chlapcov aj dievčatá, štandardné vekové skupiny, číselné kategórie U a zverejnené ročníkové rozsahy. Pri ďalšej sezóne sa štandardné hranice posunú podľa dátumu turnaja; explicitné propozície majú prednosť. Regionálne podmienky a rebríčkové limity pri štarte mladších hráčov sa čítajú z pravidiel príslušného turnaja. Neznáma veková hranica alebo nepotvrdený kraj sa jasne označí ako podmienka na overenie. Nové kategórie sa objavia pri obnovení alebo po obnovení päťminútovej cache; každý profil sa posudzuje samostatne. Kontroly pohlavia, licencie, uzávierky a limit 15 sekúnd zostávajú platné.
+
+## Mesačné a ročné zhrnutia
+
+Sekcia **Viac → Zhrnutia** obsahuje všetky ukončené mesiace od prvej zaznamenanej aktivity a ukončené roky. Na hlavnej obrazovke sa automaticky zobrazí posledný mesiac; v januári aj predchádzajúci rok. Hranice období používajú časové pásmo Europe/Bratislava.
+
+Kartičky obsahujú skutočný zapísaný čas dokončených tréningov, dvojhry aj štvorhry, výhry, prehry, ligové zápasy, počet pomenovaných líg, turnaje, aktívne dni a tréningový graf. Prepojená aktivita a jej zápas sa nepočítajú dvakrát. Plánované aktivity sú vylúčené. Archív sa ukladá s dátami denníka (aj v exporte a pri synchronizácii účtu); pri načítaní alebo oprave histórie sa prepočíta z pôvodných záznamov. Prázdne mesiace medzi aktívnymi obdobiami zostávajú dostupné.
