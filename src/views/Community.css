@@ -315,3 +315,38 @@
 .club-feedback { margin-top: 12px; }
 .club-import { display: grid; gap: 6px; }
 @media (max-width: 480px) { .club-heading { align-items: flex-start; flex-direction: column; } }
+
+/* Personal club invitations and friend discovery. */
+.friend-profile-card { padding: 16px; overflow: hidden; }
+.friend-profile-card > .community-friend { padding: 0; background: none; border: 0; box-shadow: none; }
+.friend-profile-card > .community-friend > .text-button { font-size: .7rem; padding: 6px; }
+.friend-club-actions { display: grid; gap: 10px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-subtle); }
+.friend-club-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; background: var(--surface-tint); border-radius: 14px; padding: 12px; }
+.friend-club-row > div { flex: 1; min-width: 110px; }
+.friend-club-row strong, .friend-club-row small { display: block; overflow-wrap: anywhere; }
+.friend-club-row strong { font-size: .85rem; }
+.friend-club-row small { font-size: .7rem; margin-top: 3px; }
+.friend-club-row .btn-secondary { padding: 8px 10px; font-size: .72rem; min-height: 38px; }
+.friend-club-mark { display: grid; place-items: center; color: var(--accent-tt-green); width: 34px; height: 34px; background: var(--bg-card); border-radius: 10px; flex-shrink: 0; }
+.friend-club-invite { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.friend-club-invite > label, .friend-club-invite > small { flex: 1; min-width: 130px; font-size: .75rem; }
+.friend-club-invite select { display: block; max-width: 100%; width: 100%; padding: 8px; border-radius: 10px; color: var(--text-main); background: var(--bg-card); border: 1px solid var(--border-subtle); margin-top: 5px; font: inherit; }
+.club-state { display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; color: var(--accent-tt-green); }
+.club-connection-panel, .club-direct-invite { border: 1px solid var(--border-subtle); border-radius: 20px; padding: 18px; background: var(--bg-card); display: grid; gap: 14px; min-width: 0; }
+.club-section-heading { display: flex; gap: 12px; align-items: center; }
+.club-section-heading h3 { font-size: .95rem; margin: 0; }
+.club-section-heading p { font-size: .74rem; margin: 5px 0 0; line-height: 1.5; }
+.club-inbox-symbol { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0; background: rgba(16,185,129,.1); color: var(--accent-tt-green); }
+.club-connection-card { border: 1px solid var(--border-subtle); border-radius: 15px; padding: 14px; display: grid; gap: 12px; }
+.club-connection-title { display: flex; gap: 10px; align-items: flex-start; }
+.club-connection-title > div { min-width: 0; }
+.club-connection-title h4 { margin: 5px 0; font-size: .95rem; overflow-wrap: anywhere; }
+.club-connection-title p { font-size: .75rem; margin: 0; overflow-wrap: anywhere; }
+.club-connection-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.club-connection-buttons button { min-height: 42px; padding: 9px 12px; font-size: .75rem; }
+.club-connection-history summary { cursor: pointer; color: var(--text-muted); font-size: .78rem; padding: 6px 0; }
+.club-connection-history > div { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border-subtle); padding: 10px 0; font-size: .75rem; }
+.club-connection-history span { overflow-wrap: anywhere; min-width: 0; }
+.club-connection-history small { flex-shrink: 0; }
+@media (max-width: 360px) { .club-connection-buttons > .btn-primary, .club-connection-buttons > .btn-secondary { flex: 1 1 auto; } }
+.community-view .friend-profile-card > .community-friend { padding: 0; background: transparent; border: 0; box-shadow: none; border-radius: 0; }
