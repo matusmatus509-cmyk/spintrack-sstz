@@ -1,3 +1,9 @@
+import { useClubConnections } from "../hooks/useClubConnections";
+import {
+  FriendClubActions,
+  ClubConnectionStatus,
+  ClubConnectionsPanel,
+} from "../components/ClubConnections";
 import { PlayerAvatar } from "../components/PlayerAvatar";
 import { ClubTrainingPanel } from "../components/ClubTrainingPanel";
 import { ClubView } from "./ClubView";
@@ -327,7 +333,12 @@ function AuthForm() {
   );
 }
 type CommunityTab =
-  "feed" | "friends" | "invitations" | "mine" | "club" | "clubs";
+  | "feed"
+  | "friends"
+  | "invitations"
+  | "mine"
+  | "club"
+  | "clubs";
 
 export function CommunityView({
   onNavigate,
@@ -335,6 +346,11 @@ export function CommunityView({
   onNavigate: (tab: NavTab) => void;
 }) {
   const account = useCommunity();
+  const connections = useClubConnections(account.user?.id);
+  const [openClubId, setOpenClubId] = useState("");
+  useEffect(() => {
+    void connections.refresh();
+  }, [account.requests, connections.refresh]);
   const { activities, updateActivity, exportData, importData } = useApp();
   const [tab, setTab] = useState<CommunityTab>("feed");
   const navRef = useRef<HTMLElement>(null);
@@ -485,7 +501,11 @@ export function CommunityView({
             className="social-icon-button"
             aria-label="Obnoviť komunitu"
             disabled={Boolean(busy) || account.socialLoading}
-            onClick={() => void run("refresh", account.refresh)}
+            onClick={() =>
+              void run("refresh", async () => {
+                await Promise.all([account.refresh(), connections.refresh()]);
+              })
+            }
           >
             <RefreshCw
               size={18}
@@ -643,11 +663,19 @@ export function CommunityView({
           {message}
         </p>
       )}
+      <ClubConnectionStatus connection={connections} />
       <nav ref={navRef} className="social-nav" aria-label="Sekcie komunity">
         {(
           [
             { id: "feed", label: "Aktivity", Icon: Activity, count: 0 },
-            { id: "clubs", label: "Kluby", Icon: ShieldCheck, count: 0 },
+            {
+              id: "clubs",
+              label: "Kluby",
+              Icon: ShieldCheck,
+              count: connections.actions.filter(
+                (a) => a.status === "pending" && a.can_respond,
+              ).length,
+            },
             {
               id: "friends",
               label: "Hráči",
@@ -658,7 +686,14 @@ export function CommunityView({
               id: "invitations",
               label: "Pozvánky",
               Icon: Inbox,
-              count: pending.length,
+              count:
+                pending.length +
+                connections.actions.filter(
+                  (a) =>
+                    a.status === "pending" &&
+                    a.kind === "invitation" &&
+                    a.player_id === account.user?.id,
+                ).length,
             },
           ] as const
         ).map(({ id, label, Icon, count }) => {
@@ -717,7 +752,14 @@ export function CommunityView({
             {(
               [
                 {
-                  count: pending.length,
+                  count:
+                    pending.length +
+                    connections.actions.filter(
+                      (a) =>
+                        a.status === "pending" &&
+                        a.kind === "invitation" &&
+                        a.player_id === account.user?.id,
+                    ).length,
                   tab: "invitations",
                   title: "Nové pozvánky",
                   hint: "Pozri, kto ťa pozýva k stolu.",
@@ -804,13 +846,19 @@ export function CommunityView({
               <span className="social-inline-count">{pending.length}</span>
             )}
           </h2>
-          <p>Ulož si spoločnú aktivitu do kalendára alebo denníka.</p>
+          <p>Pozvánky do klubov a na spoločné aktivity na jednom mieste.</p>
         </div>
       )}
       {account.socialLoading && !account.feed.length && (
         <p role="status">Načítavam komunitu…</p>
       )}
-      {tab === "clubs" && <ClubView key={account.user.id} />}
+      {tab === "clubs" && (
+        <ClubView
+          key={account.user.id}
+          connections={connections}
+          initialClubId={openClubId}
+        />
+      )}
       {tab === "feed" && (
         <>
           <label className="social-search-field">
@@ -1003,27 +1051,38 @@ export function CommunityView({
                   ? request.recipient
                   : request.requester;
               return (
-                <article
-                  className="glass-panel community-friend"
+                <section
+                  className="glass-panel friend-profile-card"
                   key={request.id}
                 >
-                  <PlayerAvatar name={player.display_name} />
-                  <div>
-                    <strong>{player.display_name}</strong>
-                    <small>@{player.handle}</small>
-                  </div>
-                  <button
-                    className="text-button"
-                    disabled={Boolean(busy)}
-                    onClick={() => {
-                      void run(request.id, () =>
-                        account.removeFriend(request.id),
-                      );
+                  <article className="community-friend">
+                    <PlayerAvatar name={player.display_name} />
+                    <div>
+                      <strong>{player.display_name}</strong>
+                      <small>@{player.handle}</small>
+                    </div>
+                    <button
+                      className="text-button"
+                      disabled={Boolean(busy)}
+                      onClick={() => {
+                        void run(request.id, () =>
+                          account.removeFriend(request.id),
+                        );
+                      }}
+                    >
+                      Odobrať priateľa
+                    </button>
+                  </article>
+                  <FriendClubActions
+                    playerId={player.id}
+                    profileClub={player.club}
+                    connection={connections}
+                    openClub={(id) => {
+                      setOpenClubId(id);
+                      selectTab("clubs");
                     }}
-                  >
-                    Odobrať priateľa
-                  </button>
-                </article>
+                  />
+                </section>
               );
             })}
           {outgoing.length > 0 && <h2>Odoslané žiadosti</h2>}
@@ -1052,10 +1111,11 @@ export function CommunityView({
       )}
       {tab === "invitations" && (
         <>
+          <ClubConnectionsPanel connection={connections} onlyInvites />
           {!account.invitations.length && (
             <section className="glass-panel community-empty">
               <CalendarPlus size={26} />
-              <h2>Zatiaľ žiadne pozvánky</h2>
+              <h2>Zatiaľ žiadne pozvánky na aktivity</h2>
               <p>
                 Keď ťa priateľ označí v aktivite, môžeš si ju tu pridať do
                 denníka alebo kalendára.

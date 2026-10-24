@@ -1,3 +1,8 @@
+import {
+  ClubInviteForm,
+  ClubConnectionsPanel,
+} from "../components/ClubConnections";
+import type { ClubConnections } from "../hooks/useClubConnections";
 import { LocationField } from "../components/LocationField";
 import { PlayerAvatar } from "../components/PlayerAvatar";
 import {
@@ -46,14 +51,23 @@ function check(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
-export function ClubView() {
+export function ClubView({
+  connections,
+  initialClubId,
+}: {
+  connections: ClubConnections;
+  initialClubId?: string;
+}) {
   const { user } = useCommunity();
   const { activities, rememberLocation } = useApp();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [rows, setRows] = useState<ClubActivity[]>([]);
   const [notes, setNotes] = useState<ClubNote[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(initialClubId || "");
+  useEffect(() => {
+    if (initialClubId) setSelected(initialClubId);
+  }, [initialClubId]);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -79,9 +93,12 @@ export function ClubView() {
   useEffect(() => {
     if (!quickTarget || loading) return;
     const target =
-      quickTarget === "invite" ? inviteRef.current : composerRef.current;
+      quickTarget === "invite"
+        ? document.querySelector<HTMLElement>(".club-direct-invite") ||
+          inviteRef.current
+        : composerRef.current;
     if (target) {
-      target.open = true;
+      if (target instanceof HTMLDetailsElement) target.open = true;
       target.scrollIntoView({ behavior: "smooth", block: "start" });
       target
         .querySelector<HTMLElement>("input, select, button")
@@ -175,7 +192,7 @@ export function ClubView() {
     return () => {
       active = false;
     };
-  }, [user?.id, selected, revision, limit, mode, past]);
+  }, [user?.id, selected, revision, limit, mode, past, connections.revision]);
   useEffect(() => {
     const refresh = () => {
       if (!document.hidden) setRevision((n) => n + 1);
@@ -195,6 +212,7 @@ export function ClubView() {
     setMessage("");
     try {
       await action();
+      await connections.refresh();
       setMessage(success);
       setRevision((n) => n + 1);
     } catch (e) {
@@ -371,6 +389,7 @@ export function ClubView() {
   );
   return (
     <section className="club-view">
+      <ClubConnectionsPanel connection={connections} />
       {!clubs.length && !loading && (
         <div className="club-welcome">
           <span className="club-welcome-icon">
@@ -393,7 +412,10 @@ export function ClubView() {
           <button
             className="text-button"
             disabled={loading || busy}
-            onClick={() => setRevision((n) => n + 1)}
+            onClick={() => {
+              setRevision((n) => n + 1);
+              void connections.refresh();
+            }}
           >
             Skúsiť znova
           </button>
@@ -448,7 +470,10 @@ export function ClubView() {
               className="social-icon-button"
               aria-label="Obnoviť klub"
               disabled={loading || busy}
-              onClick={() => setRevision((n) => n + 1)}
+              onClick={() => {
+                setRevision((n) => n + 1);
+                void connections.refresh();
+              }}
             >
               <RefreshCw size={18} />
             </button>
@@ -470,7 +495,7 @@ export function ClubView() {
               <Plus size={17} />
               {coach ? "Nový tréning" : "Zdieľať aktivitu"}
             </button>
-            {myRole === "owner" && (
+            {coach && (
               <button
                 className="btn-secondary"
                 disabled={busy}
@@ -571,6 +596,9 @@ export function ClubView() {
           )}
           {mode === "members" ? (
             <>
+              {coach && (
+                <ClubInviteForm clubId={selected} connection={connections} />
+              )}
               {myRole === "owner" && (
                 <details
                   ref={inviteRef}
@@ -625,10 +653,12 @@ export function ClubView() {
                               text: `Pridaj sa k nám do klubu ${club.name} v SpinTrack. Pozývací kód: ${code}`,
                             });
                           } catch (error) {
-                            if (!(
-                              error instanceof DOMException &&
-                              error.name === "AbortError"
-                            ))
+                            if (
+                              !(
+                                error instanceof DOMException &&
+                                error.name === "AbortError"
+                              )
+                            )
                               setError(
                                 "Kód môžeš skopírovať a poslať spoluhráčom.",
                               );
@@ -1119,8 +1149,9 @@ export function ClubView() {
       <div className="social-privacy-note">
         <LockKeyhole size={16} />
         <p>
-          Čo sa deje v klube, vidia iba jeho členovia. Tvoje súkromné poznámky a
-          fotky zostávajú v denníku.
+          Čo sa deje v klube, vidia iba jeho členovia. Priatelia vidia názov
+          klubu a tvoju rolu. Tvoje súkromné poznámky a fotky zostávajú v
+          denníku.
         </p>
       </div>
     </section>
