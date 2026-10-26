@@ -1,3 +1,4 @@
+import { startSstzAutoRefresh } from '../utils/sstzAutoRefresh';
 import { buildRecaps, currentMonth, type Recap } from '../utils/recaps';
 import {loadSstzAccountImport, sstzNameKey, type SstzPlayerChoice} from '../utils/sstzAccountImport';
 import { mergeLocationHistory } from '../utils/locations';
@@ -1000,38 +1001,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     }, showProgress,
   );
 
-  // Initial refresh runs once, including under StrictMode. Resume refreshes are throttled.
-  const didRefreshOnOpen = useRef(false);
-  const lastAutoRefresh = useRef(0);
+  // Keep all personal results fresh, including events saved in the calendar.
+  // Each source commits independently: a league outage must not block new tournaments.
   const refreshConnected = useRef(() => {});
   refreshConnected.current = () => {
-    if (!navigator.onLine || Date.now() - lastAutoRefresh.current < 60000) return;
-    lastAutoRefresh.current = Date.now();
-    if (sstzProfile && tournamentProfile) void syncSstzAccount({name:tournamentProfile.name,registryId:tournamentProfile.id,leagueId:sstzProfile.id},false);
-    else {
-      if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
-      if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
-    }
+    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
+    if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
     if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined, false);
   };
-  useEffect(() => {
-    if (!didRefreshOnOpen.current) {
-      didRefreshOnOpen.current = true;
-      refreshConnected.current();
-    }
-    let hiddenAt = document.hidden ? Date.now() : 0;
-    const resume = () => {
-      if (document.hidden) hiddenAt = Date.now();
-      else if (hiddenAt && Date.now() - hiddenAt >= 60000) refreshConnected.current();
-    };
-    const online = () => refreshConnected.current();
-    document.addEventListener('visibilitychange', resume);
-    window.addEventListener('online', online);
-    return () => {
-      document.removeEventListener('visibilitychange', resume);
-      window.removeEventListener('online', online);
-    };
-  }, []);
+  useEffect(() => startSstzAutoRefresh(() => refreshConnected.current(), {
+    visible: () => !document.hidden,
+    online: () => navigator.onLine,
+    now: () => Date.now(),
+    every: (callback, milliseconds) => {
+      const timer = window.setInterval(callback, milliseconds);
+      return () => window.clearInterval(timer);
+    },
+    listen: (event, callback) => {
+      const target = event === 'visibilitychange' ? document : window;
+      target.addEventListener(event, callback);
+      return () => target.removeEventListener(event, callback);
+    },
+  }), []);
 
   const importAllSstzMatchesToDiary = (): number => {
     if (!sstzProfile) return 0;

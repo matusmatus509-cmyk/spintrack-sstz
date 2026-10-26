@@ -138,6 +138,7 @@ export function SstzImportPanel() {
         Zadaj svoje meno, vyber hráča a importuj ligové aj turnajové zápasy
         naraz vrátane štvorhier.
       </p>
+      {name && <p>Pripojené zápasy obnovujeme automaticky pri otvorení a každých 5 minút počas používania. Zahŕňame aj turnaje z kalendára, keď SSTZ zverejní tvoje výsledky.</p>}
       {name && (
         <div className="sstz-import-connected">
           <strong>
