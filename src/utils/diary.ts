@@ -129,6 +129,7 @@ export function getDiaryEntries(
           activity.publicNote,
           activity.privateNote,
           activity.trainingPartners,
+          ...Object.values(activity.trainingPartnerNames || {}),
           activity.reflection?.wentWell,
           activity.reflection?.improve,
           activity.reflection?.nextGoal,

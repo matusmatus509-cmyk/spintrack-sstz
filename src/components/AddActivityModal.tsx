@@ -1,3 +1,4 @@
+import { TrainingPeople } from './TrainingPeople';
 import { LocationField } from "./LocationField";
 import { newActivityId } from '../utils/activityId';
 import React, { useEffect, useState, useRef } from "react";
@@ -139,6 +140,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
   completePlanned = false,
 }) => {
   const community = useCommunity();
+  const [partnerIds, setPartnerIds] = useState<string[]>([]);
   const [invitees, setInvitees] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const localId = useRef(newActivityId());
@@ -199,6 +201,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       } else {
         setForm(nextForm);
       }
+      setPartnerIds(editActivity?.trainingPartnerIds || []);
       setCustomDrill("");
       setError("");
       setInvitees((editActivity?.trainingPartnerIds || []).filter(id => community.friends.some(friend => friend.id === id)));
@@ -315,7 +318,8 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
       publicNote: form.publicNote.trim() || undefined,
       privateNote: form.privateNote.trim() || undefined,
       trainingPartners: training ? form.trainingPartners.trim() : undefined,
-      trainingPartnerIds: training ? invitees : undefined,
+      trainingPartnerIds: training ? partnerIds : undefined,
+      trainingPartnerNames: training ? Object.fromEntries(partnerIds.map(id => [id, community.friends.find(f => f.id === id)?.display_name || editActivity?.trainingPartnerNames?.[id] || "Uložený hráč"])) : undefined,
       reflection: !form.planned ? { wentWell: form.wentWell.trim(), improve: form.improve.trim(), nextGoal: form.nextGoal.trim() } : undefined,
       visibility: form.visibility,
       racketId:
@@ -366,7 +370,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
         <header className="activity-header">
           <div>
             <span className="activity-eyebrow">TVOJ ŠPORTOVÝ DENNÍK</span>
-            <h2 id="activity-title">{completePlanned ? "Dokončiť tréning" : editActivity ? "Upraviť aktivitu" : "Pridať aktivitu"}</h2>
+            <h2 id="activity-title">{completePlanned ? "Dokončiť tréning" : editActivity ? "Upraviť aktivitu" : training ? "Zapísať tréning" : "Pridať aktivitu"}</h2>
           </div>
           <button
             type="button"
@@ -414,9 +418,10 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
               return previous ? <aside className="practice-callout"><span>Cieľ z posledného tréningu</span><strong>{previous.reflection!.nextGoal}</strong></aside> : null;
             })()}
             {completePlanned && <p className="practice-callout">Absolvované. Uprav skutočné trvanie a ulož tréning.</p>}
+            {training && <TrainingPeople key={editActivity?.id || localId.current} names={form.trainingPartners} onNames={value => field("trainingPartners", value)} selected={partnerIds} onSelected={setPartnerIds} friends={community.friends} labels={editActivity?.trainingPartnerNames || {}} loggedIn={Boolean(community.user)} />}
             <section className="activity-section">
               <h3>Základné údaje</h3>
-              {training && <label>Spoluhráči<input value={form.trainingPartners} onChange={e => field("trainingPartners", e.target.value)} placeholder="S kým si trénoval/a?" maxLength={300} /></label>}
+
               <label className="activity-check activity-plan-toggle">
                 <input type="checkbox" checked={form.planned}
                   onChange={(e) => field("planned", e.target.checked)} />
@@ -864,7 +869,7 @@ export const AddActivityModal: React.FC<AddActivityModalProps> = ({
               )}
               {community.user && !editActivity && (
                 <>
-                  <h3>Označiť priateľov</h3>
+                  <h3>Poslať pozvánku priateľom</h3>
                   <p className="activity-hint">
                     Dostanú pozvánku a tréning alebo aktivitu si môžu pridať do
                     svojho kalendára. Súkromná poznámka a fotky zostávajú iba u

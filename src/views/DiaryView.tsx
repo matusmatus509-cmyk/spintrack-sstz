@@ -428,7 +428,7 @@ export const DiaryView: React.FC<{ initialCategory?: 'all' | ActivityCategory }>
                           </div>
                         </div>
                       )}
-                      {activity.trainingPartners && <p className="practice-muted">Spoluhráči: {activity.trainingPartners}</p>}
+                      {(activity.trainingPartners || activity.trainingPartnerIds?.length) && <p className="practice-muted">Súperi alebo spoluhráči: {[activity.trainingPartners, ...(activity.trainingPartnerIds || []).map(id => activity.trainingPartnerNames?.[id] || "Uložený hráč")].filter(Boolean).join(", ")}</p>}
                       {activity.reflection && <div className="practice-reflection">
                         {activity.reflection.wentWell && <p><strong>Darilo sa:</strong> {activity.reflection.wentWell}</p>}
                         {activity.reflection.improve && <p><strong>Zlepšiť:</strong> {activity.reflection.improve}</p>}

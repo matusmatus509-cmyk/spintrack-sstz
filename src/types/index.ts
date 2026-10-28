@@ -56,6 +56,7 @@ export interface ActivityRecord {
   category: ActivityCategory;
   linkedMatchId?: string;
   trainingPartnerIds?: string[];
+  trainingPartnerNames?: Record<string, string>;
   trainingPartners?: string;
   reflection?: { wentWell: string; improve: string; nextGoal: string };
   sourceEventId?: string; // Official tournament identity prevents duplicate calendar additions.
