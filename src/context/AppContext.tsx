@@ -1,3 +1,4 @@
+import { refreshSuccess, refreshFailure, type RefreshAttempt } from '../utils/sstzRefreshPolicy';
 import { startSstzAutoRefresh } from '../utils/sstzAutoRefresh';
 import { buildRecaps, currentMonth, type Recap } from '../utils/recaps';
 import {loadSstzAccountImport, sstzNameKey, type SstzPlayerChoice} from '../utils/sstzAccountImport';
@@ -258,6 +259,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   }, []);
   const recaps = useMemo(() => buildRecaps(activities, matches, doublesMatches, recapMonth), [activities, matches, doublesMatches, recapMonth]);
 
+  const [sstzRefreshState, setSstzRefreshState] = useState<Record<string, RefreshAttempt>>(saved?.sstzRefreshState || {});
+  const refreshStateRef = useRef(sstzRefreshState);
+  const recordRefresh = (key: string, state: RefreshAttempt) => {
+    refreshStateRef.current = {...refreshStateRef.current, [key]: state};
+    setSstzRefreshState(refreshStateRef.current);
+  };
+
   // Persist to localStorage
   useEffect(() => {
     const dataToSave = {
@@ -268,6 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activities,
       savedLocations,
       recaps,
+      sstzRefreshState,
       seenRecaps,
       trainingSessions,
       matches,
@@ -301,6 +310,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     activities,
     savedLocations,
     recaps,
+    sstzRefreshState,
     seenRecaps,
     trainingSessions,
     matches,
@@ -817,6 +827,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       }
       return existing.promise;
     }
+    const identity = key || (kind === 'player' ? sstzProfile?.id : kind === 'tournaments' ? tournamentProfile?.id : kind === 'schedule' ? `${selectedLeagueSlug}:${selectedClubId}` : '');
+    const refreshKey = `${kind}:${identity || ''}`;
+    const pause = refreshStateRef.current[refreshKey];
+    if (pause?.next > Date.now() && (!showProgress || pause.limited)) {
+      if (showProgress) {
+        const detail = 'SSTZ dočasne obmedzilo požiadavky. Obnovu zopakujeme po prestávke; uložené zápasy sú dostupné.';
+        if (kind === 'tournaments' || kind === 'account') setTournamentError(detail);
+        else setSstzError(detail);
+      }
+      return Promise.resolve(false);
+    }
     const controller = new AbortController();
     const startedAt = Date.now();
     if (showProgress) {
@@ -827,6 +848,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     const promise = (async () => {
       try {
         await task(AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]));
+        recordRefresh(refreshKey, refreshSuccess(Date.now()));
         if (kind === 'tournaments' || kind === 'account') setTournamentError(null);
         if (kind !== 'tournaments') setSstzError(null);
         if (runningSyncs.current.get(kind)?.showProgress) {
@@ -842,10 +864,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
           }
           return false;
         }
-        const detail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
+        const rawDetail = error instanceof Error ? error.message : 'Obnovenie údajov zlyhalo.';
+        recordRefresh(refreshKey, refreshFailure(pause, rawDetail, Date.now()));
+        const detail = /429/.test(rawDetail) ? 'SSTZ dočasne obmedzilo požiadavky. Obnovu automaticky zopakujeme po prestávke.' : kind === 'schedule' && /404/.test(rawDetail) ? 'Uložený rozpis už nie je dostupný. V sekcii SSTZ vyber ligu a tím znova.' : rawDetail;
+        if (kind === 'schedule' && /404/.test(rawDetail)) setScheduleConnected(false);
         if (kind === 'tournaments' || kind === 'account') setTournamentError(detail);
         if (kind !== 'tournaments') setSstzError(detail);
-        setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
+        if (runningSyncs.current.get(kind)?.showProgress) setSyncJobs(previous => ({ ...previous, [kind]: { state: 'error', message: detail, startedAt, finishedAt: Date.now() } }));
         return false;
       } finally {
         controller.abort();
@@ -990,7 +1015,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         ? `/api/sstz/team-schedule?leagueSlug=${encodeURIComponent(leagueSlug)}&clubId=${encodeURIComponent(clubId)}`
         : `/api/sstz/team-schedule?leagueSlug=${encodeURIComponent(leagueSlug)}`;
       const res = await fetch(url, { signal, cache: 'no-store' });
-      if (!res.ok) throw new Error(`Chyba pri sťahovaní rozpisu (HTTP ${res.status})`);
+      if (!res.ok) {
+        const failure = await res.json().catch(() => null);
+        throw new Error(`Chyba pri sťahovaní rozpisu (HTTP ${res.status}). ${failure?.error || ''}`);
+      }
       const data = await res.json();
       if (!Array.isArray(data.matches)) throw new Error('SSTZ neposkytlo úplný rozpis. Uložené zápasy zostali zachované.');
       signal.throwIfAborted();
@@ -1093,6 +1121,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       activities,
       savedLocations,
       recaps,
+      sstzRefreshState,
       seenRecaps,
       trainingSessions,
       matches,
@@ -1119,6 +1148,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       if (data.rackets) setRackets(data.rackets);
       if (data.activeRacketId !== undefined) setActiveRacketId(data.activeRacketId);
       if (data.activities) setActivities(data.activities);
+      if (data.sstzRefreshState) { refreshStateRef.current = data.sstzRefreshState; setSstzRefreshState(data.sstzRefreshState); }
       if (Array.isArray(data.seenRecaps)) setSeenRecaps(data.seenRecaps.filter((id: unknown) => typeof id === 'string'));
       if (data.savedLocations !== undefined || data.activities || data.trainingSessions) {
         setSavedLocations(mergeLocationHistory(data.savedLocations, (data.activities || []).map((a: ActivityRecord) => a.location), (data.trainingSessions || []).map((a: TrainingSession) => a.location)));

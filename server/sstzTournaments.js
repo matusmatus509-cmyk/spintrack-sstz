@@ -1,3 +1,4 @@
+import { sstzGuard } from './sstzRequestGuard.js';
 // Scraper for official SSTZ tournament player records on sstz.sk.
 // The portal exposes these through a paginated AJAX collection, not the initial HTML.
 import * as http from 'node:http';
@@ -38,7 +39,7 @@ async function fetchSstz(url, { cookie = '', referer = `${BASE_URL}/`, xhr = fal
   const headers = { ...DEFAULT_HEADERS, Referer: referer };
   if (cookie) headers.Cookie = cookie;
   if (xhr) headers['X-Requested-With'] = 'XMLHttpRequest';
-  const response = await fetch(url, { headers, signal: AbortSignal.timeout(30000) });
+  const response = await sstzGuard.fetch(url, { headers, signal: AbortSignal.timeout(30000) });
   if (!response.ok) {
     const error = new Error(`SSTZ HTTP ${response.status}: ${url}`);
     error.status = response.status;
@@ -98,7 +99,7 @@ export async function searchSstzTournamentPlayers(query) {
     if (name) body.append(name, getAttribute(tag, 'value'));
   }
   body.set('fulltext', term);
-  const filtered = await fetch(action, {
+  const filtered = await sstzGuard.fetch(action, {
     method: 'POST',
     headers: { ...DEFAULT_HEADERS, Cookie: cookie, Referer: searchUrl, Origin: BASE_URL, 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', Accept: 'application/json, text/javascript, */*; q=0.01' },
     body,
@@ -227,7 +228,7 @@ async function fetchTournamentPage(url, cookie, config, page, counter) {
   form.append('pagination[strategy]', String(p.strategy));
   form.append('pagination[counter]', String(counter));
   form.append('qs', String(config.fetchQueryString || ''));
-  const response = await fetch(url, {
+  const response = await sstzGuard.fetch(url, {
     method: config.fetchMethod,
     headers: { ...DEFAULT_HEADERS, Cookie: cookie, Referer: url.href, Origin: BASE_URL, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json, text/javascript, */*; q=0.01' },
     body: form,

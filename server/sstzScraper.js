@@ -1,3 +1,4 @@
+import { sstzGuard } from './sstzRequestGuard.js';
 // SSTZ and stolnytenis.info scraper & parser
 // Extracts 100% authentic league matches, sets, scores, and player statistics without fabrication.
 
@@ -69,7 +70,7 @@ export function assertCompleteDuels(html, duels) {
 }
 
 async function fetchSstz(url, headers = DEFAULT_HEADERS, redirect = 'follow') {
-  const response = await fetch(url, { headers, redirect, signal: AbortSignal.timeout(30000) });
+  const response = await sstzGuard.fetch(url, { headers, redirect, signal: AbortSignal.timeout(30000) });
   if (!response.ok && !(redirect === 'manual' && response.status >= 300 && response.status < 400)) {
     const error = new Error(`SSTZ HTTP ${response.status}: ${url}`);
     error.status = response.status;
@@ -174,7 +175,7 @@ export async function searchSSTZ(query) {
   if (cached) return cached;
 
   try {
-    const resHome = await fetch(`${BASE_URL}/`, { headers: DEFAULT_HEADERS });
+    const resHome = await sstzGuard.fetch(`${BASE_URL}/`, { headers: DEFAULT_HEADERS });
     const setCookies = resHome.headers.getSetCookie ? resHome.headers.getSetCookie() : [resHome.headers.get('set-cookie')];
     const cookie = setCookies.map(c => c ? c.split(';')[0] : '').filter(Boolean).join('; ');
     const homeHtml = await resHome.text();
@@ -183,7 +184,7 @@ export async function searchSSTZ(query) {
 
     const postData = 'url=https%3A%2F%2Fwww.stolnytenis.info%2F&q=' + encodeURIComponent(query) + '&_request=%5CApp%5CRequests%5CFrontend%5CSearch&_token=' + encodeURIComponent(token);
 
-    const res = await fetch(`${BASE_URL}/`, {
+    const res = await sstzGuard.fetch(`${BASE_URL}/`, {
       method: 'POST',
       headers: {
         ...DEFAULT_HEADERS,
@@ -722,7 +723,7 @@ export async function getTeamSchedule(leagueSlug, clubId) {
     : `${BASE_URL}/liga/${leagueSlug}/rozpis`;
 
   try {
-    const res = await fetch(url, {
+    const res = await sstzGuard.fetch(url, {
       headers: DEFAULT_HEADERS
     });
 
@@ -811,7 +812,7 @@ export async function getLeagueData(leagueSlug) {
 
   try {
     const tableUrl = `${BASE_URL}/liga/${leagueSlug}/tabulka`;
-    const res = await fetch(tableUrl, {
+    const res = await sstzGuard.fetch(tableUrl, {
       headers: DEFAULT_HEADERS
     });
 
@@ -913,7 +914,7 @@ export async function getAllSlovakLeagues() {
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${BASE_URL}/`, {
+    const res = await sstzGuard.fetch(`${BASE_URL}/`, {
       headers: DEFAULT_HEADERS
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

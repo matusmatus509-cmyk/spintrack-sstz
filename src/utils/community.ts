@@ -56,6 +56,7 @@ export const emptyAccountData = () => ({
   activities: [],
   savedLocations: [],
   seenRecaps: [],
+  sstzRefreshState: {},
   ignoredMerges: [],
   trainingSessions: [],
   matches: [],

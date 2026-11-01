@@ -1,3 +1,4 @@
+import { sstzGuard } from './sstzRequestGuard.js';
 import { recommendations } from './tournamentRecommendations.js';
 import express from 'express';
 import cors from 'cors';
@@ -40,7 +41,7 @@ app.get('/api/sstz/search', async (req, res) => {
     const results = await searchSSTZ(query.toString());
     res.json(results);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status === 404 ? 404 : err.status === 429 ? 429 : 500).json({ error: err.message });
   }
 });
 
@@ -66,7 +67,7 @@ app.get('/api/sstz/tournaments/player/:id', async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(id)) return res.status(400).json({ error: 'Neplatné SSTZ ID hráča.' });
   try {
-    res.json(await getSstzTournamentProfile(id));
+    res.json(await sstzGuard.load(`tournaments:${id}`, () => getSstzTournamentProfile(id)));
   } catch (err) {
     res.status(err.status === 404 ? 404 : 502).json({ error: err.message || 'Import turnajov SSTZ zlyhal.' });
   }
@@ -77,7 +78,7 @@ app.get('/api/sstz/player/:id', async (req, res) => {
   const { id } = req.params;
   const allSeasons = req.query.allSeasons !== 'false';
   try {
-    const profile = await getPlayerProfile(id, { allSeasons });
+    const profile = await sstzGuard.load(`player:${id}:${allSeasons}`, () => getPlayerProfile(id, { allSeasons }));
     if (!profile) {
       return res.status(404).json({ error: `Player ${id} not found` });
     }
@@ -100,7 +101,7 @@ app.get('/api/sstz/team-schedule', async (req, res) => {
     }
     res.json(schedule);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status === 404 ? 404 : err.status === 429 ? 429 : 500).json({ error: err.message });
   }
 });
 
@@ -114,7 +115,7 @@ app.get('/api/sstz/league/:slug', async (req, res) => {
     }
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status === 404 ? 404 : err.status === 429 ? 429 : 500).json({ error: err.message });
   }
 });
 
@@ -124,7 +125,7 @@ app.get('/api/sstz/all-leagues', async (req, res) => {
     const leagues = await getAllSlovakLeagues();
     res.json(leagues);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status === 404 ? 404 : err.status === 429 ? 429 : 500).json({ error: err.message });
   }
 });
 
