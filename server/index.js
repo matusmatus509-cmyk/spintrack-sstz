@@ -28,7 +28,8 @@ app.use(express.json());
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.set('Cache-Control', 'no-store');
+  res.json({ status: 'ok', time: new Date().toISOString(), revision: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'local', region: process.env.VERCEL_REGION || 'local' });
 });
 
 // Omnisearch

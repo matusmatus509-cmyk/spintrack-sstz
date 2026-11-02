@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["fra1"],
   "functions": { "api/index.js": { "maxDuration": 300 } },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" }
