@@ -85,7 +85,7 @@ const CACHE_TTL_MS = 15 * 60 * 1000;
 
 function getFromCache(key) {
   const item = cache.get(key);
-  if (item && Date.now() - item.timestamp < CACHE_TTL_MS) {
+  if (item && Date.now() - item.timestamp < (key.endsWith('allSeasons=false') ? 5 * 60000 : CACHE_TTL_MS)) {
     return item.data;
   }
   return null;

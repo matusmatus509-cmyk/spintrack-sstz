@@ -1,3 +1,4 @@
+import { mergeLeagueRefresh } from '../utils/leagueRefresh';
 import { refreshSuccess, refreshFailure, type RefreshAttempt } from '../utils/sstzRefreshPolicy';
 import { startSstzAutoRefresh } from '../utils/sstzAutoRefresh';
 import { buildRecaps, currentMonth, type Recap } from '../utils/recaps';
@@ -259,7 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   }, []);
   const recaps = useMemo(() => buildRecaps(activities, matches, doublesMatches, recapMonth), [activities, matches, doublesMatches, recapMonth]);
 
-  const [sstzRefreshState, setSstzRefreshState] = useState<Record<string, RefreshAttempt>>(saved?.sstzRefreshState || {});
+  const [sstzRefreshState, setSstzRefreshState] = useState<Record<string, RefreshAttempt>>(saved?.sstzRefreshPolicyVersion === 2 ? saved.sstzRefreshState || {} : {});
   const refreshStateRef = useRef(sstzRefreshState);
   const recordRefresh = (key: string, state: RefreshAttempt) => {
     refreshStateRef.current = {...refreshStateRef.current, [key]: state};
@@ -277,6 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       savedLocations,
       recaps,
       sstzRefreshState,
+      sstzRefreshPolicyVersion: 2,
       seenRecaps,
       trainingSessions,
       matches,
@@ -830,12 +832,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
     const identity = key || (kind === 'player' ? sstzProfile?.id : kind === 'tournaments' ? tournamentProfile?.id : kind === 'schedule' ? `${selectedLeagueSlug}:${selectedClubId}` : '');
     const refreshKey = `${kind}:${identity || ''}`;
     const pause = refreshStateRef.current[refreshKey];
-    if (pause?.next > Date.now() && (!showProgress || pause.limited)) {
-      if (showProgress) {
-        const detail = 'SSTZ dočasne obmedzilo požiadavky. Obnovu zopakujeme po prestávke; uložené zápasy sú dostupné.';
-        if (kind === 'tournaments' || kind === 'account') setTournamentError(detail);
-        else setSstzError(detail);
-      }
+    if (pause?.next > Date.now() && !showProgress) {
       return Promise.resolve(false);
     }
     const controller = new AbortController();
@@ -1004,7 +1001,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
         throw new Error('SSTZ neposkytlo úplné údaje hráča. Uložená história zostala zachovaná.');
       }
       signal.throwIfAborted();
-      applySstzPayload(data);
+      applySstzPayload(allSeasons ? data : mergeLeagueRefresh(data, sstzProfile, matches, doublesMatches));
     }, showProgress,
   );
 
@@ -1033,7 +1030,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
   // Each source commits independently: a league outage must not block new tournaments.
   const refreshConnected = useRef(() => {});
   refreshConnected.current = () => {
-    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, true, false);
+    if (sstzProfile) void syncSstzPlayer(sstzProfile.id, false, false);
     if (tournamentProfile) void syncSstzTournaments(tournamentProfile.id, false);
     if (scheduleConnected && selectedLeagueSlug) void syncTeamSchedule(selectedLeagueSlug, selectedClubId || undefined, false);
   };
@@ -1122,6 +1119,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode; storageKey?: str
       savedLocations,
       recaps,
       sstzRefreshState,
+      sstzRefreshPolicyVersion: 2,
       seenRecaps,
       trainingSessions,
       matches,
